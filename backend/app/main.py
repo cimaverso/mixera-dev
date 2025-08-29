@@ -1,0 +1,52 @@
+# main.py
+
+from fastapi import FastAPI
+from sqlmodel import SQLModel
+from fastapi.staticfiles import StaticFiles
+from app.database.database import engine
+from fastapi.middleware.cors import CORSMiddleware
+from app.models.usuario.modelo_usuario import Usuario
+from app.models.usuario.modelo_rol import Rol
+from app.models.libro.modelo_libro import Libro, LibroCreate
+from app.models.libro.modelo_editorial import Editorial
+from app.models.libro.modelo_autor import Autor
+from app.models.libro.modelo_categoria import Categoria
+from app.models.texto.modelo_texto import Texto
+
+
+
+from app.routers import usuario, autenticacion, pago, autor, categoria, editorial, libro, webhook, texto, progreso
+
+
+app = FastAPI(
+    title="Sistema Mixera",
+)
+
+def crear_tablas():
+    SQLModel.metadata.create_all(engine)
+
+crear_tablas()
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+app.mount("/uploads/books", StaticFiles(directory="uploads/books"), name="books")
+app.mount("/uploads/covers", StaticFiles(directory="uploads/covers"), name="covers")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],
+)
+
+app.include_router(usuario.router)
+app.include_router(autenticacion.router)
+app.include_router(pago.router)
+app.include_router(webhook.router)
+app.include_router(autor.router)
+app.include_router(categoria.router)
+app.include_router(editorial.router)
+app.include_router(libro.router)
+app.include_router(texto.router)
+app.include_router(progreso.router)

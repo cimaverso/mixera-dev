@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, input, button, label, h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif;
+  
+}
+
+.registro-fondo {
+
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+    background-image: url('./../../../public/assets/FondoLogin.webp');
+}
+
+.registro-contenedor {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.registro-logo {
+  width: 120px;
+  margin-bottom: 10px;
+}
+
+.registro-titulo {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.registro-formulario .campo {
+  margin-bottom: 15px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.registro-formulario input {
+  width: 100%;
+  padding: 10px 15px 10px 45px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.registro-formulario input:focus {
+  border: 2px solid #24211e;
+}
+
+.registro-formulario .icono {
+  position: absolute;
+  left: 15px;
+  color: #24211e;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.boton-ingresar {
+  background-color: #24211e;
+  color: white;
+  width: 40%;
+  padding: 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.boton-ingresar:hover {
+  background-color: #3a3734;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.enlace-olvido {
+  font-size: 14px;
+  color: white;
+  text-decoration: none;
+}
+
+.enlace-olvido:hover {
+  text-decoration: underline;
+}
+
+.enlace-login {
+  font-size: 14px;
+  color: white;
+  text-decoration: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.enlace-login:hover {
+  text-decoration: underline;
+  color: #f0f0f0;
+}
+
+
+
+.mensaje-form {
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: bold;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.mensaje-exito {
+  background-color: #e6ffed;
+  color: #2d7a46;
+  border: 1px solid #2d7a46;
+}
+
+.mensaje-error {
+  background-color: #ffe6e6;
+  color: #cc0000;
+  border: 1px solid #cc0000;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+/* ------------------------- */
+/* 📱 MEDIA QUERIES ≤ 380px */
+/* ------------------------- */
+
+@media screen and (max-width: 380px) {
+  .registro-contenedor {
+    padding: 25px;
+  }
+
+  .registro-logo {
+    width: 90px;
+  }
+
+  .registro-titulo {
+    font-size: 20px;
+  }
+
+  .registro-formulario .campo .icono {
+    display: none !important;
+  }
+
+  .registro-formulario input {
+    font-size: 13px;
+    padding: 10px 15px;
+  }
+
+  .boton-ingresar {
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  .enlace-olvido {
+    font-size: 13px;
+  }
+}
+
+/* ------------------------- */
+/* 📱 TABLETS */
+/* ------------------------- */
+
+@media screen and (min-width: 381px) and (max-width: 768px) {
+  .registro-contenedor {
+    max-width: 90%;
+    padding: 35px;
+  }
+
+  .registro-logo {
+    width: 100px;
+  }
+
+  .registro-titulo {
+    font-size: 22px;
+  }
+}

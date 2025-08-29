@@ -1,0 +1,171 @@
+.tuts-header { margin-bottom: 8px; }
+.tuts-sub { color: #666; font-size: .95rem; }
+
+/* Grid responsive - ORIGINAL + OPTIMIZACIONES */
+.tuts-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+}
+
+/* Breakpoints originales mejorados */
+@media (max-width: 1100px) { 
+  .tuts-grid { 
+    grid-template-columns: repeat(2, minmax(220px, 1fr)); 
+  } 
+}
+@media (max-width: 600px) { 
+  .tuts-grid { 
+    grid-template-columns: 1fr; 
+  } 
+}
+
+/* NUEVAS OPTIMIZACIONES RESPONSIVE */
+
+/* Pantallas muy grandes */
+@media (min-width: 1400px) {
+  .tuts-grid {
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+  }
+}
+
+/* Ajuste intermedio para mejor distribución */
+@media (max-width: 900px) and (min-width: 601px) {
+  .tuts-grid {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+    gap: 18px;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .tuts-grid {
+    gap: 16px;
+  }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 360px) {
+  .tuts-grid {
+    gap: 14px;
+  }
+}
+
+/* Orientación landscape en móviles */
+@media (max-width: 900px) and (orientation: landscape) {
+  .tuts-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Tablets en portrait */
+@media (max-width: 1100px) and (min-width: 768px) and (orientation: portrait) {
+  .tuts-grid {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+  }
+}
+
+/* Optimización para contenedores pequeños */
+@media (max-width: 400px) {
+  .tuts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tarjeta - ORIGINAL */
+.tut-card {
+  background: #eee;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform .18s ease, box-shadow .18s ease;
+  outline: none;
+}
+.tut-card:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,.08); }
+
+.tut-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #d6d6d6;
+  overflow: hidden;
+}
+.tut-thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: contrast(1.02) saturate(1.02);
+  transition: transform .25s ease;
+}
+.tut-card:hover .tut-thumb img { transform: scale(1.04); }
+
+/* Botón de play encima de la miniatura - ORIGINAL */
+.tut-play {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 46px; color: white;
+  text-shadow: 0 2px 10px rgba(0,0,0,.45);
+  background: linear-gradient(to bottom, rgba(0,0,0,.0), rgba(0,0,0,.25));
+  pointer-events: none;
+}
+
+.tut-title {
+  padding: 12px 14px 14px;
+  font-size: 0.95rem;
+  color: #222;
+}
+
+/* OPTIMIZACIONES RESPONSIVE ADICIONALES */
+
+/* Ajustar tamaño del botón play según pantalla */
+@media (max-width: 600px) {
+  .tut-play {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 400px) {
+  .tut-play {
+    font-size: 36px;
+  }
+}
+
+/* Ajustar padding del título en móviles */
+@media (max-width: 600px) {
+  .tut-title {
+    padding: 10px 12px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .tut-title {
+    padding: 8px 10px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mejorar hover en dispositivos touch */
+@media (hover: none) {
+  .tut-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .tut-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(0,0,0,.12);
+  }
+}
+
+/* Optimización para pantallas de alta densidad */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .tut-thumb img {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Reducir animaciones si el usuario prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .tut-card, .tut-thumb img {
+    transition: none;
+  }
+}

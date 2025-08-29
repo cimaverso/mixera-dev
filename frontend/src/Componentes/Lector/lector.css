@@ -1,0 +1,1119 @@
+/* lector.css - VISTA DOBLE OPTIMIZADA - SCROLL Y RESPONSIVE MEJORADOS - BARRA DELGADA FINAL */
+
+/* ===== VARIABLES CSS OPTIMIZADAS ===== */
+:root {
+  --z-index-textos: 210;
+  --z-index-modales: 999;
+  --z-index-panel: 10;
+  --z-index-temporales: 250;
+  
+  --color-primary: #2196f3;
+  --color-secondary: #4caf50;
+  --color-warning: #ff9800;
+  --color-danger: #f44336;
+  --color-texto: #2196f3;
+  
+  --border-radius: 8px;
+  --border-radius-small: 4px;
+  --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
+  --shadow-heavy: 0 8px 20px rgba(0,0,0,0.2);
+  
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  
+  /* Variables para barra inferior */
+  --barra-height-desktop: 50px;
+  --barra-height-mobile: 45px;
+  --barra-bottom-desktop: 0px;
+  --barra-bottom-mobile: 0px;
+}
+
+/* ===== CONTENEDOR PRINCIPAL - OPTIMIZADO ===== */
+.lector-container {
+    position: relative;
+    height: 100vh;
+    background-color: #f4f4f4;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== PANEL DE HERRAMIENTAS FLOTANTE ===== */
+.panel-herramientas {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #de007e, #de007e);
+    padding: 8px;
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: var(--z-index-panel);
+    box-shadow: var(--shadow-medium);
+    backdrop-filter: blur(10px);
+}
+
+.panel-herramientas button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    border-radius: var(--border-radius-small);
+    position: relative;
+    min-width: 36px;
+    min-height: 36px;
+}
+
+.panel-herramientas button.activo {
+    color: black;
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+    box-shadow: var(--shadow-light);
+}
+
+.panel-herramientas button:hover:not(.activo) {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.panel-herramientas button:active {
+    transform: scale(0.95);
+}
+
+/* ===== VISOR PDF - OPTIMIZADO PARA SCROLL ===== */
+.visor-pdf {
+    height: calc(100vh - var(--barra-height-desktop));
+    width: 100%;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #f4f4f4 !important;
+}
+
+/* ===== BARRA INFERIOR DELGADA DE LADO A LADO - FINAL ===== */
+.barra-inferior {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: var(--barra-height-desktop);
+    transform: none;
+    
+    /* Fondo de barra unificado */
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: calc(var(--z-index-panel) + 5);
+    
+    border: none;
+    border-radius: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    
+    min-height: var(--barra-height-desktop);
+    max-width: none;
+}
+
+.barra-inferior button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    padding: 8px;
+    border-radius: 6px;
+    min-width: 40px;
+    min-height: 34px;
+    flex-shrink: 0;
+}
+
+.barra-inferior button:hover {
+    background: rgba(33, 150, 243, 0.8) !important;
+    border-color: rgba(33, 150, 243, 1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.barra-inferior button:active {
+    transform: scale(0.98);
+}
+
+.barra-inferior span {
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    min-width: 60px;
+    text-align: center;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ===== VISTA DOBLE - SIN SCROLL PROPIO ===== */
+.dual-view-wrap {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100%;
+    width: 100%;
+    padding: 16px 16px 80px 16px;
+    background: #f7f7f7;
+    overflow: visible;
+}
+
+.dual-page {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    padding: 8px;
+    box-shadow: var(--shadow-light);
+    transition: box-shadow var(--transition-normal);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.dual-page:hover {
+    box-shadow: var(--shadow-medium);
+}
+
+.dual-canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-small);
+}
+
+/* ===== OVERLAYS PARA TEXTOS - VISTA NORMAL ===== */
+.texto-overlay-zoom-fixed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+    z-index: 150;
+    overflow: visible;
+    transform-origin: 0 0;
+}
+
+/* ===== OVERLAYS PARA TEXTOS - VISTA DOBLE ===== */
+.texto-overlay-dual-fixed {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    pointer-events: auto;
+    z-index: 150;
+    overflow: visible;
+    transform-origin: 0 0;
+}
+
+/* ===== ELEMENTOS DE TEXTO VISTA NORMAL ===== */
+.texto-zoom-fixed {
+    position: absolute;
+    z-index: var(--z-index-textos);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    transform-origin: center center;
+    will-change: transform;
+    contain: layout style paint;
+}
+
+.texto-zoom-fixed .texto-contenido {
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500 !important;
+    border: 2px solid transparent !important;
+    border-radius: 6px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    overflow: hidden;
+    line-height: 1.4;
+    text-shadow: none !important;
+    cursor: inherit;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    position: relative;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+}
+
+/* ===== ELEMENTOS DE TEXTO VISTA DOBLE ===== */
+.texto-dual-fixed {
+    position: absolute;
+    z-index: var(--z-index-textos);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    transform-origin: center center;
+    will-change: transform;
+    contain: layout style paint;
+}
+
+.texto-dual-fixed .texto-contenido {
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500 !important;
+    border: 2px solid transparent !important;
+    border-radius: 6px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    overflow: hidden;
+    line-height: 1.4;
+    text-shadow: none !important;
+    cursor: inherit;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    position: relative;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+}
+
+/* ===== ESTADOS HOVER UNIFICADOS ===== */
+.texto-zoom-fixed:hover .texto-contenido,
+.texto-dual-fixed:hover .texto-contenido {
+    background: rgba(33, 150, 243, 0.05) !important;
+    border-color: rgba(33, 150, 243, 0.3) !important;
+    border-style: dashed !important;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15) !important;
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+
+.texto-zoom-fixed:hover,
+.texto-dual-fixed:hover {
+    z-index: calc(var(--z-index-textos) + 10) !important;
+}
+
+/* ===== ESTADOS DE INTERACCIÓN ACTIVA UNIFICADOS ===== */
+.texto-zoom-fixed[data-dragging="true"],
+.texto-dual-fixed[data-dragging="true"] {
+    z-index: calc(var(--z-index-textos) + 50) !important;
+    cursor: grabbing !important;
+    transform: translate(-50%, -50%) scale(1.02);
+    transition: none !important;
+}
+
+.texto-zoom-fixed[data-dragging="true"] .texto-contenido,
+.texto-dual-fixed[data-dragging="true"] .texto-contenido {
+    background: rgba(33, 150, 243, 0.1) !important;
+    border-color: var(--color-primary) !important;
+    border-style: solid !important;
+    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.3) !important;
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+
+.texto-zoom-fixed[data-resizing="true"],
+.texto-dual-fixed[data-resizing="true"] {
+    z-index: calc(var(--z-index-textos) + 40) !important;
+}
+
+.texto-zoom-fixed[data-resizing="true"] .texto-contenido,
+.texto-dual-fixed[data-resizing="true"] .texto-contenido {
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+
+/* ===== RESIZE HANDLES UNIFICADOS ===== */
+.texto-zoom-fixed .resize-handles,
+.texto-dual-fixed .resize-handles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.texto-zoom-fixed .resize-handle,
+.texto-dual-fixed .resize-handle {
+    position: absolute;
+    pointer-events: auto;
+    background: var(--color-primary);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: var(--shadow-medium);
+    transition: all var(--transition-fast);
+    width: 12px;
+    height: 12px;
+}
+
+.texto-zoom-fixed .resize-se,
+.texto-dual-fixed .resize-se {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+
+.texto-zoom-fixed .resize-handle:hover,
+.texto-dual-fixed .resize-handle:hover {
+    background: #1976d2;
+    transform: scale(1.2);
+    box-shadow: var(--shadow-heavy);
+}
+
+/* ===== MODALES CON CONTROLES DE FUENTE ===== */
+.modal-texto-con-fuente {
+    position: fixed !important;
+    font-family: inherit;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+    will-change: transform;
+    contain: layout style paint;
+}
+
+.modal-texto-con-fuente .modal-header {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+    color: rgb(0, 0, 0) !important;
+    cursor: move !important;
+    user-select: none !important;
+    transition: background 0.2s ease !important;
+    flex-shrink: 0 !important;
+    font-weight: 600 !important;
+}
+
+.modal-texto-con-fuente .modal-header:hover {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+}
+
+.modal-texto-con-fuente .modal-textarea {
+    transition: border-color 0.2s ease !important;
+    color: #000000 !important;
+}
+
+.modal-texto-con-fuente .modal-textarea:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1) !important;
+    color: #000000 !important;
+}
+
+.modal-texto-con-fuente button {
+    transition: all var(--transition-normal) !important;
+}
+
+.modal-texto-con-fuente button:hover {
+    opacity: 0.9 !important;
+    transform: translateY(-1px) !important;
+}
+
+.modal-texto-con-fuente button:active {
+    transform: translateY(0) !important;
+}
+
+/* Controles de fuente específicos */
+.modal-texto-con-fuente .font-controls {
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.modal-texto-con-fuente .font-size-slider {
+    flex: 1 !important;
+    height: 6px !important;
+    background: #ddd !important;
+    border-radius: 3px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+.modal-texto-con-fuente .font-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    background: var(--color-primary) !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.modal-texto-con-fuente .font-size-slider::-webkit-slider-thumb:hover {
+    background: #1976d2 !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+}
+
+.modal-texto-con-fuente .font-size-slider::-moz-range-thumb {
+    width: 18px !important;
+    height: 18px !important;
+    background: var(--color-primary) !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+.modal-texto-con-fuente .font-size-display {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--color-primary) !important;
+    min-width: 35px !important;
+    text-align: center !important;
+    background: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--color-primary) !important;
+}
+
+.modal-texto-con-fuente .text-preview {
+    padding: 12px !important;
+    border: 2px dashed #e0e0e0 !important;
+    border-radius: 8px !important;
+    background: #fafafa !important;
+    min-height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.modal-texto-con-fuente .text-preview:hover {
+    border-color: var(--color-primary) !important;
+    background: #f0f8ff !important;
+}
+
+.modal-texto-con-fuente .preview-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
+    text-align: center !important;
+    line-height: 1.4 !important;
+    word-wrap: break-word !important;
+    max-width: 100% !important;
+    text-shadow: none !important;
+    transition: all 0.2s ease !important;
+}
+
+/* ===== ANIMACIONES OPTIMIZADAS ===== */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.modal-texto-con-fuente {
+    animation: fadeInScale 0.2s ease;
+}
+
+/* ===== FEEDBACK VISUAL ===== */
+.save-feedback {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--color-secondary), #45a049);
+    color: white;
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    z-index: calc(var(--z-index-modales) + 100);
+    font-size: 14px;
+    font-weight: 600;
+    animation: slideInRight 0.3s ease;
+    box-shadow: var(--shadow-medium);
+    backdrop-filter: blur(10px);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVE DESIGN OPTIMIZADO ===== */
+@media (max-width: 768px) {
+    :root {
+        --barra-height-desktop: var(--barra-height-mobile);
+    }
+    
+    .visor-pdf {
+        height: calc(100vh - var(--barra-height-mobile));
+    }
+    
+    .panel-herramientas {
+        right: 5px;
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .panel-herramientas button {
+        padding: 6px;
+        font-size: 16px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+    
+    .barra-inferior {
+        height: var(--barra-height-mobile);
+        min-height: var(--barra-height-mobile);
+        padding: 0 15px;
+        gap: 8px;
+    }
+    
+    .barra-inferior button {
+        min-width: 36px;
+        min-height: 30px;
+        font-size: 14px;
+        padding: 6px;
+    }
+    
+    .barra-inferior span {
+        font-size: 12px;
+        padding: 6px 10px;
+        height: 30px;
+        min-width: 50px;
+    }
+    
+    .texto-zoom-fixed .texto-contenido,
+    .texto-dual-fixed .texto-contenido {
+        font-size: 13px !important;
+        padding: 6px 9px !important;
+        color: #000000 !important;
+        text-shadow: none !important;
+    }
+    
+    .texto-zoom-fixed .resize-handle,
+    .texto-dual-fixed .resize-handle {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .modal-texto-con-fuente {
+        width: calc(100vw - 40px) !important;
+        max-width: 450px !important;
+        margin: 0 20px;
+    }
+    
+    .modal-texto-con-fuente .font-controls {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .modal-texto-con-fuente .font-size-slider {
+        min-width: 100px !important;
+    }
+    
+    .dual-view-wrap {
+        flex-direction: column;
+        gap: 12px;
+        padding: 8px 8px 70px 8px;
+    }
+    
+    .dual-page {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --barra-height-mobile: 40px;
+    }
+    
+    .lector-container {
+        font-size: 14px;
+    }
+    
+    .visor-pdf {
+        height: calc(100vh - 40px);
+    }
+    
+    .barra-inferior {
+        height: 40px;
+        min-height: 40px;
+        padding: 0 10px;
+        gap: 6px;
+    }
+    
+    .barra-inferior button {
+        min-width: 32px;
+        min-height: 28px;
+        font-size: 13px;
+        padding: 4px;
+    }
+    
+    .barra-inferior span {
+        font-size: 11px;
+        padding: 4px 8px;
+        height: 28px;
+        min-width: 45px;
+    }
+    
+    .dual-view-wrap {
+        flex-direction: column;
+        gap: 12px;
+        padding: 8px 8px 50px 8px;
+    }
+    
+    .texto-zoom-fixed .texto-contenido,
+    .texto-dual-fixed .texto-contenido {
+        font-size: 12px !important;
+        padding: 4px 6px !important;
+        color: #000000 !important;
+        text-shadow: none !important;
+    }
+    
+    .modal-texto-con-fuente {
+        width: calc(100vw - 20px) !important;
+        margin: 0 10px;
+    }
+    
+    .modal-texto-con-fuente .font-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    
+    .modal-texto-con-fuente .font-size-slider {
+        width: 100% !important;
+    }
+}
+
+/* ===== LANDSCAPE MOBILE OPTIMIZATION ===== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .barra-inferior {
+        height: 35px;
+        min-height: 35px;
+    }
+    
+    .visor-pdf {
+        height: calc(100vh - 35px);
+    }
+    
+    .barra-inferior button {
+        min-width: 30px;
+        min-height: 26px;
+    }
+    
+    .barra-inferior span {
+        font-size: 10px;
+        height: 26px;
+        min-width: 40px;
+    }
+}
+
+/* ===== MODO OSCURO - MANTENER TEXTO NEGRO ===== */
+@media (prefers-color-scheme: dark) {
+    .lector-container {
+        background-color: #1a1a1a;
+    }
+    
+    .texto-zoom-fixed .texto-contenido,
+    .texto-dual-fixed .texto-contenido {
+        color: #000000 !important;
+        text-shadow: none !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .modal-texto-con-fuente {
+        background: #2a2a2a !important;
+        color: #e0e0e0 !important;
+        border-color: #555 !important;
+    }
+    
+    .modal-texto-con-fuente .modal-textarea {
+        background: #333 !important;
+        color: #000000 !important;
+        border-color: #555 !important;
+    }
+    
+    .modal-texto-con-fuente .font-controls {
+        background: #333 !important;
+        border-color: #555 !important;
+    }
+    
+    .modal-texto-con-fuente .text-preview {
+        background: #333 !important;
+        border-color: #555 !important;
+    }
+    
+    .modal-texto-con-fuente .text-preview:hover {
+        background: #3a3a3a !important;
+    }
+    
+    .modal-texto-con-fuente .preview-content {
+        color: #000000 !important;
+        text-shadow: none !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        padding: 8px !important;
+        border-radius: 4px !important;
+    }
+    
+    .dual-page {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+}
+
+/* ===== ACCESIBILIDAD ===== */
+.texto-zoom-fixed:focus-visible,
+.texto-dual-fixed:focus-visible,
+.panel-herramientas button:focus-visible,
+.barra-inferior button:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.modal-texto-con-fuente:focus-within {
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+}
+
+/* ===== REDUCIR ANIMACIONES ===== */
+@media (prefers-reduced-motion: reduce) {
+    .texto-zoom-fixed,
+    .texto-dual-fixed,
+    .panel-herramientas button,
+    .barra-inferior button,
+    .modal-texto-con-fuente,
+    .texto-zoom-fixed .texto-contenido,
+    .texto-dual-fixed .texto-contenido,
+    .texto-zoom-fixed .resize-handle,
+    .texto-dual-fixed .resize-handle {
+        transition: none !important;
+        animation: none !important;
+    }
+    
+    .texto-zoom-fixed:hover,
+    .texto-dual-fixed:hover,
+    .texto-zoom-fixed[data-dragging="true"],
+    .texto-dual-fixed[data-dragging="true"] {
+        transform: translate(-50%, -50%) !important;
+    }
+}
+
+/* ===== OPTIMIZACIONES DE RENDIMIENTO ===== */
+.texto-overlay-zoom-fixed,
+.texto-overlay-dual-fixed,
+.texto-zoom-fixed,
+.texto-dual-fixed {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+.texto-zoom-fixed,
+.texto-dual-fixed {
+    will-change: transform, opacity;
+    contain: layout style paint;
+}
+
+.modal-texto-con-fuente {
+    will-change: transform;
+    contain: layout style paint;
+}
+
+/* ===== UTILIDADES ===== */
+.hidden {
+    display: none !important;
+}
+
+.no-select {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* ===== DEBUG PARA VISTA DOBLE (REMOVER EN PRODUCCIÓN) ===== */
+.debug-dual .texto-overlay-dual-fixed {
+    border: 2px dashed rgba(255, 152, 0, 0.5) !important;
+    background: rgba(255, 152, 0, 0.02) !important;
+}
+
+.debug-dual .texto-overlay-dual-fixed::before {
+    content: 'Dual P' attr(data-pagina) ' C' attr(data-canvas-index);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    color: #ff9800;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    z-index: 1000;
+    font-weight: bold;
+}
+
+.debug-zoom .texto-overlay-zoom-fixed {
+    border: 2px dashed rgba(33, 150, 243, 0.3) !important;
+    background: rgba(33, 150, 243, 0.02) !important;
+}
+
+.debug-zoom .texto-overlay-zoom-fixed::before {
+    content: 'Single P' attr(data-pagina);
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 10px;
+    color: #2196f3;
+    background: rgba(255,255,255,0.8);
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-family: monospace;
+    z-index: 1000;
+}
+
+/* ===== SCROLLBARS PERSONALIZADOS ===== */
+.visor-pdf::-webkit-scrollbar {
+    width: 8px;
+}
+
+.visor-pdf::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+}
+
+.visor-pdf::-webkit-scrollbar-thumb {
+    background: rgba(33, 150, 243, 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.visor-pdf::-webkit-scrollbar-thumb:hover {
+    background: rgba(33, 150, 243, 0.5);
+}
+
+.modal-texto-con-fuente::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-texto-con-fuente::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+
+.modal-texto-con-fuente::-webkit-scrollbar-thumb {
+    background: rgba(33, 150, 243, 0.5);
+    border-radius: 3px;
+}
+
+.modal-texto-con-fuente::-webkit-scrollbar-thumb:hover {
+    background: rgba(33, 150, 243, 0.7);
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .panel-herramientas,
+    .barra-inferior,
+    .save-feedback,
+    .modal-texto-con-fuente,
+    .resize-handles {
+        display: none !important;
+    }
+    
+    .lector-container {
+        height: auto !important;
+        background: white !important;
+    }
+    
+    .visor-pdf {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    .texto-zoom-fixed .texto-contenido,
+    .texto-dual-fixed .texto-contenido {
+        break-inside: avoid;
+        background: white !important;
+        color: #000000 !important;
+        border: 1px solid #ccc !important;
+        text-shadow: none !important;
+    }
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA VISTA DOBLE ===== */
+
+/* Cursor diferenciado en vista doble */
+.texto-overlay-dual-fixed[data-activo="true"] {
+    cursor: crosshair;
+}
+
+.texto-overlay-dual-fixed[data-activo="false"] {
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Indicadores visuales para debugging de vista doble */
+.dual-page[data-debug="true"]::before {
+    content: attr(data-page-info);
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(255, 152, 0, 0.8);
+    color: white;
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 3px;
+    z-index: 1000;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+/* Transiciones suaves entre vistas */
+.visor-pdf {
+    transition: all 0.3s ease;
+}
+
+.dual-view-wrap {
+    transition: all 0.3s ease;
+}
+
+/* Mejoras de accesibilidad para vista doble */
+.texto-dual-fixed[aria-label] {
+    position: relative;
+}
+
+.texto-dual-fixed[aria-label]:focus::after {
+    content: attr(aria-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* ===== MEJORAS ADICIONALES PARA ESTABILIDAD DE SCROLL ===== */
+.lector-container * {
+    box-sizing: border-box;
+}
+
+/* Evitar scroll horizontal no deseado */
+.visor-pdf {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Suavizado de scroll */
+.visor-pdf {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ===== OPTIMIZACIONES ESPECÍFICAS PARA MOBILE ===== */
+@media (max-width: 768px) {
+    /* Asegurar que el contenido no se oculte detrás de elementos */
+    .dual-view-wrap {
+        padding-bottom: 60px;
+    }
+}
+
+/* ===== SOPORTE PARA PANTALLAS DE ALTA DENSIDAD ===== */
+@media (-webkit-min-device-pixel-ratio: 2),
+       (min-resolution: 192dpi) {
+    .texto-zoom-fixed .resize-handle,
+    .texto-dual-fixed .resize-handle {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .panel-herramientas button,
+    .barra-inferior button {
+        border: 0.5px solid transparent;
+    }
+}
+
+/* ===== CORRECCIÓN DEFINITIVA PARA ELEMENTOS PDF VIEWER ===== */
+.rpv-core__viewer,
+.rpv-core__inner-pages,
+.rpv-core__inner-page,
+.rpv-core__page-layer,
+.rpv-core__canvas-layer,
+.rpv-core__text-layer,
+.rpv-core__annotation-layer {
+    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Solo el canvas debe tener fondo blanco */
+.rpv-core__canvas-layer canvas {
+    background: white !important;
+}
+
+/* Forzar el color del contenedor principal */
+.visor-pdf {
+    background: #f4f4f4 !important;
+}
+
+.lector-container {
+    background: #f4f4f4 !important;
+}

@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, input, button, label, h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif;
+  
+}
+
+.verificacion-fondo {
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+    background-image: url('./../../../public/assets/FondoLogin.webp');
+}
+
+.verificacion-contenedor {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.verificacion-logo {
+  width: 120px;
+  margin-bottom: 10px;
+}
+
+.verificacion-icono {
+  font-size: 50px;
+  margin-bottom: 10px;
+}
+
+.verificacion-titulo {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.verificacion-mensaje {
+  color: white;
+  font-size: 16px;
+  margin-bottom: 25px;
+}
+
+.verificacion-boton {
+  background-color: #24211e;
+  color: white;
+  padding: 15px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.verificacion-boton:hover {
+  background-color: #3a3734;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 📱 MEDIA QUERIES */
+@media screen and (max-width: 380px) {
+  .verificacion-contenedor {
+    padding: 25px;
+  }
+
+  .verificacion-logo {
+    width: 90px;
+  }
+
+  .verificacion-titulo {
+    font-size: 20px;
+  }
+
+  .verificacion-boton {
+    font-size: 14px;
+    padding: 12px 20px;
+  }
+}
+
+@media screen and (min-width: 381px) and (max-width: 768px) {
+  .verificacion-contenedor {
+    max-width: 90%;
+    padding: 35px;
+  }
+
+  .verificacion-logo {
+    width: 100px;
+  }
+
+  .verificacion-titulo {
+    font-size: 22px;
+  }
+}

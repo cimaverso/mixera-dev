@@ -1,0 +1,206 @@
+/* Fondo oscurecido - ORIGINAL */
+.mv-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+/* Contenedor del modal - ORIGINAL */
+.mv-dialog {
+  position: relative;
+  width: min(100%, 960px);
+  background: #111;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  padding: 16px 16px 12px;
+}
+
+/* Botón X - ORIGINAL */
+.mv-close {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  opacity: .85;
+}
+.mv-close:hover { opacity: 1; }
+
+/* Mantener proporción 16:9 del iframe - ORIGINAL */
+.mv-aspect {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mv-aspect iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+
+.mv-title {
+  margin: 10px 2px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ddd;
+  text-align: left;
+}
+
+/* Responsive original */
+@media (max-width: 420px) {
+  .mv-dialog { padding: 12px; }
+  .mv-title { font-size: 14px; }
+}
+
+/* OPTIMIZACIONES RESPONSIVE AGREGADAS */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 768px) {
+  .mv-backdrop {
+    padding: 12px;
+  }
+  .mv-dialog {
+    width: min(100%, 600px);
+  }
+}
+
+/* Móviles grandes */
+@media (max-width: 600px) {
+  .mv-backdrop {
+    padding: 8px;
+  }
+  .mv-dialog {
+    padding: 14px 14px 10px;
+  }
+  .mv-close {
+    right: 8px;
+    top: 6px;
+    font-size: 20px;
+  }
+}
+
+/* Móviles medianos */
+@media (max-width: 480px) {
+  .mv-backdrop {
+    padding: 6px;
+  }
+  .mv-dialog {
+    border-radius: 10px;
+  }
+  .mv-aspect {
+    border-radius: 6px;
+  }
+  .mv-title {
+    margin: 8px 2px 0;
+  }
+}
+
+/* Móviles muy pequeños - extiende el breakpoint original */
+@media (max-width: 360px) {
+  .mv-dialog { 
+    padding: 10px; 
+    border-radius: 8px;
+  }
+  .mv-title { 
+    font-size: 13px; 
+    margin: 6px 1px 0;
+  }
+  .mv-close {
+    right: 6px;
+    top: 4px;
+    font-size: 18px;
+  }
+  .mv-aspect {
+    border-radius: 4px;
+  }
+}
+
+/* Orientación landscape en móviles */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  .mv-backdrop {
+    padding: 4px;
+  }
+  .mv-dialog {
+    width: min(100%, 800px);
+    padding: 8px 8px 6px;
+  }
+  .mv-title {
+    font-size: 13px;
+    margin: 4px 2px 0;
+  }
+  .mv-close {
+    right: 6px;
+    top: 2px;
+    font-size: 18px;
+  }
+}
+
+/* Pantallas muy altas (móviles en portrait) */
+@media (max-width: 480px) and (min-height: 800px) {
+  .mv-dialog {
+    width: min(100%, 400px);
+  }
+}
+
+/* Mejoras de accesibilidad y UX */
+
+/* Botón close mejorado para touch */
+@media (max-width: 768px) {
+  .mv-close {
+    padding: 4px;
+    min-width: 28px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Focus states para accesibilidad */
+.mv-close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+/* Mejorar backdrop en dispositivos touch */
+@media (hover: none) {
+  .mv-backdrop {
+    background: rgba(0,0,0,.7);
+  }
+}
+
+/* Optimización para pantallas de muy alta resolución */
+@media (min-width: 1200px) {
+  .mv-dialog {
+    width: min(100%, 1100px);
+  }
+}
+
+/* Reducir animaciones si se prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .mv-dialog {
+    transition: none;
+  }
+}
+
+/* Mejor contraste en modo de alto contraste */
+@media (prefers-contrast: high) {
+  .mv-dialog {
+    border: 2px solid #fff;
+  }
+  .mv-close {
+    background: rgba(255,255,255,.1);
+    border-radius: 4px;
+  }
+}

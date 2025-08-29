@@ -1,0 +1,279 @@
+/* Botón volver */
+.btn-volver {
+  background: transparent;
+  border: none;
+  color: #e73180;
+  cursor: pointer;
+  margin-bottom: clamp(12px, 3vw, 18px);
+  font-weight: 600;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  padding: 4px 0;
+  transition: color 0.15s ease;
+}
+
+.btn-volver:hover {
+  color: #c91f6d;
+  text-decoration: underline;
+}
+
+.btn-volver:focus {
+  outline: 2px solid #e73180;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Contenedor principal */
+.detalle {
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) 1fr;
+  gap: clamp(20px, 4vw, 32px);
+  align-items: start;
+  background: #e0e0e0;
+  padding: clamp(14px, 3vw, 20px);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Portada */
+.detalle__portada {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #d1d1d1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detalle__portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Información */
+.detalle__info { 
+  display: grid; 
+  gap: clamp(8px, 2vw, 12px);
+  min-width: 0; /* Permite truncamiento */
+}
+
+.detalle__titulo { 
+  font-size: clamp(1.1rem, 3vw, 1.4rem); 
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  color: #333;
+  margin: 0;
+  word-break: break-word;
+}
+
+.detalle__sub { 
+  color: #666; 
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  margin: 0;
+}
+
+/* Datos del libro */
+.detalle__datos {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 o 3 columnas compactas */
+  gap: 0 22px;       /* Menos espacio entre columnas */
+  padding: 0;
+  margin: 8px 0 0 0;
+  align-items: start;
+}
+
+.detalle__datos li {
+  font-size: 0.98rem;
+  color: #444;
+  margin: 0 0 2px 0;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  font-weight: 400;
+  padding-bottom: 10px;
+}
+
+
+
+
+/* Progreso de lectura */
+.detalle__progreso {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 12px);
+  margin: clamp(10px, 2vw, 16px) 0;
+}
+
+.barra {
+  height: clamp(18px, 4vw, 22px);
+  width: 100%;        /* <<--- Barra ocupa todo el ancho del contenedor padre */
+  background: #fff;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  position: relative;
+  margin-right: 14px; /* (Opcional: da un pequeño espacio entre barra y los números) */
+}
+
+
+.barra__llena {
+  height: 100%;
+  background: #000;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.btn-descargar {
+  background: transparent; 
+  border: none; 
+  cursor: pointer; 
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: #333;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.btn-descargar:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.btn-descargar:focus {
+  outline: 2px solid #e73180;
+  outline-offset: 2px;
+}
+
+/* Sinopsis */
+.detalle__sinopsis { 
+  margin-top: clamp(8px, 2vw, 12px); 
+  color: #333;
+  line-height: 1.5;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+}
+
+/* Acciones */
+.detalle__acciones {
+  display: flex; 
+  gap: clamp(8px, 2vw, 14px); 
+  flex-wrap: wrap; 
+  margin-top: clamp(12px, 3vw, 16px);
+}
+
+.btn-accion {
+  background: transparent;
+  border: 1px solid #333;
+  padding: clamp(8px, 2vw, 10px) clamp(12px, 3vw, 16px);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-accion:hover {
+  background: #f2f2f2;
+}
+
+.btn-accion:focus {
+  outline: 2px solid #e73180;
+  outline-offset: 2px;
+}
+
+.btn-comprar {
+  background: #2dbb45;
+  color: #fff;
+  border: none;
+  padding: clamp(8px, 2vw, 10px) clamp(14px, 3vw, 18px);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+  transition: filter 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-comprar:hover { 
+  filter: brightness(0.95); 
+}
+
+.btn-comprar:focus {
+  outline: 2px solid #2dbb45;
+  outline-offset: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+  .detalle {
+    grid-template-columns: minmax(250px, 280px) 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 800px) {
+  .detalle {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .detalle__portada {
+    max-width: 280px;
+    justify-self: center;
+  }
+  
+  .detalle__datos { 
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .barra {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .detalle {
+    padding: 16px 12px;
+  }
+  
+  .detalle__acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-accion,
+  .btn-comprar {
+    text-align: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 400px) {
+  .detalle__portada {
+    max-width: 220px;
+  }
+  
+  .detalle__progreso {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .barra {
+    max-width: 100%;
+  }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .barra__llena,
+  .btn-volver,
+  .btn-accion,
+  .btn-comprar,
+  .btn-descargar {
+    transition: none;
+  }
+}

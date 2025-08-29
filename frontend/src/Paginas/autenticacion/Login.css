@@ -1,0 +1,732 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, input, button, label, h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif;
+  
+
+}
+
+body {
+  background-image: url('./../../../public/assets/FondoLogin.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  
+}
+
+.registro-fondo {
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-image: url('./../../../public/assets/FondoLogin.webp');
+}
+
+.registro-contenedor {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 15px;
+  max-width: 400px;
+  width: 100%;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.registro-logo {
+  width: 120px;
+  margin-bottom: 10px;
+  transition: width 0.3s ease;
+}
+
+.registro-titulo {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.registro-formulario .campo {
+  margin-bottom: 15px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.registro-formulario input {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.registro-formulario input:focus {
+  border: 2px solid #24211e;
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(36, 33, 30, 0.2);
+}
+
+.registro-formulario input::placeholder {
+  color: #666;
+  opacity: 0.8;
+}
+
+.registro-formulario .icono {
+  position: absolute;
+  left: 15px;
+  color: #24211e;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  z-index: 1;
+}
+
+.recordarme {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.boton-ingresar {
+  background-color: #24211e;
+  color: white;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.boton-ingresar:hover {
+  background-color: #3a3734;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.boton-ingresar:active {
+  transform: translateY(0);
+}
+
+.boton-google {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.boton-google:hover {
+  background-color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.enlace-olvido {
+  font-size: 14px;
+  color: white;
+  text-decoration: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.enlace-olvido:hover {
+  text-decoration: underline;
+  color: #f0f0f0;
+}
+
+
+.enlace-registro {
+  font-size: 14px;
+  color: white;
+  text-decoration: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.enlace-registro:hover {
+  text-decoration: underline;
+  color: #f0f0f0;
+}
+.mensaje-login {
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 500;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.mensaje-error {
+  background-color: rgba(255, 230, 230, 0.95);
+  color: #cc0000;
+  border: 1px solid #cc0000;
+}
+
+.mensaje-alerta {
+  background-color: rgba(255, 248, 225, 0.95);
+  color: #8a6d3b;
+  border: 1px solid #f0ad4e;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* ========================================= */
+/* 📱 RESPONSIVE DESIGN - MOBILE FIRST */
+/* ========================================= */
+
+/* ------------------------- */
+/* 📱 MÓVILES PEQUEÑOS (320px - 380px) */
+/* ------------------------- */
+@media screen and (max-width: 380px) {
+  .registro-contenedor {
+    padding: 25px 20px;
+    border-radius: 10px;
+    margin: 10px;
+  }
+  
+  .registro-logo {
+    width: 90px;
+  }
+  
+  .registro-titulo {
+    font-size: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .registro-formulario .campo .icono {
+    display: none !important;
+  }
+  
+  .registro-formulario input {
+    font-size: 13px;
+    padding: 12px 15px;
+    width: 100%;
+  }
+  
+  .boton-ingresar {
+    font-size: 14px;
+    padding: 14px;
+  }
+  
+  .boton-google {
+    font-size: 13px;
+    padding: 10px;
+  }
+  
+  .enlace-olvido {
+    font-size: 13px;
+  }
+}
+
+/* ------------------------- */
+/* 📱 MÓVILES MEDIANOS (381px - 480px) */
+/* ------------------------- */
+@media screen and (min-width: 381px) and (max-width: 480px) {
+  .registro-contenedor {
+    padding: 30px;
+    max-width: 350px;
+  }
+  
+  .registro-logo {
+    width: 100px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+  }
+}
+
+/* ------------------------- */
+/* 📱 TABLETS PEQUEÑAS (481px - 768px) */
+/* ------------------------- */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .registro-contenedor {
+    max-width: 420px;
+    padding: 40px;
+  }
+  
+  .registro-logo {
+    width: 110px;
+  }
+  
+  .registro-titulo {
+    font-size: 26px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 14px 15px 14px 45px;
+    font-size: 15px;
+  }
+  
+  .boton-ingresar {
+    padding: 16px;
+    font-size: 16px;
+  }
+}
+
+/* ------------------------- */
+/* 💻 TABLETS GRANDES (769px - 999px) */
+/* ------------------------- */
+@media screen and (min-width: 769px) and (max-width: 999px) {
+  .registro-contenedor {
+    max-width: 450px;
+    padding: 45px;
+  }
+  
+  .registro-logo {
+    width: 130px;
+  }
+  
+  .registro-titulo {
+    font-size: 28px;
+    margin-bottom: 25px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 15px 15px 15px 50px;
+    font-size: 15px;
+  }
+  
+  .registro-formulario .icono {
+    left: 18px;
+  }
+  
+  .boton-ingresar {
+    padding: 18px;
+    font-size: 17px;
+  }
+}
+
+/* ========================================= */
+/* 💻 DESKTOP Y PANTALLAS GRANDES */
+/* ========================================= */
+
+/* ------------------------- */
+/* 💻 DESKTOP ESTÁNDAR (1000px - 1199px) */
+/* ------------------------- */
+@media screen and (min-width: 1000px) and (max-width: 1199px) {
+  .registro-fondo {
+    padding: 40px;
+  }
+  
+  .registro-contenedor {
+    max-width: 480px;
+    padding: 50px;
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  .registro-logo {
+    width: 140px;
+    margin-bottom: 15px;
+  }
+  
+  .registro-titulo {
+    font-size: 30px;
+    margin-bottom: 30px;
+    font-weight: 500;
+  }
+  
+  .registro-formulario .campo {
+    margin-bottom: 20px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 16px 20px 16px 55px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .registro-formulario input:focus {
+    border: 2px solid #24211e;
+    box-shadow: 0 0 0 3px rgba(36, 33, 30, 0.1);
+  }
+  
+  .registro-formulario .icono {
+    left: 20px;
+    font-size: 18px;
+  }
+  
+  .recordarme {
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .boton-ingresar {
+    padding: 18px;
+    font-size: 17px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .boton-google {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  
+  .enlace-olvido {
+    font-size: 15px;
+  }
+}
+
+/* ------------------------- */
+/* 💻 DESKTOP GRANDE (1200px - 1439px) */
+/* ------------------------- */
+@media screen and (min-width: 1200px) and (max-width: 1439px) {
+  .registro-fondo {
+    padding: 50px;
+  }
+  
+  .registro-contenedor {
+    max-width: 520px;
+    padding: 60px;
+    border-radius: 25px;
+    backdrop-filter: blur(25px);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.2);
+  }
+  
+  .registro-logo {
+    width: 150px;
+    margin-bottom: 20px;
+  }
+  
+  .registro-titulo {
+    font-size: 32px;
+    margin-bottom: 35px;
+    font-weight: 500;
+  }
+  
+  .registro-formulario .campo {
+    margin-bottom: 25px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 18px 25px 18px 60px;
+    font-size: 17px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .registro-formulario .icono {
+    left: 22px;
+    font-size: 20px;
+  }
+  
+  .recordarme {
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+  
+  .boton-ingresar {
+    padding: 20px;
+    font-size: 18px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+  }
+  
+  .boton-google {
+    padding: 16px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+  
+  .enlace-olvido {
+    font-size: 16px;
+  }
+  
+  .mensaje-login {
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+  }
+}
+
+/* ------------------------- */
+/* 💻 PANTALLAS EXTRAGRANDES (1440px - 1919px) */
+/* ------------------------- */
+@media screen and (min-width: 1440px) and (max-width: 1919px) {
+  .registro-fondo {
+    padding: 60px;
+  }
+  
+  .registro-contenedor {
+    max-width: 580px;
+    padding: 70px;
+    border-radius: 30px;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+  
+  .registro-logo {
+    width: 160px;
+    margin-bottom: 25px;
+  }
+  
+  .registro-titulo {
+    font-size: 36px;
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+  
+  .registro-formulario .campo {
+    margin-bottom: 30px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 20px 30px 20px 65px;
+    font-size: 18px;
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .registro-formulario .icono {
+    left: 25px;
+    font-size: 22px;
+  }
+  
+  .recordarme {
+    font-size: 17px;
+    margin-bottom: 30px;
+  }
+  
+  .boton-ingresar {
+    padding: 22px;
+    font-size: 19px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .boton-google {
+    padding: 18px;
+    font-size: 17px;
+    border-radius: 15px;
+  }
+  
+  .enlace-olvido {
+    font-size: 17px;
+  }
+}
+
+/* ------------------------- */
+/* 🖥️ PANTALLAS 4K Y ULTRAWIDE (1920px+) */
+/* ------------------------- */
+@media screen and (min-width: 1920px) {
+  .registro-fondo {
+    padding: 80px;
+  }
+  
+  .registro-contenedor {
+    max-width: 650px;
+    padding: 80px;
+    border-radius: 35px;
+    backdrop-filter: blur(35px);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+  }
+  
+  .registro-logo {
+    width: 180px;
+    margin-bottom: 30px;
+  }
+  
+  .registro-titulo {
+    font-size: 40px;
+    margin-bottom: 45px;
+    font-weight: 500;
+  }
+  
+  .registro-formulario .campo {
+    margin-bottom: 35px;
+  }
+  
+  .registro-formulario input {
+    width: 100%;
+    padding: 24px 35px 24px 75px;
+    font-size: 20px;
+    border-radius: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .registro-formulario input:focus {
+    border: 3px solid #24211e;
+    box-shadow: 0 0 0 4px rgba(36, 33, 30, 0.1);
+  }
+  
+  .registro-formulario .icono {
+    left: 28px;
+    font-size: 24px;
+  }
+  
+  .recordarme {
+    font-size: 18px;
+    margin-bottom: 35px;
+  }
+  
+  .boton-ingresar {
+    padding: 25px;
+    font-size: 20px;
+    border-radius: 18px;
+    margin-bottom: 35px;
+  }
+  
+  .boton-google {
+    padding: 20px;
+    font-size: 18px;
+    border-radius: 18px;
+  }
+  
+  .enlace-olvido {
+    font-size: 18px;
+  }
+  
+  .mensaje-login {
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 25px;
+    font-size: 16px;
+  }
+}
+
+/* ========================================= */
+/* 🎨 MEJORAS VISUALES ADICIONALES */
+/* ========================================= */
+
+/* Hover effects mejorados para desktop */
+@media screen and (min-width: 1000px) {
+  .registro-contenedor:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+  
+  .registro-formulario input:hover {
+    border-color: rgba(36, 33, 30, 0.4);
+  }
+}
+
+/* Animación suave para el logo */
+@media screen and (min-width: 1000px) {
+  .registro-logo:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* Optimización para pantallas muy anchas */
+@media screen and (min-width: 2560px) {
+  .registro-contenedor {
+    max-width: 750px;
+    padding: 100px;
+  }
+  
+  .registro-titulo {
+    font-size: 48px;
+  }
+  
+  .registro-formulario input {
+    font-size: 22px;
+    padding: 28px 40px 28px 85px;
+  }
+  
+  .registro-formulario .icono {
+    font-size: 28px;
+    left: 35px;
+  }
+}
+
+/* ========================================= */
+/* 🔧 OPTIMIZACIONES TÉCNICAS */
+/* ========================================= */
+
+/* Prefetch y optimización de rendimiento */
+@media screen and (min-width: 1000px) {
+  .registro-contenedor {
+    will-change: transform;
+  }
+  
+  .boton-ingresar, .boton-google {
+    will-change: transform, box-shadow;
+  }
+  
+  .registro-formulario input {
+    will-change: border-color, transform, box-shadow;
+  }
+}
+
+/* Soporte para dispositivos de alto DPI */
+@media screen and (min-width: 1000px) and (-webkit-min-device-pixel-ratio: 2) {
+  .registro-contenedor {
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+  }
+}
+
+/* Reducir movimiento para usuarios que lo prefieren */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .registro-contenedor:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,115 @@
+.libro-card {
+  background: #e5e5e5;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease;
+  outline: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; /* Evita problemas de overflow */
+}
+
+.libro-card:focus { 
+  box-shadow: 0 0 0 3px rgba(231,49,128,.3); 
+}
+
+.libro-card:hover { 
+  transform: translateY(-2px); 
+}
+
+.libro-card__portada {
+ width: 100%;
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: start; /* Cambiado de center a start */
+  overflow: hidden;
+  position: relative;
+}
+
+.libro-card__portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.libro-card:hover .libro-card__portada img { 
+  transform: scale(1.05); 
+}
+
+.libro-card__placeholder {
+  width: 100%;
+  height: 100%;
+  background: #cfcfcf;
+}
+
+.libro-card__info {
+  padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 14px) clamp(10px, 2.5vw, 14px);
+  display: grid;
+  gap: clamp(4px, 1vw, 8px);
+  flex: 1;
+  min-width: 0; /* Permite que el texto se trunce correctamente */
+}
+
+.libro-card__titulo {
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  line-height: 1.25;
+  color: #333;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.libro-card__autor {
+  font-size: clamp(0.75rem, 1.8vw, 0.8rem);
+  color: #666;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.libro-card__precio {
+  margin-top: clamp(4px, 1vw, 8px);
+  background: #2dbb45;
+  color: #fff;
+  text-align: center;
+  padding: clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 10px);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+  transition: filter 0.15s ease;
+  border: none;
+  cursor: inherit;
+}
+
+.libro-card:hover .libro-card__precio {
+  filter: brightness(0.95);
+}
+
+/* Mejoras para pantallas muy pequeñas */
+@media (max-width: 320px) {
+  .libro-card__info {
+    padding: 8px 10px 10px;
+    gap: 6px;
+  }
+  
+  .libro-card__titulo {
+    font-size: 0.8rem;
+    -webkit-line-clamp: 3;
+  }
+  
+  .libro-card__autor {
+    font-size: 0.72rem;
+  }
+  
+  .libro-card__precio {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+}

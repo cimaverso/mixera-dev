@@ -1,0 +1,326 @@
+/* ==========================================
+   ESTILOS BASE (Mobile First)
+   ========================================== */
+
+/* Títulos y separadores */
+h1 { 
+  margin-bottom: 10px; 
+  color: #333; 
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.separador { 
+  border: 1px solid #e73180; 
+  margin-bottom: clamp(20px, 5vw, 30px); 
+}
+
+.seccion-titulo { 
+  color: #e73180; 
+  margin-bottom: 12px; 
+  font-weight: 600; 
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+}
+
+/* ==========================================
+   LAYOUT PRINCIPAL
+   ========================================== */
+
+/* Filas - Mobile First */
+.fila { 
+  display: flex; 
+  flex-direction: column;
+  gap: clamp(15px, 4vw, 40px);
+  margin-bottom: clamp(20px, 5vw, 40px);
+}
+
+.fila-1 .col { 
+  width: 100%;
+  min-width: unset;
+}
+
+/* Fila 2 - Grid responsive */
+.fila-2 { 
+  display: grid; 
+  grid-template-columns: 1fr;
+  gap: clamp(15px, 4vw, 30px);
+}
+
+/* ==========================================
+   FORMULARIOS Y CONTROLES
+   ========================================== */
+
+.grupo-inputs { 
+  display: flex; 
+  flex-direction: column; 
+  gap: clamp(8px, 2vw, 12px);
+}
+
+/* Inputs responsivos */
+input {   
+  width: 100%;
+  max-width: 400px;
+  padding: clamp(8px, 2vw, 10px);
+  border-radius: 8px; 
+  border: 1px solid #ccc;   
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+  background: white;
+  box-sizing: border-box;
+}
+
+/* Botones */
+.btn-perfil {   
+  background-color: #e73180; 
+  color: white; 
+  padding: clamp(8px, 2vw, 10px);
+  width: 100%;
+  max-width: 200px;
+  border: none; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-weight: 500;   
+  transition: all 0.2s ease;
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+}
+
+.btn-perfil:hover { 
+  background-color: #c91f6d; 
+  transform: translateY(-1px);
+}
+
+/* Input de imagen */
+.input-imagen {   
+  width: 100%;
+  max-width: 400px;
+  background: #fafafa; 
+  border: 2px dashed #ccc; 
+  padding: clamp(15px, 4vw, 20px);   
+  text-align: center; 
+  border-radius: 8px; 
+  font-size: clamp(0.8rem, 2vw, 0.85rem);
+  color: #666; 
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.input-imagen:hover {
+  border-color: #e73180;
+  background: #f9f9f9;
+}
+
+/* ==========================================
+   COMPONENTES ESPECIALIZADOS
+   ========================================== */
+
+/* Tablas responsivas */
+.adquirido {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.adquirido table { 
+  width: 100%; 
+  min-width: 500px;
+  border-collapse: collapse; 
+  background: white; 
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+}
+
+.adquirido th, .adquirido td { 
+  padding: clamp(6px, 2vw, 10px);
+  border: 1px solid #ddd; 
+  text-align: left; 
+}
+
+.adquirido th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Cards de estadísticas */
+.estadisticas .card {   
+  background: white; 
+  border-left: 5px solid #e73180; 
+  padding: clamp(12px, 3vw, 15px);   
+  margin-bottom: clamp(10px, 3vw, 15px);
+  border-radius: 6px; 
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* ==========================================
+   IMAGEN DE PERFIL
+   ========================================== */
+
+.contenedor-imagen-perfil {   
+  display: flex;   
+  justify-content: center;   
+  align-items: center;   
+  margin-bottom: 10px; 
+}  
+
+.foto-perfil {   
+  width: clamp(80px, 15vw, 120px);
+  height: clamp(80px, 15vw, 120px);
+  object-fit: cover;   
+  border-radius: 50%;   
+  border: 2px solid #ccc; 
+  transition: border-color 0.2s ease;
+}
+
+.foto-perfil:hover {
+  border-color: #e73180;
+}
+
+.foto-placeholder {   
+  width: clamp(80px, 15vw, 120px);
+  height: clamp(80px, 15vw, 120px);
+  background-color: #eee;   
+  display: flex;   
+  align-items: center;   
+  justify-content: center;   
+  border-radius: 50%;   
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  color: #888; 
+  border: 2px solid #ddd;
+}
+
+/* ==========================================
+   MENSAJES DE ESTADO
+   ========================================== */
+
+.mensaje {   
+  width: 100%;
+  max-width: 400px;
+  padding: clamp(6px, 1.5vw, 8px);   
+  margin-top: 8px;   
+  border-radius: 5px;   
+  text-align: center;   
+  font-weight: 500;   
+  border: 1px solid transparent;   
+  transition: opacity 0.3s ease-in-out;   
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+}  
+
+.mensaje.exito {   
+  background-color: #d4edda;   
+  color: #155724;   
+  border-color: #c3e6cb; 
+}  
+
+.mensaje.error {   
+  background-color: #f8d7da;   
+  color: #721c24;   
+  border-color: #f5c6cb; 
+}
+
+/* ==========================================
+   MEDIA QUERIES - RESPONSIVE BREAKPOINTS
+   ========================================== */
+
+/* Tablet Portrait: 600px+ */
+@media (min-width: 600px) {
+  .grupo-inputs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  
+  .grupo-inputs > * {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  input, .btn-perfil {
+    width: auto;
+  }
+}
+
+/* Tablet Landscape: 768px+ */
+@media (min-width: 768px) {
+  .fila {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .fila-1 .col { 
+    flex: 1; 
+    min-width: 280px;
+  }
+  
+  .fila-2 { 
+    grid-template-columns: 2fr 1fr;
+  }
+  
+  .input-imagen, input, .btn-perfil { 
+    width: 70%;
+  }
+}
+
+/* Desktop Small: 1000px+ (Tu breakpoint solicitado) */
+@media (min-width: 1000px) {
+  .fila {
+    gap: 50px;
+    margin-bottom: 50px;
+  }
+  
+  .fila-2 {
+    gap: 40px;
+  }
+  
+  .input-imagen, input, .btn-perfil { 
+    width: 60%;
+  }
+  
+  .grupo-inputs {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  /* Mejora de la tabla en desktop */
+  .adquirido table {
+    min-width: unset;
+  }
+  
+  /* Cards más espaciadas */
+  .estadisticas .card {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+}
+
+/* Desktop Large: 1200px+ */
+@media (min-width: 1200px) {
+  .fila {
+    gap: 60px;
+  }
+  
+  .input-imagen, input, .btn-perfil { 
+    width: 50%; /* Vuelve al ancho original en pantallas grandes */
+  }
+  
+  /* Layout de 3 columnas para estadísticas si hay espacio */
+  .estadisticas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .estadisticas .card {
+    margin-bottom: 0;
+  }
+}
+
+/* Desktop XL: 1400px+ */
+@media (min-width: 1400px) {
+  .container-principal {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+}

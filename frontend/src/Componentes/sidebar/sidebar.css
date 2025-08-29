@@ -1,0 +1,415 @@
+/* ========== LAYOUT GENERAL ========== */
+.layout-usuario {
+  display: block;
+  min-height: 100vh;
+  background-color: #f7f7f7;
+  transition: all 0.3s ease;
+}
+
+/* ========== SIDEBAR DESKTOP ========== */
+.sidebar-usuario {
+  background-color: #000000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+  width: 220px;
+  min-height: 100vh;
+  position: fixed;
+  gap: 70px;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width 0.3s ease;
+  z-index: 1000;
+}
+
+/* Sidebar colapsado */
+.sidebar-usuario.colapsado {
+  width: 70px;
+}
+
+.imagen-perfil {
+  width: 80px;
+  height: 80px;
+  background-color: #edb1a6;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.imagen-perfil img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagen-perfil svg {
+  width: 30px;
+  height: 30px;
+  fill: white;
+  transition: all 0.3s ease;
+}
+
+.sidebar-usuario.colapsado .imagen-perfil {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar-usuario.colapsado .imagen-perfil svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== MENÚ ========== */
+.sidebar-menu {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.sidebar-menu button {
+  background: none;
+  color: white;
+  border: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.sidebar-menu button:hover {
+  background-color: rgba(241, 15, 113, 0.1);
+  transform: translateX(2px);
+}
+
+.sidebar-menu button.activo,
+.sidebar-menu button:active {
+  background-color: #e73180;
+  color: white;
+}
+
+.sidebar-menu button span {
+  display: inline;
+  transition: opacity 0.2s ease;
+  font-weight: 500;
+}
+
+.sidebar-menu button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-usuario.colapsado .sidebar-menu button {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.sidebar-usuario.colapsado .sidebar-menu button span {
+  display: none;
+}
+
+/* ========== TOGGLE BUTTON ========== */
+.toggle-btn {
+  background-color: #e73180;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  margin: 10px 0;
+}
+
+.toggle-btn:hover {
+  background-color: #d91570;
+  transform: scale(1.05);
+}
+
+/* ========== LOGO ========== */
+.logo-footer {
+  margin-top: auto;
+  padding-bottom: 20px;
+}
+
+.logo-imagen {
+  width: 100px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  transition: width 0.3s ease;
+}
+
+.sidebar-usuario.colapsado .logo-imagen {
+  width: 50px;
+}
+
+.logo-placeholder {
+  color: #aaa;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* ========== CONTENIDO ========== */
+.contenido-usuario {
+  padding: 30px;
+  margin-left: 220px;
+  transition: margin-left 0.3s ease;
+  min-height: calc(100vh - 60px);
+}
+
+/* AJUSTE CRÍTICO: Contenido cuando sidebar está colapsado */
+.sidebar-usuario.colapsado ~ .contenido-usuario,
+.layout-usuario.sidebar-colapsado .contenido-usuario {
+  margin-left: 70px;
+}
+
+/* ========== BOTTOM NAV (OCULTO POR DEFECTO) ========== */
+.bottom-nav-usuario {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 70px;
+  background: #23201d;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1100;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+  border-top: 1px solid #333;
+}
+
+.bottom-nav-usuario button {
+  background: none;
+  border: none;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  gap: 4px;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-nav-usuario button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #e73180;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 12px;
+}
+
+.bottom-nav-usuario button.activo::before {
+  opacity: 1;
+}
+
+.bottom-nav-usuario button svg {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav-usuario button span {
+  position: relative;
+  z-index: 1;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.bottom-nav-usuario button.activo span {
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* Efecto hover solo en dispositivos con hover */
+@media (hover: hover) and (pointer: fine) {
+  .bottom-nav-usuario button:hover::before {
+    opacity: 0.3;
+  }
+
+  .bottom-nav-usuario button:hover svg {
+    transform: scale(1.1);
+  }
+}
+
+/* ========== RESPONSIVE BREAKPOINTS ========== */
+
+/* TABLET GRANDE (1000px - 1200px) */
+@media (max-width: 1200px) and (min-width: 1001px) {
+  .sidebar-usuario {
+    width: 180px;
+    gap: 50px;
+    padding: 15px 8px;
+  }
+
+  .contenido-usuario {
+    margin-left: 180px;
+    padding: 25px;
+  }
+
+  /* Ajuste para tablet grande colapsado */
+  .sidebar-usuario.colapsado ~ .contenido-usuario,
+  .layout-usuario.sidebar-colapsado .contenido-usuario {
+    margin-left: 70px;
+  }
+
+  .imagen-perfil {
+    width: 65px;
+    height: 65px;
+  }
+
+  .sidebar-menu button {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .logo-imagen {
+    width: 85px;
+  }
+}
+
+/* TABLET MEDIANO (768px - 1000px) */
+@media (max-width: 1000px) and (min-width: 769px) {
+  .sidebar-usuario {
+    width: 70px;
+    gap: 30px;
+    padding: 15px 5px;
+  }
+
+  .contenido-usuario {
+    margin-left: 70px;
+    padding: 20px;
+  }
+
+  /* En tablet mediano, el sidebar ya está "colapsado" por defecto */
+  .sidebar-usuario.colapsado ~ .contenido-usuario,
+  .layout-usuario.sidebar-colapsado .contenido-usuario {
+    margin-left: 70px; /* Mantiene el mismo valor */
+  }
+
+  .imagen-perfil {
+    width: 50px;
+    height: 50px;
+  }
+
+  .imagen-perfil svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sidebar-menu button {
+    justify-content: center;
+    padding: 10px 6px;
+    gap: 0;
+  }
+
+  .sidebar-menu button span {
+    display: none;
+  }
+
+  .sidebar-menu button svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toggle-btn {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .logo-imagen {
+    width: 45px;
+  }
+
+  .logo-footer {
+    padding-bottom: 10px;
+  }
+}
+
+/* MOBILE (768px y menor) */
+@media (max-width: 768px) {
+
+  /* Ocultar sidebar completamente */
+  .sidebar-usuario {
+    display: none;
+  }
+
+  /* Ajustar contenido para mobile */
+  .contenido-usuario {
+    margin-left: 0;
+    padding: 15px;
+    padding-bottom: 85px;
+    /* espacio para bottom nav */
+    min-height: calc(100vh - 70px);
+  }
+
+  /* En mobile no aplica el ajuste de colapso */
+  .sidebar-usuario.colapsado ~ .contenido-usuario,
+  .layout-usuario.sidebar-colapsado .contenido-usuario {
+    margin-left: 0;
+  }
+
+  /* Mostrar bottom nav */
+  .bottom-nav-usuario {
+    display: flex;
+  }
+}
+
+/* MOBILE PEQUEÑO (480px y menor) */
+@media (max-width: 480px) {
+  .contenido-usuario {
+    padding: 12px;
+  }
+
+  .bottom-nav-usuario {
+    height: 65px;
+    padding: 0 5px;
+  }
+
+  .bottom-nav-usuario button {
+    width: 55px;
+    height: 55px;
+    font-size: 9px;
+    gap: 3px;
+  }
+
+  .bottom-nav-usuario button svg {
+    width: 22px;
+    height: 22px;
+  }
+}
