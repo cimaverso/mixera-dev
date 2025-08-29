@@ -34,7 +34,7 @@ app.mount("/uploads/covers", StaticFiles(directory="uploads/covers"), name="cove
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["https://dev.mixera.org"], 
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],
