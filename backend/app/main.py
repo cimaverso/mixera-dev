@@ -32,9 +32,16 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.mount("/uploads/books", StaticFiles(directory="uploads/books"), name="books")
 app.mount("/uploads/covers", StaticFiles(directory="uploads/covers"), name="covers")
 
+
+origins = [
+    "https://dev.mixera.org",  # frontend permitido
+    "https://mixera.org"       # producción
+]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://dev.mixera.org"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],
