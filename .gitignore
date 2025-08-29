@@ -1,0 +1,23 @@
+# Node / React
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# FastAPI uploads/data
+backend/postgres-data/
+backend/uploads/
+
+# Entornos y variables
+.env
+backend/.env
+
+# Logs y archivos del sistema
+*.log
+.DS_Store
+Thumbs.db
