@@ -33,6 +33,8 @@ def obtener_libros_comprados(
     usuario: dict = Depends(obtener_usuario)
 ):
     base_url = str(request.base_url).rstrip("/")
+    if base_url.startswith("http://"):
+        base_url = base_url.replace("http://", "https://", 1)
     servicio = LibroService(db)
     return servicio.listar_libros_comprados(usuario["usu_id"], base_url)
 
@@ -41,6 +43,8 @@ def obtener_libros_comprados(
 @router.get("/{id}")
 def obtener_libro(id: int, request: Request, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     base_url = str(request.base_url).rstrip("/")
+    if base_url.startswith("http://"):
+        base_url = base_url.replace("http://", "https://", 1)
     servicio_libro = LibroService(db).listar_libro_id(id, usuario["usu_id"], base_url)
     if not servicio_libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
