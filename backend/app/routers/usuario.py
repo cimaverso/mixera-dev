@@ -35,10 +35,10 @@ def obtener_libros_adquiridos(
 def verificar_usuario(token: str = Query(...), db: Session = Depends(get_session)):
     try:
         servicio_usuario.activar_usuario(token, db)
-        return RedirectResponse("http://localhost:5173/verificacion?status=ok",
+        return RedirectResponse("https://dev.mixera.org/verificacion?status=ok",
                                 status_code=status.HTTP_303_SEE_OTHER)
     except (ValueError, JWTError):
-        return RedirectResponse("http://localhost:5173/verificacion?status=error",
+        return RedirectResponse("https://dev.mixera.org/verificacion?status=error",
                                 status_code=status.HTTP_303_SEE_OTHER)
     
 @router.get("/perfil", response_model=UsuarioPerfilResponse)

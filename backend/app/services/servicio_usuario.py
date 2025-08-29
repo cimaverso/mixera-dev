@@ -97,7 +97,7 @@ class ServicioUsuario:
             SECRET_KEY,
             algorithm=ALGORITHM
         )
-        enlace = f"http://localhost:5173/restablecer?token={token}"
+        enlace = f"https://dev.mixera.org/restablecer?token={token}"
         await enviar_correo(usuario.usu_correo, enlace, tipo="recuperacion")
 
         return {"mensaje": "Correo de recuperación enviado"}
