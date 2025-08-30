@@ -6,6 +6,7 @@ from app.models.libro.modelo_libro import LibroCreate
 from app.database.database import get_session
 from app.core.auth_core import obtener_usuario
 from datetime import date
+from app.utils.url_ultils import obtener_base_url
 
 router = APIRouter(prefix="/libros", tags=["Libros"])
 
@@ -26,15 +27,15 @@ class LibroCreateForm:
         self.lib_ideditorial = lib_ideditorial
         self.lib_estado = lib_estado
 
+
+
 @router.get("/usuario")
 def obtener_libros_comprados(
     request: Request,
     db: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario)
 ):
-    base_url = str(request.base_url).rstrip("/")
-    if base_url.startswith("http://"):
-        base_url = base_url.replace("http://", "https://", 1)
+    base_url = obtener_base_url(request)
     servicio = LibroService(db)
     return servicio.listar_libros_comprados(usuario["usu_id"], base_url)
 
@@ -42,9 +43,7 @@ def obtener_libros_comprados(
 
 @router.get("/{id}")
 def obtener_libro(id: int, request: Request, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
-    base_url = str(request.base_url).rstrip("/")
-    if base_url.startswith("http://"):
-        base_url = base_url.replace("http://", "https://", 1)
+    base_url = obtener_base_url(request)
     servicio_libro = LibroService(db).listar_libro_id(id, usuario["usu_id"], base_url)
     if not servicio_libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
@@ -53,7 +52,7 @@ def obtener_libro(id: int, request: Request, db: Session = Depends(get_session),
 
 @router.get("/")
 def obtener_libros(request: Request, db: Session = Depends(get_session), q: str = ""):
-    base_url = str(request.base_url).rstrip("/")
+    base_url = obtener_base_url(request)
     servicio = LibroService(db)
     libros = servicio.listar_libros(q=q)
     return [servicio.serializar_libros(libro, base_url) for libro in libros]
