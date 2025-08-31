@@ -1,4 +1,4 @@
-// TextosLayer.jsx - PREPARADO PARA BACKEND v16
+// TextosLayer.jsx - PREPARADO PARA BACKEND v16 - CORREGIDO FONTSIZE Y MODAL SIZE
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const TextosLayer = ({
@@ -11,7 +11,7 @@ const TextosLayer = ({
   onDeleteTexto = () => {},
   onDesactivarHerramienta = () => {},
 }) => {
-  console.log('💬 TextosLayer PREPARADO PARA BACKEND v16:', {
+  console.log('💬 TextosLayer PREPARADO PARA BACKEND v16 - FONTSIZE Y SIZE CORREGIDOS:', {
     activa: herramientaActiva === 'texto',
     paginaActual,
     cantidadTextos: textos.length,
@@ -20,7 +20,7 @@ const TextosLayer = ({
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [textoEditando, setTextoEditando] = useState(null);
-  const [guardandoTexto, setGuardandoTexto] = useState(false); // NUEVO: Estado de guardado
+  const [guardandoTexto, setGuardandoTexto] = useState(false);
   const activo = herramientaActiva === 'texto';
   const overlaysRef = useRef(new Map());
   const eventosRef = useRef(new Map());
@@ -48,7 +48,7 @@ const TextosLayer = ({
     // El scale real es la diferencia entre el tamaño mostrado y el tamaño del canvas
     const actualScale = canvasRect.width / canvas.width;
     
-    console.log('🔍 PDF Info detectado:', {
+    console.log('📏 PDF Info detectado:', {
       pageDisplaySize: `${Math.round(pageRect.width)}x${Math.round(pageRect.height)}`,
       canvasNaturalSize: `${canvas.width}x${canvas.height}`,
       canvasDisplaySize: `${Math.round(canvasRect.width)}x${Math.round(canvasRect.height)}`,
@@ -199,7 +199,7 @@ const TextosLayer = ({
           const newFontSize = `${texto.fontSize || 14}px`;
           if (currentFontSize !== newFontSize) {
             contenido.style.fontSize = newFontSize;
-            console.log(`📏 Tamaño de fuente actualizado: ${textoId} -> ${newFontSize}`);
+            console.log(`🔤 Tamaño de fuente actualizado: ${textoId} -> ${newFontSize}`);
           }
           console.log(`🔄 Contenido actualizado: ${textoId}`);
         }
@@ -530,15 +530,15 @@ const TextosLayer = ({
     console.log('✅ Renderizado completado SIN compensación de zoom');
   }, [textos, getOverlay, activo, onEditTexto, modalAbierto, getPDFInfo, guardandoTexto]);
 
-  // ===================== MODAL CON CONTROLES DE TAMAÑO DE LETRA Y BACKEND =====================
+  // ===================== MODAL CON CONTROLES DE TAMAÑO DE LETRA Y TAMAÑO MODAL - CORREGIDO =====================
   
-  const crearModal = useCallback(({ titulo, valor = '', fontSize = 14, onGuardar, onCancelar, onEliminar }) => {
+  const crearModal = useCallback(({ titulo, valor = '', fontSize = 14, width = 350, height = 120, onGuardar, onCancelar, onEliminar }) => {
     if (modalAbierto || guardandoTexto) {
       console.warn('⚠️ Modal ya existe o hay texto guardando, ignorando');
       return;
     }
     
-    console.log('🔧 Creando modal con controles de fuente:', titulo);
+    console.log('🔧 Creando modal REDIMENSIONABLE:', { titulo, fontSize, width, height });
     
     // Limpiar modales anteriores
     document.querySelectorAll('.modal-texto-con-fuente').forEach(m => m.remove());
@@ -550,8 +550,8 @@ const TextosLayer = ({
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 500px;
-      min-height: 400px;
+      width: ${Math.max(400, width + 100)}px;
+      min-height: ${Math.max(400, height + 280)}px;
       background: white;
       border: 2px solid #2196f3;
       border-radius: 12px;
@@ -560,6 +560,12 @@ const TextosLayer = ({
       font-family: inherit;
       display: flex;
       flex-direction: column;
+      resize: both;
+      overflow: hidden;
+      min-width: 400px;
+      max-width: 800px;
+      min-height: 400px;
+      max-height: 90vh;
     `;
     
     modal.innerHTML = `
@@ -578,7 +584,7 @@ const TextosLayer = ({
         align-items: center;
       ">
         <span>${titulo}</span>
-        <span style="font-size: 12px; opacity: 0.9;">📝 Editor de texto</span>
+        <span style="font-size: 12px; opacity: 0.9;">📏 Modal redimensionable</span>
       </div>
       
       <div class="modal-body" style="
@@ -587,6 +593,7 @@ const TextosLayer = ({
         display: flex;
         flex-direction: column;
         gap: 12px;
+        overflow-y: auto;
       ">
         <!-- Controles de formato -->
         <div class="font-controls" style="
@@ -597,9 +604,10 @@ const TextosLayer = ({
           background: #f8f9fa;
           border-radius: 8px;
           border: 1px solid #e9ecef;
+          flex-shrink: 0;
         ">
           <label style="font-size: 13px; font-weight: 600; color: #495057;">
-            📏 Tamaño:
+            🔤 Tamaño:
           </label>
           <input type="range" class="font-size-slider" 
                  min="10" max="24" step="1" value="${fontSize}"
@@ -624,27 +632,36 @@ const TextosLayer = ({
           ">${fontSize}px</span>
         </div>
 
-        <!-- Vista previa del texto -->
+        <!-- Vista previa del texto REDIMENSIONABLE -->
         <div class="text-preview" style="
           padding: 12px;
           border: 2px dashed #e0e0e0;
           border-radius: 8px;
           background: #fafafa;
-          min-height: 60px;
+          flex: 1;
+          min-height: 120px;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          align-items: flex-start;
+          justify-content: flex-start;
+          resize: none;
+          overflow: auto;
         ">
           <div class="preview-content" style="
             font-size: ${fontSize}px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-weight: 500;
             color: #1a1a1a;
-            text-align: center;
             line-height: 1.4;
             word-wrap: break-word;
-            max-width: 100%;
+            width: 100%;
+            height: 100%;
             text-shadow: 0 0 3px rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            white-space: pre-wrap;
           ">
             ${valor || 'Vista previa del texto...'}
           </div>
@@ -652,8 +669,7 @@ const TextosLayer = ({
 
         <!-- Textarea principal -->
         <textarea class="modal-textarea" placeholder="Escribe tu texto aquí..." style="
-          flex: 1;
-          min-height: 120px;
+          height: 120px;
           border: 2px solid #e0e0e0;
           border-radius: 8px;
           padding: 12px;
@@ -663,16 +679,36 @@ const TextosLayer = ({
           resize: vertical;
           outline: none;
           transition: border-color 0.2s ease;
+          flex-shrink: 0;
+          min-height: 80px;
         ">${valor}</textarea>
         
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="modal-contador" style="font-size: 12px; color: #666;"></div>
+        <!-- Info del modal -->
+        <div style="
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center;
+          flex-shrink: 0;
+          font-size: 12px;
+          color: #666;
+          padding: 4px 0;
+        ">
+          <div class="modal-contador"></div>
+          <div class="modal-dimensions" style="
+            font-family: monospace;
+            background: rgba(33, 150, 243, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #1976d2;
+          ">
+            📐 Tamaño modal: <span class="modal-size-display">calculando...</span>
+          </div>
           <div style="font-size: 11px; color: #999;">
             💡 Ctrl+Enter para guardar • Esc para cancelar
           </div>
         </div>
         
-        <!-- NUEVO: Indicador de guardado -->
+        <!-- Indicador de guardado -->
         <div class="modal-guardando" style="
           display: none;
           align-items: center;
@@ -683,6 +719,7 @@ const TextosLayer = ({
           border-radius: 6px;
           font-size: 13px;
           color: #1976d2;
+          flex-shrink: 0;
         ">
           <div style="
             width: 16px;
@@ -701,6 +738,7 @@ const TextosLayer = ({
           justify-content: flex-end;
           border-top: 1px solid #e0e0e0;
           padding-top: 12px;
+          flex-shrink: 0;
         ">
           ${onEliminar ? '<button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">🗑️ Eliminar</button>' : ''}
           <button class="btn-cancelar" style="background: #9e9e9e; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">❌ Cancelar</button>
@@ -729,13 +767,48 @@ const TextosLayer = ({
     const fontSlider = modal.querySelector('.font-size-slider');
     const fontDisplay = modal.querySelector('.font-size-display');
     const previewContent = modal.querySelector('.preview-content');
+    const modalSizeDisplay = modal.querySelector('.modal-size-display');
     const indicadorGuardando = modal.querySelector('.modal-guardando');
     const btnGuardar = modal.querySelector('.btn-guardar');
     const btnCancelar = modal.querySelector('.btn-cancelar');
     const btnEliminar = modal.querySelector('.btn-eliminar');
     
-    let currentFontSize = fontSize;
+    // CRÍTICO: Variables para mantener el fontSize Y las dimensiones del modal
+    let currentFontSize = parseInt(fontSize);
+    let currentModalWidth = width;
+    let currentModalHeight = height;
+    let isUpdatingFont = false;
     let guardandoEnProgreso = false;
+    
+    console.log('🔧 Modal inicializado:', { 
+      fontSize: currentFontSize, 
+      modalWidth: currentModalWidth, 
+      modalHeight: currentModalHeight 
+    });
+    
+    // NUEVO: Observer para detectar cambios de tamaño del modal
+    const updateModalDimensions = () => {
+      const modalRect = modal.getBoundingClientRect();
+      const previewRect = modal.querySelector('.text-preview').getBoundingClientRect();
+      
+      // CRÍTICO: Calcular las dimensiones reales del área de contenido
+      currentModalWidth = Math.round(previewRect.width - 24); // Restar padding
+      currentModalHeight = Math.round(previewRect.height - 24); // Restar padding
+      
+      modalSizeDisplay.textContent = `${currentModalWidth} × ${currentModalHeight}px`;
+      
+      console.log('📐 Dimensiones del modal actualizadas:', {
+        modalSize: `${Math.round(modalRect.width)}x${Math.round(modalRect.height)}`,
+        contentArea: `${currentModalWidth}x${currentModalHeight}`
+      });
+    };
+    
+    // Observer para cambios de tamaño
+    const resizeObserver = new ResizeObserver(() => {
+      updateModalDimensions();
+    });
+    resizeObserver.observe(modal);
+    resizeObserver.observe(modal.querySelector('.text-preview'));
     
     // Función para mostrar/ocultar indicador de guardado
     const mostrarGuardando = (mostrar) => {
@@ -754,7 +827,7 @@ const TextosLayer = ({
       }
     };
     
-    // Función para actualizar vista previa
+    // CORREGIDO: Función para actualizar vista previa
     const actualizarVistaPrevia = () => {
       const texto = textarea.value.trim();
       previewContent.textContent = texto || 'Vista previa del texto...';
@@ -768,6 +841,8 @@ const TextosLayer = ({
         previewContent.style.color = '#1a1a1a';
         previewContent.style.fontStyle = 'normal';
       }
+      
+      console.log('📝 Vista previa actualizada:', { fontSize: currentFontSize, hasText: !!texto });
     };
     
     // Contador de caracteres
@@ -779,22 +854,47 @@ const TextosLayer = ({
       actualizarVistaPrevia();
     };
     
-    // Control del tamaño de fuente
-    const actualizarTamañoFuente = (nuevoTamaño) => {
-      currentFontSize = parseInt(nuevoTamaño);
+    // CORREGIDO: Control del tamaño de fuente con persistencia garantizada
+    const actualizarTamanoFuente = (nuevoTamano) => {
+      if (isUpdatingFont) return;
+      isUpdatingFont = true;
+      
+      // CRÍTICO: Actualizar la variable persistente
+      currentFontSize = parseInt(nuevoTamano);
+      
+      // Actualizar todos los elementos visuales
       fontDisplay.textContent = `${currentFontSize}px`;
+      fontSlider.value = currentFontSize.toString();
+      
+      // Actualizar vista previa
       actualizarVistaPrevia();
       
-      console.log('📏 Tamaño de fuente cambiado a:', currentFontSize);
+      console.log('🔤 Tamaño de fuente actualizado a:', currentFontSize);
+      
+      // Actualizar botones rápidos cuando existan
+      const botonesRapidos = modal.querySelector('.botones-rapidos');
+      if (botonesRapidos) {
+        botonesRapidos.querySelectorAll('button').forEach(btn => {
+          const btnSize = parseInt(btn.dataset.size);
+          const isActive = btnSize === currentFontSize;
+          btn.style.background = isActive ? '#2196f3' : 'white';
+          btn.style.color = isActive ? 'white' : '#2196f3';
+        });
+      }
+      
+      isUpdatingFont = false;
     };
     
     // Event listeners
     textarea.addEventListener('input', actualizarContador);
-    fontSlider.addEventListener('input', (e) => actualizarTamañoFuente(e.target.value));
+    fontSlider.addEventListener('input', (e) => {
+      actualizarTamanoFuente(e.target.value);
+    });
     
-    // Botones de tamaño rápido
-    const controlesTamaño = modal.querySelector('.font-controls');
+    // Botones de tamaño rápido CORREGIDOS
+    const controlesTamano = modal.querySelector('.font-controls');
     const botonesRapidos = document.createElement('div');
+    botonesRapidos.className = 'botones-rapidos';
     botonesRapidos.style.cssText = `
       display: flex;
       gap: 4px;
@@ -810,6 +910,7 @@ const TextosLayer = ({
       const btn = document.createElement('button');
       btn.textContent = label;
       btn.title = `${title} (${size}px)`;
+      btn.dataset.size = size.toString();
       btn.style.cssText = `
         background: ${currentFontSize === size ? '#2196f3' : 'white'};
         color: ${currentFontSize === size ? 'white' : '#2196f3'};
@@ -825,16 +926,7 @@ const TextosLayer = ({
       
       btn.addEventListener('click', () => {
         if (guardandoEnProgreso) return;
-        
-        fontSlider.value = size;
-        actualizarTamañoFuente(size);
-        
-        // Actualizar estilos de botones
-        botonesRapidos.querySelectorAll('button').forEach(b => {
-          const isActive = b === btn;
-          b.style.background = isActive ? '#2196f3' : 'white';
-          b.style.color = isActive ? 'white' : '#2196f3';
-        });
+        actualizarTamanoFuente(size);
       });
       
       btn.addEventListener('mouseenter', () => {
@@ -852,10 +944,15 @@ const TextosLayer = ({
       botonesRapidos.appendChild(btn);
     });
     
-    controlesTamaño.appendChild(botonesRapidos);
+    controlesTamano.appendChild(botonesRapidos);
     
     // Inicializar estados
     actualizarContador();
+    
+    // Inicializar dimensiones después de un delay
+    setTimeout(() => {
+      updateModalDimensions();
+    }, 100);
     
     // Focus styles
     textarea.addEventListener('focus', () => {
@@ -870,7 +967,7 @@ const TextosLayer = ({
       textarea.style.boxShadow = 'none';
     });
     
-    // Event handlers para botones principales - MODIFICADO CON BACKEND
+    // CORREGIDO: Event handlers con fontSize Y dimensiones del modal
     btnGuardar?.addEventListener('click', async () => {
       if (guardandoEnProgreso) return;
       
@@ -882,19 +979,23 @@ const TextosLayer = ({
       
       try {
         mostrarGuardando(true);
-        console.log('💾 Iniciando guardado en backend...');
+        console.log('💾 Guardando con TODAS las dimensiones:', {
+          texto: texto.substring(0, 50) + '...',
+          fontSize: currentFontSize,
+          width: currentModalWidth,
+          height: currentModalHeight
+        });
         
-        // CLAVE: onGuardar ahora retorna una Promise del backend
-        await onGuardar(texto, currentFontSize);
+        // CRÍTICO: Usar TODAS las variables actualizadas
+        await onGuardar(texto, currentFontSize, currentModalWidth, currentModalHeight);
         
-        console.log('✅ Texto guardado exitosamente en backend');
-        // Modal se cerrará automáticamente desde el callback del parent
+        console.log('✅ Texto guardado con dimensiones completas');
+        // Modal se cerrará automáticamente
         
       } catch (error) {
         console.error('❌ Error guardando texto:', error);
         mostrarGuardando(false);
         
-        // Mostrar error al usuario
         const errorMsg = document.createElement('div');
         errorMsg.style.cssText = `
           margin-top: 8px;
@@ -907,14 +1008,12 @@ const TextosLayer = ({
         `;
         errorMsg.textContent = `Error: ${error.message || 'No se pudo guardar el texto'}`;
         
-        // Remover mensaje anterior si existe
         const errorAnterior = modal.querySelector('.error-message');
         if (errorAnterior) errorAnterior.remove();
         
         errorMsg.className = 'error-message';
         modal.querySelector('.modal-body').insertBefore(errorMsg, modal.querySelector('.modal-body').lastElementChild);
         
-        // Auto-remover después de 5 segundos
         setTimeout(() => {
           if (errorMsg.parentNode) errorMsg.remove();
         }, 5000);
@@ -940,14 +1039,8 @@ const TextosLayer = ({
       
       try {
         mostrarGuardando(true);
-        console.log('🗑️ Iniciando eliminación en backend...');
-        
-        // CLAVE: onEliminar ahora retorna una Promise del backend
         await onEliminar();
-        
-        console.log('✅ Texto eliminado exitosamente del backend');
-        // Modal se cerrará automáticamente
-        
+        console.log('✅ Texto eliminado exitosamente');
       } catch (error) {
         console.error('❌ Error eliminando texto:', error);
         mostrarGuardando(false);
@@ -955,14 +1048,14 @@ const TextosLayer = ({
       }
     });
     
-    // Keyboard shortcuts mejorados - MODIFICADO PARA BACKEND
+    // Keyboard shortcuts
     textarea.addEventListener('keydown', async (e) => {
       if (guardandoEnProgreso) {
         if (e.key === 'Escape') {
           e.preventDefault();
           return;
         }
-        return; // Ignorar otras teclas mientras guarda
+        return;
       }
       
       if (e.key === 'Escape') {
@@ -972,20 +1065,55 @@ const TextosLayer = ({
         e.preventDefault();
         const texto = textarea.value.trim();
         if (texto) {
-          // Simular click en guardar
           btnGuardar.click();
         }
       } else if (e.key === '=' && e.ctrlKey) {
         e.preventDefault();
-        const nuevoTamaño = Math.min(24, currentFontSize + 1);
-        fontSlider.value = nuevoTamaño;
-        actualizarTamañoFuente(nuevoTamaño);
+        const nuevoTamano = Math.min(24, currentFontSize + 1);
+        actualizarTamanoFuente(nuevoTamano);
       } else if (e.key === '-' && e.ctrlKey) {
         e.preventDefault();
-        const nuevoTamaño = Math.max(10, currentFontSize - 1);
-        fontSlider.value = nuevoTamaño;
-        actualizarTamañoFuente(nuevoTamaño);
+        const nuevoTamano = Math.max(10, currentFontSize - 1);
+        actualizarTamanoFuente(nuevoTamano);
       }
+    });
+    
+    // Drag para mover modal
+    let isDraggingModal = false;
+    let dragStartModal = { x: 0, y: 0 };
+    let modalStartPos = { x: 0, y: 0 };
+    
+    modal.querySelector('.modal-header').addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      
+      isDraggingModal = true;
+      dragStartModal = { x: e.clientX, y: e.clientY };
+      
+      const modalRect = modal.getBoundingClientRect();
+      modalStartPos = {
+        x: modalRect.left,
+        y: modalRect.top
+      };
+      
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDraggingModal) return;
+      
+      const deltaX = e.clientX - dragStartModal.x;
+      const deltaY = e.clientY - dragStartModal.y;
+      
+      const newX = modalStartPos.x + deltaX;
+      const newY = modalStartPos.y + deltaY;
+      
+      modal.style.left = `${newX}px`;
+      modal.style.top = `${newY}px`;
+      modal.style.transform = 'none';
+    });
+    
+    document.addEventListener('mouseup', () => {
+      isDraggingModal = false;
     });
     
     // Estilos hover para botones
@@ -1019,9 +1147,9 @@ const TextosLayer = ({
     // Cleanup cuando se cierre el modal
     const cleanup = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      resizeObserver.disconnect();
     };
     
-    // Almacenar cleanup para uso posterior
     modal.cleanup = cleanup;
     
     document.body.appendChild(modal);
@@ -1040,7 +1168,7 @@ const TextosLayer = ({
     return modal;
   }, [modalAbierto, guardandoTexto]);
 
-  // ===================== CREAR TEXTO TEMPORAL CON BACKEND =====================
+  // ===================== CREAR TEXTO TEMPORAL CON BACKEND Y DIMENSIONES =====================
   
   const crearTextoTemporal = useCallback((overlay, x, y, numeroPagina) => {
     console.log('💬 Creando texto temporal:', { numeroPagina, x, y });
@@ -1048,22 +1176,30 @@ const TextosLayer = ({
     const modal = crearModal({
       titulo: `Nuevo texto - Página ${numeroPagina}`,
       fontSize: 14,
-      onGuardar: async (texto, fontSize) => {
-        console.log('💾 Guardando nuevo texto en backend:', { texto, fontSize, x, y, numeroPagina });
+      width: 300, // Tamaño inicial más grande
+      height: 120,
+      onGuardar: async (texto, fontSize, modalWidth, modalHeight) => {
+        console.log('💾 Guardando nuevo texto con dimensiones:', { 
+          texto: texto.substring(0, 30) + '...', 
+          fontSize, 
+          modalWidth, 
+          modalHeight, 
+          x, 
+          y, 
+          numeroPagina 
+        });
         
-        // CLAVE: Retornar la Promise para que el modal pueda manejar el estado de guardado
         return new Promise((resolve, reject) => {
           onAddTexto({ 
             pagina: numeroPagina, 
             x, 
             y, 
             texto, 
-            width: 200,
-            height: 60,
+            width: modalWidth || 300,  // CORREGIDO: usar dimensiones del modal
+            height: modalHeight || 120, // CORREGIDO: usar dimensiones del modal
             fontSize: fontSize || 14
           })
           .then(() => {
-            // Éxito - cerrar modal
             if (modal && modal.cleanup) modal.cleanup();
             document.querySelector('.modal-texto-con-fuente')?.remove();
             setModalAbierto(false);
@@ -1084,10 +1220,15 @@ const TextosLayer = ({
     });
   }, [onAddTexto, onDesactivarHerramienta, crearModal]);
 
-  // ===================== EDITAR TEXTO CON BACKEND =====================
+  // ===================== EDITAR TEXTO CON BACKEND Y DIMENSIONES =====================
   
   const abrirModalEdicion = useCallback((texto) => {
-    console.log('✏️ Editando texto:', texto.id);
+    console.log('✏️ Editando texto con dimensiones:', {
+      id: texto.id,
+      currentWidth: texto.width,
+      currentHeight: texto.height,
+      fontSize: texto.fontSize
+    });
     
     setTextoEditando(texto.id);
     
@@ -1095,8 +1236,16 @@ const TextosLayer = ({
       titulo: `Editar texto - Página ${texto.pagina}`,
       valor: texto.texto,
       fontSize: texto.fontSize || 14,
-      onGuardar: async (nuevoTexto, fontSize) => {
-        console.log('💾 Guardando edición en backend:', { id: texto.id, nuevoTexto, fontSize });
+      width: texto.width || 300,  // CRÍTICO: usar dimensiones actuales
+      height: texto.height || 120, // CRÍTICO: usar dimensiones actuales
+      onGuardar: async (nuevoTexto, fontSize, modalWidth, modalHeight) => {
+        console.log('💾 Guardando edición con dimensiones:', { 
+          id: texto.id, 
+          nuevoTexto: nuevoTexto.substring(0, 30) + '...', 
+          fontSize,
+          modalWidth,
+          modalHeight
+        });
         
         return new Promise((resolve, reject) => {
           onEditTexto({ 
@@ -1104,13 +1253,12 @@ const TextosLayer = ({
             texto: nuevoTexto,
             x: texto.x,
             y: texto.y,
-            width: texto.width,
-            height: texto.height,
+            width: modalWidth || texto.width,   // CORREGIDO: usar nuevas dimensiones
+            height: modalHeight || texto.height, // CORREGIDO: usar nuevas dimensiones
             pagina: texto.pagina,
             fontSize: fontSize || 14
           })
           .then(() => {
-            // Éxito - cerrar modal
             if (modal && modal.cleanup) modal.cleanup();
             document.querySelector('.modal-texto-con-fuente')?.remove();
             setModalAbierto(false);
@@ -1133,7 +1281,6 @@ const TextosLayer = ({
         return new Promise((resolve, reject) => {
           onDeleteTexto(texto.id)
           .then(() => {
-            // Éxito - cerrar modal
             if (modal && modal.cleanup) modal.cleanup();
             document.querySelector('.modal-texto-con-fuente')?.remove();
             setModalAbierto(false);
@@ -1253,7 +1400,7 @@ const TextosLayer = ({
   useEffect(() => {
     if (!activo || visorInfo?.mode !== 'single') return;
     
-    console.log('🔍 Configurando observer para cambios de zoom...');
+    console.log('📍 Configurando observer para cambios de zoom...');
     
     let lastScale = visorInfo?.scale || 1;
     let timeoutId = null;
@@ -1263,7 +1410,7 @@ const TextosLayer = ({
       const currentScale = pdfInfo.scale;
       
       if (Math.abs(currentScale - lastScale) > 0.05) {
-        console.log(`🔍 Cambio de escala detectado: ${lastScale.toFixed(3)} → ${currentScale.toFixed(3)}`);
+        console.log(`📏 Cambio de escala detectado: ${lastScale.toFixed(3)} → ${currentScale.toFixed(3)}`);
         lastScale = currentScale;
         
         // Debounce para evitar múltiples re-renders
@@ -1367,7 +1514,7 @@ const TextosLayer = ({
       data-elementos={textos.length}
       data-modal-abierto={modalAbierto}
       data-guardando={guardandoTexto}
-      data-version="backend-ready-v16"
+      data-version="backend-ready-v16-modal-size-fixed"
       data-pdf-scale={visorInfo?.scale?.toFixed(3) || 'unknown'}
     />
   );
