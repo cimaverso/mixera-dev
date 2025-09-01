@@ -6,9 +6,8 @@ import SidebarUsuario, {
   EstadisticasIcon,
 } from "./sidebar/SidebarUsuario.jsx";
 import "./sidebar/sidebar.css";
+import api from "../servicios/api"; 
 
-
-import api from "../servicios/api"; // 👈 importa tu cliente axios
 
 // Ícono para cerrar sesión en bottom nav
 const LogoutIcon = () => (
@@ -72,14 +71,15 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
       <SidebarUsuario
         items={items}
         activeKey={activeKey}
-        onChange={onChange}
+        onChange={onChange}z
         onLogout={handleLogout}
-        logoSrc={"/LogoLogin.webp"} 
+        logoSrc={"/assets/LogoLogin.webp"} 
         fotoPerfil={fotoPerfil}
       />
 
       <main className="contenido-usuario">{children}</main>
 
+      
       {/* === BOTTOM NAV SOLO PARA MOBILE === */}
       <nav className="bottom-nav-usuario">
         <button

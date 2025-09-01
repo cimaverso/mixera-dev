@@ -14,7 +14,7 @@ class TextosAPIService {
   // Crear nuevo texto
   async createTexto(textoData) {
     try {
-      const { data } = await api.post("/textos", {
+      const { data } = await api.post("/textos/", {
         txt_idlibro: textoData.libroId,
         txt_pagina: textoData.pagina,
         txt_x: textoData.x,
