@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://api.mixera.app",
+  baseURL: "https://api.mixera.org",
   headers: { "Content-Type": "application/json", Accept: "application/json" },
 });
 
