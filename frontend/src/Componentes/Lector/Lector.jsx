@@ -16,6 +16,7 @@ import { getLibroById } from "../../servicios/libros";
 //servicios/textosAPI.js
 import { textosAPI } from "../../servicios/textosAPI.js";
 import { progresoAPI } from "../../servicios/progresoAPI";
+import { iniciarSesionLectura, finalizarSesionLectura } from "../../servicios/sesionesLectura.js";
 import "./lector.css";
 
 export default function Lector() {
@@ -39,6 +40,9 @@ export default function Lector() {
   const [paginaInicial, setPaginaInicial] = useState(null);
   const [libroCargado, setLibroCargado] = useState(false);
 
+  const sesionIdRef = useRef(null);
+
+
   useEffect(() => {
     async function cargarLibro() {
       if (!libroId) return;
@@ -50,6 +54,23 @@ export default function Lector() {
       }
     }
     cargarLibro();
+  }, [libroId]);
+
+
+  //CARGAR COMPONENTE PARA CONTAR EL TIEMPO DE LECTURA
+
+   useEffect(() => {
+    // Inicia la sesión cuando el usuario entra al lector
+    iniciarSesionLectura(libroId).then((data) => {
+      sesionIdRef.current = data.ls_id;
+    });
+
+    // Finaliza la sesión cuando el usuario sale del lector
+    return () => {
+      if (sesionIdRef.current) {
+        finalizarSesionLectura(sesionIdRef.current);
+      }
+    };
   }, [libroId]);
 
   // CARGAR PAGINA ULTIMA

@@ -60,14 +60,15 @@
   outline-offset: 2px;
 }
 
-/* Grid principal - Unificado con biblioteca */
 .catalogo-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(16px, 3vw, 24px);
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 18px;
   padding: 0;
-  max-width: 320px; /* Más estrecho tipo lista */
   width: 100%;
+  /* Quita max-width, quita margin: 0 auto */
+  /* No pongas restricciones que centren el grid */
+  justify-items: start; /* Opcional, pero fuerza a que el contenido de la celda se alinee a la izquierda */
 }
 
 /* Responsive breakpoints - Consistente */

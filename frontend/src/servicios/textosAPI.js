@@ -4,7 +4,7 @@ class TextosAPIService {
   // Obtener todos los textos de un libro
   async getTextos(libroId) {
     try {
-      const { data } = await api.get(`/textos/${libroId}`);
+      const { data } = await api.get(`/textos/usuario/${libroId}`);
       return Array.isArray(data) ? data : [];
     } catch (error) {
       throw error;
