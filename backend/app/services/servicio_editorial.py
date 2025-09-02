@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 from fastapi import HTTPException
 from app.models.libro.modelo_editorial import Editorial, EditorialCreate, EditorialUpdate
 
-class EditorialService:
+class EditorialServicio:
     def __init__(self, session: Session):
         self.session = session
 

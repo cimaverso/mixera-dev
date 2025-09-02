@@ -1,9 +1,9 @@
 # app/routes/progreso.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.services.servicio_progreso import ProgresoLecturaService
+from app.services.servicio_progreso import ProgresoLecturaServicio
 from app.database.database import get_session
-from app.models.progreso.modelo_progreso import ProgresoLecturaCreate, ProgresoLecturaResponse
+from app.models.libro.progreso.modelo_progreso import ProgresoLecturaCreate, ProgresoLecturaResponse
 from app.core.auth_core import obtener_usuario  # Tu dependencia de usuario
 
 router = APIRouter(prefix="/progresos", tags=["Progresos"])
@@ -17,7 +17,7 @@ def obtener_progreso_libro_usuario(
     usuario: dict = Depends(obtener_usuario)
 ):
     usuario_id = usuario["usu_id"]
-    servicio = ProgresoLecturaService(db)
+    servicio = ProgresoLecturaServicio(db)
     progreso = servicio.obtener_progreso(usuario_id, id)
     return progreso
 
@@ -28,6 +28,6 @@ def guardar_progreso(
     usuario: dict = Depends(obtener_usuario)
 ):
 
-    servicio = ProgresoLecturaService(db)
+    servicio = ProgresoLecturaServicio(db)
     progreso = servicio.guardar_o_actualizar_progreso(usuario["usu_id"], progreso_data)
     return progreso

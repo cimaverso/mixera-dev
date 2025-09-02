@@ -22,6 +22,7 @@ class Usuario(SQLModel, table=True):
     rol: Optional["Rol"] = Relationship(back_populates="usuarios")
     texto: list["Texto"] = Relationship(back_populates="usuarios")
     progreso: list["ProgresoLectura"] = Relationship(back_populates="usuarios")  # type: ignore
+    sesion: list["LecturaSesion"] = Relationship(back_populates="usuarios")  # type: ignore
 
 
 class UsuarioCreate(SQLModel):

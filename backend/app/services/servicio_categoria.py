@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from app.models.libro.modelo_categoria import Categoria, CategoriaCreate, CategoriaUpdate
 
-class CategoriaService:
+class CategoriaServicio:
     def __init__(self, session: Session):
         self.session = session
 

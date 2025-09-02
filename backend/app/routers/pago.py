@@ -4,16 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.services.servicio_pago import crear_preferencia_pago
 from app.core.auth_core import obtener_usuario
-from app.services.servicio_libro import LibroService
+from app.services.servicio_libro import LibroServicio
 from app.database.database import get_session
-from app.services.servicio_compra import CompraService
+from app.services.servicio_compra import CompraServicio
 
 router = APIRouter(prefix="/pago", tags=["Pago"])
 @router.get("/{libro}")
 def generar_enlace_pago(libro: int, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     
-    compra_service = CompraService(db)
-    libro = LibroService(db).listar_libro_id(libro, usuario["usu_id"])
+    compra_service = CompraServicio(db)
+    libro = LibroServicio(db).listar_libro_id(libro, usuario["usu_id"])
     if not libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
 

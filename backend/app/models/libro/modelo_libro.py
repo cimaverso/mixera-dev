@@ -25,6 +25,7 @@ class Libro(SQLModel, table=True):
     autor: Optional["Autor"] = Relationship(back_populates="libro") # type: ignore
     texto: list["Texto"] = Relationship(back_populates="libro") # type: ignore
     progreso: list["ProgresoLectura"] = Relationship(back_populates="libro") # type: ignore
+    sesion: list["LecturaSesion"] = Relationship(back_populates="libro") # type: ignore
     
     
 

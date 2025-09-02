@@ -1,9 +1,9 @@
 # app/services/servicio_progreso.py
-from app.models.progreso.modelo_progreso import ProgresoLectura, ProgresoLecturaCreate
+from app.models.libro.progreso.modelo_progreso import ProgresoLectura, ProgresoLecturaCreate
 from sqlalchemy.orm import Session
 from sqlmodel import select
 
-class ProgresoLecturaService:
+class ProgresoLecturaServicio:
     def __init__(self, db: Session):
         self.db = db
 

@@ -7,8 +7,13 @@ class TextoServicio:
     def __init__(self, session: Session):
         self.session = session
 
-    def listar_libro_id(self, libro_id: int) -> List[Texto]:
-        return self.session.exec(select(Texto).where(Texto.txt_idlibro == libro_id)).all()
+    def listar_libro_id_usuario(self, libro_id: int, usuario_id: int) -> List[Texto]:
+        return self.session.exec(
+            select(Texto).where(
+                (Texto.txt_idlibro == libro_id) & 
+                (Texto.txt_idusuario == usuario_id)
+            )
+        ).all()
 
     def crear_texto(self, texto_in: TextoCreate, usuario_id: int) -> Texto:
         texto = Texto(

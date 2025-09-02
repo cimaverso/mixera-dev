@@ -8,7 +8,8 @@ from app.models.compra.modelo_compra import Compra
 from app.models.libro.modelo_autor import Autor
 from app.models.libro.modelo_categoria import Categoria
 from app.models.libro.modelo_editorial import Editorial
-from app.models.progreso.modelo_progreso import ProgresoLectura
+from app.models.libro.progreso.modelo_progreso import ProgresoLectura
+
 
 CARPETA_LIBROS = os.path.join("uploads", "books")
 CARPETA_PORTADAS = os.path.join("uploads", "covers")
@@ -18,7 +19,7 @@ os.makedirs(CARPETA_PORTADAS, exist_ok=True)
 MAX_FILE_SIZE = 100 * 1024 * 1024
 CHUNK_SIZE = 1024 * 1024
 
-class LibroService:
+class LibroServicio:
     def __init__(self, session: Session):
         self.session = session
 
@@ -113,6 +114,7 @@ class LibroService:
                 )
                 .first()
             )
+
 
             
         

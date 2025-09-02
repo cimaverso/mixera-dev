@@ -12,14 +12,14 @@ from app.core.auth_core import generar_token_activacion
 from app.services.servicio_correo import enviar_correo
 from app.models.libro.modelo_libro import Libro
 from app.models.compra.modelo_compra import Compra
-from app.models.progreso.modelo_progreso import ProgresoLectura
+from app.models.libro.progreso.modelo_progreso import ProgresoLectura
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-class ServicioUsuario:
+class UsuarioServicio:
     
     def __init__(self):
 

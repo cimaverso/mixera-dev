@@ -1,7 +1,7 @@
 # routers/libro_router.py
 from fastapi import APIRouter, UploadFile, File, Depends, Form, Request, HTTPException
 from sqlalchemy.orm import Session
-from app.services.servicio_libro import LibroService
+from app.services.servicio_libro import LibroServicio
 from app.models.libro.modelo_libro import LibroCreate
 from app.database.database import get_session
 from app.core.auth_core import obtener_usuario
@@ -36,7 +36,7 @@ def obtener_libros_comprados(
     usuario: dict = Depends(obtener_usuario)
 ):
     base_url = obtener_base_url(request)
-    servicio = LibroService(db)
+    servicio = LibroServicio(db)
     return servicio.listar_libros_comprados(usuario["usu_id"], base_url)
 
 
@@ -44,7 +44,7 @@ def obtener_libros_comprados(
 @router.get("/{id}")
 def obtener_libro(id: int, request: Request, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     base_url = obtener_base_url(request)
-    servicio_libro = LibroService(db).listar_libro_id(id, usuario["usu_id"], base_url)
+    servicio_libro = LibroServicio(db).listar_libro_id(id, usuario["usu_id"], base_url)
     if not servicio_libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
     return servicio_libro
@@ -53,7 +53,7 @@ def obtener_libro(id: int, request: Request, db: Session = Depends(get_session),
 @router.get("/")
 def obtener_libros(request: Request, db: Session = Depends(get_session), q: str = ""):
     base_url = obtener_base_url(request)
-    servicio = LibroService(db)
+    servicio = LibroServicio(db)
     libros = servicio.listar_libros(q=q)
     return [servicio.serializar_libros(libro, base_url) for libro in libros]
 
@@ -62,6 +62,8 @@ async def crear_libro(data: LibroCreateForm = Depends(), session: Session = Depe
 portada: UploadFile = File(...)      # Portada obligatorio
 ):
     libro_data = LibroCreate(**data.__dict__)
-    libro = LibroService(session).crear_libro(file, portada, libro_data)
+    libro = LibroServicio(session).crear_libro(file, portada, libro_data)
     return libro
+
+
 

@@ -3,7 +3,7 @@ from app.models.libro.modelo_autor import Autor, AutorCreate, AutorUpdate
 
 
 
-class AutorService:
+class AutorServicio:
     def __init__(self, session: Session):
         self.session = session
 

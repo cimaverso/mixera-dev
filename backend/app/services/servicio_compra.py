@@ -2,7 +2,7 @@
 from app.models.compra.modelo_compra import Compra
 from datetime import datetime
 
-class CompraService:
+class CompraServicio:
     def __init__(self, db):
         self.db = db
 

@@ -1,6 +1,6 @@
 # app/routes/webhook.py
 from fastapi import APIRouter, Request, Depends
-from app.services.servicio_compra import CompraService
+from app.services.servicio_compra import CompraServicio
 from app.database.database import get_session
 from app.services.servicio_pago import sdk
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/webhook", tags=["webhook"])
 @router.post("/mercadopago")
 async def webhook_mercadopago(request: Request, db: Session = Depends(get_session)):
 
-    compra_service = CompraService(db)
+    compra_service = CompraServicio(db)
     data = await request.json()
 
     topic = data.get("type") or data.get("topic")

@@ -6,10 +6,9 @@ from app.models.usuario.modelo_usuario import UsuarioCreate, UsuarioResponse, Us
 from app.database.database import get_session
 from fastapi.responses import RedirectResponse
 from app.core.auth_core import obtener_usuario
-from app.services.servicio_usuario import ServicioUsuario
+from app.services.servicio_usuario import UsuarioServicio
 
-
-servicio_usuario = ServicioUsuario()
+servicio_usuario = UsuarioServicio()
 
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
@@ -28,7 +27,7 @@ def obtener_libros_adquiridos(
     db: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario),
 ):
-    service = ServicioUsuario()
+    service = UsuarioServicio()
     return service.libros_adquiridos_con_progreso(usuario["usu_id"], db)
 
 @router.get("/verificar")
