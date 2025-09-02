@@ -35,7 +35,7 @@ app.mount("/uploads/covers", StaticFiles(directory="uploads/covers"), name="cove
 
 origins = [
     "http://localhost:5173",  # desarrollo local
-    "https://dev.mixera.org",  # produccion
+    "https://app.mixera.org",  # produccion
     "https://mixera.org"       # producción
 ]
 
