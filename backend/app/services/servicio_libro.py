@@ -70,16 +70,22 @@ class LibroServicio:
     
     def serializar_libros(self, libro: Libro, base_url: str, progreso: ProgresoLectura = None):
         autor = self.session.query(Autor).filter(Autor.aut_id == libro.lib_idautor).first()
+        categoria = self.session.query(Categoria).filter(Categoria.cat_id == libro.lib_idcategoria).first()
+        editorial = self.session.query(Editorial).filter(Editorial.edi_id == libro.lib_ideditorial).first()
         return {
             "id": libro.lib_id,
             "titulo": libro.lib_titulo,
             "autor": autor.aut_nombre if autor else None,
+            "categoria": categoria.cat_nombre if categoria else None,
+            "editorial": editorial.edi_nombre if editorial else None,
             "precio": libro.lib_precio,
             "portada": f"{base_url}/uploads/covers/{libro.lib_portada}" if libro.lib_portada else None,
             "url": f"{base_url}/uploads/books/{libro.lib_url}" if libro.lib_url else None,
             "progreso_pagina_actual": progreso.pro_pagina_actual if progreso else 0,
             "progreso_pagina_total": progreso.pro_pagina_total if progreso else getattr(libro, "lib_total_paginas", 0),
+            "estado": libro.lib_estado,
         }
+
 
     def listar_libro_id(self, libro_id: int, user_id: int, base_url: str = ""):
         libro = (
