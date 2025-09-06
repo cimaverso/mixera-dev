@@ -37,6 +37,8 @@ class LibroCreate(SQLModel):
     lib_precio: int
     lib_url: Optional[str] = None
     lib_ideditorial: Optional[int] = None
+    lib_idautor: Optional[int] = None
+    lib_idcategoria: Optional[int] = None
     lib_estado: bool
     lib_portada: Optional[str] = None
 
@@ -50,6 +52,8 @@ class LibroUpdate(SQLModel):
     lib_precio: Optional[int] = None
     lib_url: Optional[str] = None
     lib_ideditorial: Optional[int] = None
+    lib_idautor: Optional[int] = None
+    lib_idcategoria: Optional[int] = None
     lib_estado: Optional[bool] = None
     lib_portada: Optional[str] = None
 
@@ -65,6 +69,8 @@ class LibroResponse(SQLModel):
     lib_precio: Optional[int] = None
     lib_url: str
     lib_ideditorial: Optional[int] = None
+    lib_idautor: Optional[int] = None
+    lib_idcategoria: Optional[int] = None
     lib_estado: bool
     lib_portada: Optional[str] = None
 
