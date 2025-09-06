@@ -26,6 +26,10 @@ class UsuarioServicio:
         self.upload_directory = Path("uploads/profile-images")
         self.upload_directory.mkdir(parents=True, exist_ok=True)
 
+    def listar_usuarios(self, db: Session) -> list[Usuario]:
+        usuarios = db.exec(select(Usuario)).all()
+        return usuarios
+
     def registrar_usuario(self, datos: UsuarioCreate, db: Session, background_tasks: BackgroundTasks) -> Usuario:
         # Verificar si el correo o usuario ya existe
         usuario_duplicado = db.exec(

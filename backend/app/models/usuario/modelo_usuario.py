@@ -48,6 +48,10 @@ class UsuarioUpdate(SQLModel):
 class UsuarioResponse(SQLModel):
     usu_id: int
     usu_usuario: str
+    usu_nombre: Optional[str]
+    usu_apellido: Optional[str]
+    usu_ciudad: Optional[str]
+    usu_pais: Optional[str]
     usu_correo: str
     usu_verificado: bool
     usu_fecharegistro: date

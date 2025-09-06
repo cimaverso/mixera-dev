@@ -22,6 +22,13 @@ class CambioClave(BaseModel):
     nueva: str
 
 
+@router.get("/", response_model=list[UsuarioResponse])
+def obtener_usuarios(db: Session = Depends(get_session)):
+    try:
+        return servicio_usuario.listar_usuarios(db)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Error al listar los usuarios")
+
 @router.get("/libros")
 def obtener_libros_adquiridos(
     db: Session = Depends(get_session),
