@@ -17,6 +17,8 @@ class LibroCreateForm:
         lib_descripcion: str = Form(...),
         lib_precio: float = Form(...),
         lib_ideditorial: int = Form(...),
+        lib_idautor: int = Form(...),         # <--- Añadido
+        lib_idcategoria: int = Form(...),  
         lib_estado: bool = Form(...),
         
     ):
@@ -25,6 +27,8 @@ class LibroCreateForm:
         self.lib_fecha = date.today()
         self.lib_precio = lib_precio
         self.lib_ideditorial = lib_ideditorial
+        self.lib_idautor = lib_idautor        
+        self.lib_idcategoria = lib_idcategoria
         self.lib_estado = lib_estado
 
 
