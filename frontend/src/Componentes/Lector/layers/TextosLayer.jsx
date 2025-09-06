@@ -1,6 +1,17 @@
-// TextosLayer.jsx - PREPARADO PARA BACKEND v16 - CORREGIDO FONTSIZE Y MODAL SIZE
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// TextosLayer.jsx - SISTEMA CONSOLIDADO SIN CONFLICTOS v2
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import TextoModal from '../components/TextoModal';
 
+/**
+ * TextosLayer - Sistema unificado para gestión de textos en PDF
+ * 
+ * Características:
+ * - Sin dependencias externas (BaseLayer, PersistentRenderer)
+ * - Gestión directa de overlays y elementos
+ * - Coordenadas relativas consistentes (0-1)
+ * - Escalado automático con zoom
+ * - Integración limpia con backend
+ */
 const TextosLayer = ({
   herramientaActiva,
   paginaActual,
@@ -11,1512 +22,1043 @@ const TextosLayer = ({
   onDeleteTexto = () => {},
   onDesactivarHerramienta = () => {},
 }) => {
-  console.log('💬 TextosLayer PREPARADO PARA BACKEND v16 - FONTSIZE Y SIZE CORREGIDOS:', {
-    activa: herramientaActiva === 'texto',
+  // ===================== ESTADO LOCAL =====================
+  const activo = herramientaActiva === 'texto';
+  const escala = visorInfo?.scale || 1;
+  
+  // Referencias para gestión directa
+  const overlaysRef = useRef(new Map()); // pagina -> overlay element
+  const textosElementsRef = useRef(new Map()); // textoId -> texto element
+  const eventListenersRef = useRef(new Map()); // textoId -> cleanup functions
+  
+  // Estados del modal y operaciones
+  const [modalConfig, setModalConfig] = useState(null);
+  const [operacionEnCurso, setOperacionEnCurso] = useState(false);
+  const [textoGuardando, setTextoGuardando] = useState(null);
+
+  // Configuración de dimensiones
+  const DIMENSIONES = useMemo(() => ({
+    MIN_WIDTH: 80,
+    MAX_WIDTH: 600,
+    MIN_HEIGHT: 30,
+    MAX_HEIGHT: 400,
+    DEFAULT_WIDTH: 200,
+    DEFAULT_HEIGHT: 60,
+    DEFAULT_FONT_SIZE: 14
+  }), []);
+
+  console.log('TextosLayer consolidado v2:', {
+    activo,
     paginaActual,
     cantidadTextos: textos.length,
-    visorScale: visorInfo?.scale
+    escala: escala.toFixed(2),
+    modal: !!modalConfig,
+    operacion: operacionEnCurso
   });
 
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [textoEditando, setTextoEditando] = useState(null);
-  const [guardandoTexto, setGuardandoTexto] = useState(false);
-  const activo = herramientaActiva === 'texto';
-  const overlaysRef = useRef(new Map());
-  const eventosRef = useRef(new Map());
-
-  // ===================== DETECTAR INFORMACIÓN REAL DEL PDF =====================
+  // ===================== GESTIÓN DE OVERLAYS =====================
   
-  const getPDFInfo = useCallback(() => {
-    const page = document.querySelector('.rpv-core__inner-page');
-    const canvas = document.querySelector('.rpv-core__canvas-layer canvas');
-    const viewer = document.querySelector('.rpv-core__viewer');
-    
-    if (!page || !canvas) {
-      console.warn('⚠️ No se encontró información del PDF');
-      return { 
-        pageWidth: 800, 
-        pageHeight: 600, 
-        scale: visorInfo?.scale || 1,
-        found: false 
-      };
-    }
-    
-    const pageRect = page.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    
-    // El scale real es la diferencia entre el tamaño mostrado y el tamaño del canvas
-    const actualScale = canvasRect.width / canvas.width;
-    
-    console.log('📏 PDF Info detectado:', {
-      pageDisplaySize: `${Math.round(pageRect.width)}x${Math.round(pageRect.height)}`,
-      canvasNaturalSize: `${canvas.width}x${canvas.height}`,
-      canvasDisplaySize: `${Math.round(canvasRect.width)}x${Math.round(canvasRect.height)}`,
-      calculatedScale: actualScale.toFixed(3),
-      visorInfoScale: visorInfo?.scale
-    });
-    
-    return {
-      pageWidth: pageRect.width,
-      pageHeight: pageRect.height,
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height,
-      scale: actualScale,
-      found: true
-    };
-  }, [visorInfo?.scale]);
-
-  // ===================== CREAR/OBTENER OVERLAY (SIN ZOOM COMPENSATION) =====================
-  
+  /**
+   * Obtiene o crea overlay para una página específica
+   */
   const getOverlay = useCallback((numeroPagina) => {
     let overlay = overlaysRef.current.get(numeroPagina);
     
-    if (!overlay || !overlay.parentNode) {
-      const paginas = document.querySelectorAll('.rpv-core__inner-page');
-      const paginaElement = paginas[numeroPagina - 1];
+    // Verificar si el overlay existe y está conectado
+    if (!overlay || !overlay.parentNode || !document.contains(overlay)) {
+      console.log(`Creando overlay para página ${numeroPagina}`);
       
-      if (paginaElement) {
-        overlay = document.createElement('div');
-        overlay.className = 'texto-overlay-zoom-fixed';
-        overlay.dataset.pagina = numeroPagina.toString();
-        
-        // CLAVE: El overlay debe cubrir exactamente la página, sin compensación de zoom
-        overlay.style.cssText = `
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: ${activo ? 'auto' : 'none'};
-          z-index: 150;
-          cursor: ${activo ? 'crosshair' : 'default'};
-          overflow: visible;
-        `;
-        
-        if (getComputedStyle(paginaElement).position === 'static') {
-          paginaElement.style.position = 'relative';
-        }
-        
-        paginaElement.appendChild(overlay);
-        overlaysRef.current.set(numeroPagina, overlay);
-        
-        console.log(`✅ Overlay zoom-fixed creado para página ${numeroPagina}`);
+      // Buscar elemento de página específico
+      const paginaElement = document.querySelector(
+        `.rpv-core__inner-page[aria-label="Page ${numeroPagina}"]`
+      );
+      
+      if (!paginaElement) {
+        console.warn(`No se encontró página ${numeroPagina}`);
+        return null;
       }
+      
+      // Crear overlay unificado
+      overlay = document.createElement('div');
+      overlay.className = 'textos-overlay-consolidado';
+      overlay.dataset.pagina = numeroPagina.toString();
+      overlay.dataset.activo = activo.toString();
+      overlay.dataset.version = 'consolidado-v2';
+      
+      // Configurar estilos del overlay
+      overlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: ${activo ? 'auto' : 'none'};
+        z-index: 150;
+        cursor: ${activo ? 'crosshair' : 'default'};
+        overflow: visible;
+        box-sizing: border-box;
+        background: ${activo && process.env.NODE_ENV === 'development' ? 'rgba(0, 255, 0, 0.02)' : 'transparent'};
+        border: ${activo && process.env.NODE_ENV === 'development' ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none'};
+      `;
+      
+      // Asegurar posición relativa en la página
+      if (getComputedStyle(paginaElement).position === 'static') {
+        paginaElement.style.position = 'relative';
+      }
+      
+      // Agregar al DOM y registrar
+      paginaElement.appendChild(overlay);
+      overlaysRef.current.set(numeroPagina, overlay);
+      
+      console.log(`✅ Overlay creado para página ${numeroPagina}`);
     } else {
+      // Actualizar estado existente
+      overlay.dataset.activo = activo.toString();
       overlay.style.pointerEvents = activo ? 'auto' : 'none';
       overlay.style.cursor = activo ? 'crosshair' : 'default';
+      
+      if (process.env.NODE_ENV === 'development') {
+        overlay.style.background = activo ? 'rgba(0, 255, 0, 0.02)' : 'transparent';
+        overlay.style.border = activo ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none';
+      }
     }
     
     return overlay;
   }, [activo]);
 
-  // ===================== RENDERIZAR TEXTOS SIN COMPENSACIÓN DE ZOOM =====================
+  // ===================== UTILIDADES DE COORDENADAS =====================
   
-  const renderizarTextos = useCallback(() => {
-    console.log('🎨 Renderizando textos SIN compensación de zoom...');
+  /**
+   * Convierte coordenadas de evento a relativas (0-1)
+   */
+  const convertirARelativas = useCallback((event, overlayElement) => {
+    if (!overlayElement) return null;
     
-    const pdfInfo = getPDFInfo();
-    
-    // Limpiar textos huérfanos
-    document.querySelectorAll('.texto-zoom-fixed').forEach(texto => {
-      const textoId = texto.dataset.textoId;
-      const textoExiste = textos.find(t => t.id.toString() === textoId);
+    try {
+      const rect = overlayElement.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
       
-      if (!textoExiste) {
-        console.log(`🗑️ Removiendo texto huérfano: ${textoId}`);
-        texto.remove();
-      }
+      return {
+        x: Math.max(0, Math.min(1, x)),
+        y: Math.max(0, Math.min(1, y))
+      };
+    } catch (error) {
+      console.warn('Error convirtiendo coordenadas:', error);
+      return null;
+    }
+  }, []);
+
+  /**
+   * Valida y calcula dimensiones escaladas
+   */
+  const validarDimensiones = useCallback((width, height, fontSize) => {
+    const validWidth = Math.max(
+      DIMENSIONES.MIN_WIDTH, 
+      Math.min(DIMENSIONES.MAX_WIDTH, width || DIMENSIONES.DEFAULT_WIDTH)
+    );
+    
+    const validHeight = Math.max(
+      DIMENSIONES.MIN_HEIGHT, 
+      Math.min(DIMENSIONES.MAX_HEIGHT, height || DIMENSIONES.DEFAULT_HEIGHT)
+    );
+    
+    const validFontSize = Math.max(10, Math.min(24, fontSize || DIMENSIONES.DEFAULT_FONT_SIZE));
+    
+    return {
+      width: validWidth,
+      height: validHeight,
+      fontSize: validFontSize,
+      scaledWidth: Math.round(validWidth * escala),
+      scaledHeight: Math.round(validHeight * escala),
+      scaledFontSize: Math.round(validFontSize * escala)
+    };
+  }, [escala, DIMENSIONES]);
+
+  // ===================== CREACIÓN DE ELEMENTOS DE TEXTO =====================
+  
+  /**
+   * Crea elemento DOM para un texto
+   */
+  const crearElementoTexto = useCallback((texto) => {
+    const dimensiones = validarDimensiones(texto.width, texto.height, texto.fontSize);
+    
+    console.log(`🎨 Creando elemento texto: ${texto.id}`, {
+      base: `${texto.width || DIMENSIONES.DEFAULT_WIDTH}x${texto.height || DIMENSIONES.DEFAULT_HEIGHT}`,
+      escalado: `${dimensiones.scaledWidth}x${dimensiones.scaledHeight}`,
+      escala: escala.toFixed(2)
     });
     
-    // Renderizar cada texto usando coordenadas RELATIVAS
-    textos.forEach(texto => {
+    // Container principal
+    const textoContainer = document.createElement('div');
+    textoContainer.className = 'texto-consolidado';
+    textoContainer.dataset.textoId = texto.id.toString();
+    textoContainer.dataset.pagina = texto.pagina.toString();
+    textoContainer.dataset.version = 'consolidado-v2';
+    
+    textoContainer.style.cssText = `
+      position: absolute;
+      left: ${texto.x * 100}%;
+      top: ${texto.y * 100}%;
+      transform: translate(-50%, -50%);
+      width: ${dimensiones.scaledWidth}px;
+      height: ${dimensiones.scaledHeight}px;
+      z-index: 210;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      user-select: none;
+      min-width: ${Math.round(DIMENSIONES.MIN_WIDTH * escala)}px;
+      min-height: ${Math.round(DIMENSIONES.MIN_HEIGHT * escala)}px;
+      max-width: ${Math.round(DIMENSIONES.MAX_WIDTH * escala)}px;
+      max-height: ${Math.round(DIMENSIONES.MAX_HEIGHT * escala)}px;
+    `;
+
+    // Contenido del texto
+    const textoContent = document.createElement('div');
+    textoContent.className = 'texto-contenido-consolidado';
+    textoContent.style.cssText = `
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: ${dimensiones.scaledFontSize}px;
+      font-weight: 500;
+      padding: ${Math.round(8 * escala)}px ${Math.round(12 * escala)}px;
+      border: 2px solid transparent;
+      border-radius: ${Math.round(6 * escala)}px;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      overflow: hidden;
+      line-height: 1.4;
+      text-shadow: 0 0 3px rgba(255,255,255,0.8);
+      cursor: inherit;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      position: relative;
+    `;
+    textoContent.textContent = texto.texto;
+
+    // Handle de resize
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'resize-handle-consolidado';
+    resizeHandle.style.cssText = `
+      display: none;
+      position: absolute;
+      bottom: ${Math.round(-4 * escala)}px;
+      right: ${Math.round(-4 * escala)}px;
+      width: ${Math.round(12 * escala)}px;
+      height: ${Math.round(12 * escala)}px;
+      background: #2196f3;
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: se-resize;
+      pointer-events: auto;
+      z-index: 1001;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    `;
+
+    // Indicador de guardado
+    const indicadorGuardado = document.createElement('div');
+    indicadorGuardado.className = 'indicador-guardado-consolidado';
+    indicadorGuardado.style.cssText = `
+      display: none;
+      position: absolute;
+      top: ${Math.round(-8 * escala)}px;
+      right: ${Math.round(-8 * escala)}px;
+      background: rgba(255, 152, 0, 0.9);
+      color: white;
+      border-radius: 50%;
+      width: ${Math.round(20 * escala)}px;
+      height: ${Math.round(20 * escala)}px;
+      align-items: center;
+      justify-content: center;
+      font-size: ${Math.round(10 * escala)}px;
+      z-index: 1002;
+      animation: pulse 1s infinite;
+      box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    `;
+    indicadorGuardado.textContent = '⏳';
+
+    // Ensamblar elemento
+    textoContainer.appendChild(textoContent);
+    textoContainer.appendChild(resizeHandle);
+    textoContainer.appendChild(indicadorGuardado);
+
+    return textoContainer;
+  }, [validarDimensiones, escala, DIMENSIONES]);
+
+  // ===================== GESTIÓN DE EVENTOS DE TEXTO =====================
+  
+  /**
+   * Configura todos los eventos para un elemento de texto
+   */
+  const configurarEventosTexto = useCallback((textoElement, texto) => {
+    const textoId = texto.id.toString();
+    
+    // Limpiar eventos anteriores
+    const eventosAnteriores = eventListenersRef.current.get(textoId);
+    if (eventosAnteriores) {
+      eventosAnteriores.forEach(cleanup => cleanup());
+    }
+    
+    console.log(`🎧 Configurando eventos para texto: ${textoId}`);
+    
+    const cleanups = [];
+    const contenido = textoElement.querySelector('.texto-contenido-consolidado');
+    const resizeHandle = textoElement.querySelector('.resize-handle-consolidado');
+    const indicadorGuardado = textoElement.querySelector('.indicador-guardado-consolidado');
+    
+    // ===== EVENTOS HOVER =====
+    const handleMouseEnter = () => {
+      if (!activo || operacionEnCurso) return;
+      
+      contenido.style.background = 'rgba(33, 150, 243, 0.05)';
+      contenido.style.borderColor = 'rgba(33, 150, 243, 0.3)';
+      contenido.style.borderStyle = 'dashed';
+      contenido.style.boxShadow = `0 ${Math.round(2 * escala)}px ${Math.round(8 * escala)}px rgba(33, 150, 243, 0.15)`;
+      
+      if (resizeHandle) {
+        resizeHandle.style.display = 'block';
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!textoElement.dataset.dragging && !textoElement.dataset.resizing) {
+        contenido.style.background = 'transparent';
+        contenido.style.borderColor = 'transparent';
+        contenido.style.borderStyle = 'solid';
+        contenido.style.boxShadow = 'none';
+        
+        if (resizeHandle) {
+          resizeHandle.style.display = 'none';
+        }
+      }
+    };
+
+    // ===== DOBLE CLICK PARA EDITAR =====
+    const handleDoubleClick = (e) => {
+      if (!activo || operacionEnCurso) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+      
+      console.log(`🖱️ Doble click para editar texto: ${textoId}`);
+      abrirModalEdicion(texto);
+    };
+
+    // ===== DRAG & DROP =====
+    let isDragging = false;
+    let startPos = { x: 0, y: 0 };
+    let dragOffset = { x: 0, y: 0 };
+
+    const handleMouseDown = (e) => {
+      if (!activo || operacionEnCurso || e.target === resizeHandle) return;
+      if (e.button !== 0) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+      
+      startPos = { x: e.clientX, y: e.clientY };
+      
       const overlay = getOverlay(texto.pagina);
       if (!overlay) return;
       
-      const textoId = texto.id.toString();
-      let textoElement = overlay.querySelector(`[data-texto-id="${textoId}"]`);
+      const overlayRect = overlay.getBoundingClientRect();
+      const textoRect = textoElement.getBoundingClientRect();
+      const centerX = textoRect.left + textoRect.width / 2;
+      const centerY = textoRect.top + textoRect.height / 2;
       
-      if (!textoElement) {
-        // Crear elemento nuevo
-        textoElement = document.createElement('div');
-        textoElement.className = 'texto-zoom-fixed';
-        textoElement.dataset.textoId = textoId;
-        textoElement.dataset.pagina = texto.pagina.toString();
-        
-        // ESTRUCTURA SIMPLIFICADA que escala automáticamente
-        textoElement.innerHTML = `
-          <div class="texto-contenido" style="
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            color: #1a1a1a;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: ${texto.fontSize || 14}px;
-            font-weight: 500;
-            padding: 8px 12px;
-            border: 2px solid transparent;
-            border-radius: 6px;
-            box-sizing: border-box;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            overflow: hidden;
-            line-height: 1.4;
-            text-shadow: 0 0 3px rgba(255,255,255,0.8);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            position: relative;
-          ">${texto.texto}</div>
-          <div class="resize-handles" style="display: none;">
-            <div class="resize-handle resize-se" style="
-              position: absolute;
-              bottom: -4px;
-              right: -4px;
-              width: 12px;
-              height: 12px;
-              background: #2196f3;
-              border: 2px solid white;
-              border-radius: 50%;
-              cursor: se-resize;
-              z-index: 1000;
-            "></div>
-          </div>
-        `;
-        
-        overlay.appendChild(textoElement);
-        console.log(`🆕 Texto zoom-fixed creado: ${textoId}`);
-      } else {
-        // Actualizar contenido existente
-        const contenido = textoElement.querySelector('.texto-contenido');
-        if (contenido) {
-          if (contenido.textContent !== texto.texto) {
-            contenido.textContent = texto.texto;
-          }
-          // CRÍTICO: Actualizar también el tamaño de fuente
-          const currentFontSize = contenido.style.fontSize;
-          const newFontSize = `${texto.fontSize || 14}px`;
-          if (currentFontSize !== newFontSize) {
-            contenido.style.fontSize = newFontSize;
-            console.log(`🔤 Tamaño de fuente actualizado: ${textoId} -> ${newFontSize}`);
-          }
-          console.log(`🔄 Contenido actualizado: ${textoId}`);
-        }
-      }
-      
-      // CLAVE: Usar coordenadas RELATIVAS (porcentajes) y tamaños fijos en px
-      // El CSS se encarga automáticamente del scaling con el zoom del PDF
-      const width = texto.width || 200;
-      const height = texto.height || 60;
-      
-      textoElement.style.cssText = `
-        position: absolute;
-        left: ${texto.x * 100}%;
-        top: ${texto.y * 100}%;
-        transform: translate(-50%, -50%);
-        width: ${width}px;
-        height: ${height}px;
-        z-index: 210;
-        cursor: pointer;
-        pointer-events: ${activo ? 'auto' : 'none'};
-        transition: all 0.2s ease;
-        min-width: 100px;
-        min-height: 40px;
-        max-width: 500px;
-        max-height: 400px;
-      `;
-      
-      // ===================== CONFIGURAR EVENTOS SIN MULTIPLICAR POR ZOOM =====================
-      
-      if (activo) {
-        // Limpiar eventos anteriores
-        const eventosAnteriores = eventosRef.current.get(textoId);
-        if (eventosAnteriores) {
-          eventosAnteriores.forEach(cleanup => cleanup());
-        }
-        
-        const cleanups = [];
-        
-        // HOVER EFFECTS
-        const handleMouseEnter = () => {
-          const contenido = textoElement.querySelector('.texto-contenido');
-          const handles = textoElement.querySelector('.resize-handles');
-          if (contenido) {
-            contenido.style.background = 'rgba(33, 150, 243, 0.05)';
-            contenido.style.borderColor = 'rgba(33, 150, 243, 0.3)';
-            contenido.style.borderStyle = 'dashed';
-            contenido.style.boxShadow = '0 2px 8px rgba(33, 150, 243, 0.15)';
-          }
-          if (handles) {
-            handles.style.display = 'block';
-          }
-        };
-        
-        const handleMouseLeave = () => {
-          if (!textoElement.dataset.dragging && !textoElement.dataset.resizing) {
-            const contenido = textoElement.querySelector('.texto-contenido');
-            const handles = textoElement.querySelector('.resize-handles');
-            if (contenido) {
-              contenido.style.background = 'transparent';
-              contenido.style.borderColor = 'transparent';
-              contenido.style.borderStyle = 'solid';
-              contenido.style.boxShadow = 'none';
-            }
-            if (handles) {
-              handles.style.display = 'none';
-            }
-          }
-        };
-        
-        // DRAG & DROP SIMPLIFICADO
-        let isDragging = false;
-        let startPos = { x: 0, y: 0 };
-        let dragOffset = { x: 0, y: 0 };
-        
-        const handleMouseDown = (e) => {
-          if (e.target.classList.contains('resize-handle')) return;
-          if (e.button !== 0) return;
-          
-          e.stopPropagation();
-          e.preventDefault();
-          
-          startPos = { x: e.clientX, y: e.clientY };
-          
-          // CLAVE: Calcular offset sin compensar por zoom
-          const overlayRect = overlay.getBoundingClientRect();
-          const textoRect = textoElement.getBoundingClientRect();
-          const centerX = textoRect.left + textoRect.width / 2;
-          const centerY = textoRect.top + textoRect.height / 2;
-          
-          dragOffset = {
-            x: (e.clientX - centerX) / overlayRect.width,
-            y: (e.clientY - centerY) / overlayRect.height
-          };
-          
-          const handleMouseMove = (e) => {
-            const distance = Math.sqrt(
-              Math.pow(e.clientX - startPos.x, 2) + 
-              Math.pow(e.clientY - startPos.y, 2)
-            );
-            
-            if (distance > 5 && !isDragging) {
-              isDragging = true;
-              textoElement.dataset.dragging = 'true';
-              textoElement.style.opacity = '0.8';
-              textoElement.style.zIndex = '300';
-              console.log('🎯 Drag iniciado:', textoId);
-            }
-            
-            if (isDragging) {
-              const currentOverlayRect = overlay.getBoundingClientRect();
-              let newX = (e.clientX - currentOverlayRect.left) / currentOverlayRect.width - dragOffset.x;
-              let newY = (e.clientY - currentOverlayRect.top) / currentOverlayRect.height - dragOffset.y;
-              
-              newX = Math.max(0.05, Math.min(0.95, newX));
-              newY = Math.max(0.05, Math.min(0.95, newY));
-              
-              textoElement.style.left = `${newX * 100}%`;
-              textoElement.style.top = `${newY * 100}%`;
-            }
-          };
-          
-          const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            
-            if (isDragging) {
-              // CLAVE: Calcular posición final en coordenadas relativas
-              const finalOverlayRect = overlay.getBoundingClientRect();
-              const finalTextoRect = textoElement.getBoundingClientRect();
-              const finalCenterX = finalTextoRect.left + finalTextoRect.width / 2;
-              const finalCenterY = finalTextoRect.top + finalTextoRect.height / 2;
-              
-              const finalX = (finalCenterX - finalOverlayRect.left) / finalOverlayRect.width;
-              const finalY = (finalCenterY - finalOverlayRect.top) / finalOverlayRect.height;
-              
-              console.log('💾 Guardando nueva posición relativa:', { 
-                id: texto.id, 
-                x: finalX.toFixed(4), 
-                y: finalY.toFixed(4) 
-              });
-              
-              // MODIFICADO: Marcar como guardando mientras actualiza backend
-              setGuardandoTexto(texto.id);
-              
-              onEditTexto({ 
-                id: texto.id, 
-                x: finalX, 
-                y: finalY,
-                texto: texto.texto,
-                width: texto.width,
-                height: texto.height,
-                fontSize: texto.fontSize,
-                pagina: texto.pagina
-              }).then(() => {
-                // Callback exitoso - el texto se guardó en backend
-                console.log('✅ Posición guardada en backend:', texto.id);
-                setGuardandoTexto(false);
-              }).catch((error) => {
-                console.error('❌ Error guardando posición:', error);
-                setGuardandoTexto(false);
-              });
-              
-              // Restaurar estilos
-              textoElement.style.opacity = '1';
-              textoElement.style.zIndex = '210';
-              delete textoElement.dataset.dragging;
-              
-              isDragging = false;
-            }
-          };
-          
-          document.addEventListener('mousemove', handleMouseMove, { passive: false });
-          document.addEventListener('mouseup', handleMouseUp, { passive: false });
-          
-          cleanups.push(() => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-          });
-        };
-        
-        // RESIZE SIMPLIFICADO
-        const resizeHandle = textoElement.querySelector('.resize-se');
-        if (resizeHandle) {
-          let isResizing = false;
-          let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
-          
-          const handleResizeStart = (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            
-            isResizing = true;
-            textoElement.dataset.resizing = 'true';
-            
-            const rect = textoElement.getBoundingClientRect();
-            resizeStart = {
-              x: e.clientX,
-              y: e.clientY,
-              width: rect.width,
-              height: rect.height
-            };
-            
-            document.body.style.cursor = 'se-resize';
-            
-            const handleResizeMove = (e) => {
-              if (!isResizing) return;
-              
-              const deltaX = e.clientX - resizeStart.x;
-              const deltaY = e.clientY - resizeStart.y;
-              
-              // CLAVE: No compensar por zoom, usar valores directos
-              const newWidth = Math.max(100, resizeStart.width + deltaX);
-              const newHeight = Math.max(40, resizeStart.height + deltaY);
-              
-              textoElement.style.width = `${newWidth}px`;
-              textoElement.style.height = `${newHeight}px`;
-            };
-            
-            const handleResizeEnd = () => {
-              if (isResizing) {
-                const finalRect = textoElement.getBoundingClientRect();
-                
-                console.log('📏 Nuevo tamaño directo:', { 
-                  width: finalRect.width, 
-                  height: finalRect.height 
-                });
-                
-                // MODIFICADO: Marcar como guardando mientras actualiza backend
-                setGuardandoTexto(texto.id);
-                
-                onEditTexto({ 
-                  id: texto.id, 
-                  x: texto.x,
-                  y: texto.y,
-                  texto: texto.texto,
-                  width: finalRect.width,
-                  height: finalRect.height,
-                  fontSize: texto.fontSize,
-                  pagina: texto.pagina
-                }).then(() => {
-                  console.log('✅ Tamaño guardado en backend:', texto.id);
-                  setGuardandoTexto(false);
-                }).catch((error) => {
-                  console.error('❌ Error guardando tamaño:', error);
-                  setGuardandoTexto(false);
-                });
-                
-                isResizing = false;
-                delete textoElement.dataset.resizing;
-                document.body.style.cursor = '';
-              }
-              
-              document.removeEventListener('mousemove', handleResizeMove);
-              document.removeEventListener('mouseup', handleResizeEnd);
-            };
-            
-            document.addEventListener('mousemove', handleResizeMove);
-            document.addEventListener('mouseup', handleResizeEnd);
-          };
-          
-          resizeHandle.addEventListener('mousedown', handleResizeStart);
-          cleanups.push(() => {
-            resizeHandle.removeEventListener('mousedown', handleResizeStart);
-          });
-        }
-        
-        // DOBLE CLICK PARA EDITAR
-        const handleDoubleClick = (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          console.log('🖱️ Doble click en texto:', textoId);
-          
-          if (!modalAbierto && !guardandoTexto) {
-            abrirModalEdicion(texto);
-          }
-        };
-        
-        // Registrar eventos principales
-        textoElement.addEventListener('mousedown', handleMouseDown, { passive: false });
-        textoElement.addEventListener('dblclick', handleDoubleClick, { passive: false });
-        textoElement.addEventListener('mouseenter', handleMouseEnter);
-        textoElement.addEventListener('mouseleave', handleMouseLeave);
-        
-        cleanups.push(() => {
-          textoElement.removeEventListener('mousedown', handleMouseDown);
-          textoElement.removeEventListener('dblclick', handleDoubleClick);
-          textoElement.removeEventListener('mouseenter', handleMouseEnter);
-          textoElement.removeEventListener('mouseleave', handleMouseLeave);
-        });
-        
-        eventosRef.current.set(textoId, cleanups);
-        console.log(`✅ Eventos configurados para texto: ${textoId}`);
-      }
-      
-      // NUEVO: Indicador visual de guardado
-      if (guardandoTexto === texto.id) {
-        const indicadorGuardado = textoElement.querySelector('.indicador-guardado') || 
-          document.createElement('div');
-        
-        if (!indicadorGuardado.classList.contains('indicador-guardado')) {
-          indicadorGuardado.className = 'indicador-guardado';
-          indicadorGuardado.innerHTML = '⏳';
-          indicadorGuardado.style.cssText = `
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: rgba(255, 152, 0, 0.9);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            z-index: 1001;
-            animation: pulse 1s infinite;
-          `;
-          textoElement.appendChild(indicadorGuardado);
-        }
-      } else {
-        const indicadorExistente = textoElement.querySelector('.indicador-guardado');
-        if (indicadorExistente) {
-          indicadorExistente.remove();
-        }
-      }
-    });
-    
-    console.log('✅ Renderizado completado SIN compensación de zoom');
-  }, [textos, getOverlay, activo, onEditTexto, modalAbierto, getPDFInfo, guardandoTexto]);
-
-  // ===================== MODAL CON CONTROLES DE TAMAÑO DE LETRA Y TAMAÑO MODAL - CORREGIDO =====================
-  
-  const crearModal = useCallback(({ titulo, valor = '', fontSize = 14, width = 350, height = 120, onGuardar, onCancelar, onEliminar }) => {
-    if (modalAbierto || guardandoTexto) {
-      console.warn('⚠️ Modal ya existe o hay texto guardando, ignorando');
-      return;
-    }
-    
-    console.log('🔧 Creando modal REDIMENSIONABLE:', { titulo, fontSize, width, height });
-    
-    // Limpiar modales anteriores
-    document.querySelectorAll('.modal-texto-con-fuente').forEach(m => m.remove());
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal-texto-con-fuente';
-    modal.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: ${Math.max(400, width + 100)}px;
-      min-height: ${Math.max(400, height + 280)}px;
-      background: white;
-      border: 2px solid #2196f3;
-      border-radius: 12px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-      z-index: 10000;
-      font-family: inherit;
-      display: flex;
-      flex-direction: column;
-      resize: both;
-      overflow: hidden;
-      min-width: 400px;
-      max-width: 800px;
-      min-height: 400px;
-      max-height: 90vh;
-    `;
-    
-    modal.innerHTML = `
-      <div class="modal-header" style="
-        background: linear-gradient(135deg, #2196f3, #1976d2);
-        color: white;
-        padding: 12px 16px;
-        font-weight: 600;
-        cursor: move;
-        user-select: none;
-        flex-shrink: 0;
-        border-radius: 10px 10px 0 0;
-        margin: -2px -2px 0 -2px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      ">
-        <span>${titulo}</span>
-        <span style="font-size: 12px; opacity: 0.9;">📏 Modal redimensionable</span>
-      </div>
-      
-      <div class="modal-body" style="
-        flex: 1;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        overflow-y: auto;
-      ">
-        <!-- Controles de formato -->
-        <div class="font-controls" style="
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 12px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border: 1px solid #e9ecef;
-          flex-shrink: 0;
-        ">
-          <label style="font-size: 13px; font-weight: 600; color: #495057;">
-            🔤 Tamaño:
-          </label>
-          <input type="range" class="font-size-slider" 
-                 min="10" max="24" step="1" value="${fontSize}"
-                 style="
-                   flex: 1;
-                   height: 6px;
-                   background: #ddd;
-                   border-radius: 3px;
-                   outline: none;
-                   cursor: pointer;
-                 ">
-          <span class="font-size-display" style="
-            font-size: 13px;
-            font-weight: 600;
-            color: #2196f3;
-            min-width: 35px;
-            text-align: center;
-            background: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #2196f3;
-          ">${fontSize}px</span>
-        </div>
-
-        <!-- Vista previa del texto REDIMENSIONABLE -->
-        <div class="text-preview" style="
-          padding: 12px;
-          border: 2px dashed #e0e0e0;
-          border-radius: 8px;
-          background: #fafafa;
-          flex: 1;
-          min-height: 120px;
-          display: flex;
-          align-items: flex-start;
-          justify-content: flex-start;
-          resize: none;
-          overflow: auto;
-        ">
-          <div class="preview-content" style="
-            font-size: ${fontSize}px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 500;
-            color: #1a1a1a;
-            line-height: 1.4;
-            word-wrap: break-word;
-            width: 100%;
-            height: 100%;
-            text-shadow: 0 0 3px rgba(255,255,255,0.8);
-            padding: 8px 12px;
-            box-sizing: border-box;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            white-space: pre-wrap;
-          ">
-            ${valor || 'Vista previa del texto...'}
-          </div>
-        </div>
-
-        <!-- Textarea principal -->
-        <textarea class="modal-textarea" placeholder="Escribe tu texto aquí..." style="
-          height: 120px;
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          padding: 12px;
-          font-size: 14px;
-          font-family: inherit;
-          line-height: 1.5;
-          resize: vertical;
-          outline: none;
-          transition: border-color 0.2s ease;
-          flex-shrink: 0;
-          min-height: 80px;
-        ">${valor}</textarea>
-        
-        <!-- Info del modal -->
-        <div style="
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center;
-          flex-shrink: 0;
-          font-size: 12px;
-          color: #666;
-          padding: 4px 0;
-        ">
-          <div class="modal-contador"></div>
-          <div class="modal-dimensions" style="
-            font-family: monospace;
-            background: rgba(33, 150, 243, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #1976d2;
-          ">
-            📐 Tamaño modal: <span class="modal-size-display">calculando...</span>
-          </div>
-          <div style="font-size: 11px; color: #999;">
-            💡 Ctrl+Enter para guardar • Esc para cancelar
-          </div>
-        </div>
-        
-        <!-- Indicador de guardado -->
-        <div class="modal-guardando" style="
-          display: none;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          background: rgba(33, 150, 243, 0.1);
-          border: 1px solid rgba(33, 150, 243, 0.3);
-          border-radius: 6px;
-          font-size: 13px;
-          color: #1976d2;
-          flex-shrink: 0;
-        ">
-          <div style="
-            width: 16px;
-            height: 16px;
-            border: 2px solid #1976d2;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-          "></div>
-          <span>Guardando en el servidor...</span>
-        </div>
-        
-        <div style="
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-          border-top: 1px solid #e0e0e0;
-          padding-top: 12px;
-          flex-shrink: 0;
-        ">
-          ${onEliminar ? '<button class="btn-eliminar" style="background: #f44336; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">🗑️ Eliminar</button>' : ''}
-          <button class="btn-cancelar" style="background: #9e9e9e; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">❌ Cancelar</button>
-          <button class="btn-guardar" style="background: #4caf50; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">💾 Guardar</button>
-        </div>
-      </div>
-    `;
-    
-    // Agregar animación de spinner CSS
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      @keyframes pulse {
-        0% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.7; transform: scale(1.1); }
-        100% { opacity: 1; transform: scale(1); }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    const textarea = modal.querySelector('.modal-textarea');
-    const contador = modal.querySelector('.modal-contador');
-    const fontSlider = modal.querySelector('.font-size-slider');
-    const fontDisplay = modal.querySelector('.font-size-display');
-    const previewContent = modal.querySelector('.preview-content');
-    const modalSizeDisplay = modal.querySelector('.modal-size-display');
-    const indicadorGuardando = modal.querySelector('.modal-guardando');
-    const btnGuardar = modal.querySelector('.btn-guardar');
-    const btnCancelar = modal.querySelector('.btn-cancelar');
-    const btnEliminar = modal.querySelector('.btn-eliminar');
-    
-    // CRÍTICO: Variables para mantener el fontSize Y las dimensiones del modal
-    let currentFontSize = parseInt(fontSize);
-    let currentModalWidth = width;
-    let currentModalHeight = height;
-    let isUpdatingFont = false;
-    let guardandoEnProgreso = false;
-    
-    console.log('🔧 Modal inicializado:', { 
-      fontSize: currentFontSize, 
-      modalWidth: currentModalWidth, 
-      modalHeight: currentModalHeight 
-    });
-    
-    // NUEVO: Observer para detectar cambios de tamaño del modal
-    const updateModalDimensions = () => {
-      const modalRect = modal.getBoundingClientRect();
-      const previewRect = modal.querySelector('.text-preview').getBoundingClientRect();
-      
-      // CRÍTICO: Calcular las dimensiones reales del área de contenido
-      currentModalWidth = Math.round(previewRect.width - 24); // Restar padding
-      currentModalHeight = Math.round(previewRect.height - 24); // Restar padding
-      
-      modalSizeDisplay.textContent = `${currentModalWidth} × ${currentModalHeight}px`;
-      
-      console.log('📐 Dimensiones del modal actualizadas:', {
-        modalSize: `${Math.round(modalRect.width)}x${Math.round(modalRect.height)}`,
-        contentArea: `${currentModalWidth}x${currentModalHeight}`
-      });
-    };
-    
-    // Observer para cambios de tamaño
-    const resizeObserver = new ResizeObserver(() => {
-      updateModalDimensions();
-    });
-    resizeObserver.observe(modal);
-    resizeObserver.observe(modal.querySelector('.text-preview'));
-    
-    // Función para mostrar/ocultar indicador de guardado
-    const mostrarGuardando = (mostrar) => {
-      guardandoEnProgreso = mostrar;
-      indicadorGuardando.style.display = mostrar ? 'flex' : 'none';
-      btnGuardar.disabled = mostrar;
-      btnCancelar.disabled = mostrar;
-      if (btnEliminar) btnEliminar.disabled = mostrar;
-      
-      if (mostrar) {
-        btnGuardar.style.opacity = '0.5';
-        btnGuardar.textContent = 'Guardando...';
-      } else {
-        btnGuardar.style.opacity = '1';
-        btnGuardar.textContent = '💾 Guardar';
-      }
-    };
-    
-    // CORREGIDO: Función para actualizar vista previa
-    const actualizarVistaPrevia = () => {
-      const texto = textarea.value.trim();
-      previewContent.textContent = texto || 'Vista previa del texto...';
-      previewContent.style.fontSize = `${currentFontSize}px`;
-      
-      // Cambiar color de la vista previa si no hay texto
-      if (!texto) {
-        previewContent.style.color = '#999';
-        previewContent.style.fontStyle = 'italic';
-      } else {
-        previewContent.style.color = '#1a1a1a';
-        previewContent.style.fontStyle = 'normal';
-      }
-      
-      console.log('📝 Vista previa actualizada:', { fontSize: currentFontSize, hasText: !!texto });
-    };
-    
-    // Contador de caracteres
-    const actualizarContador = () => {
-      const length = textarea.value.length;
-      contador.textContent = `${length}/500 caracteres`;
-      contador.style.color = length > 450 ? '#f44336' : '#666';
-      
-      actualizarVistaPrevia();
-    };
-    
-    // CORREGIDO: Control del tamaño de fuente con persistencia garantizada
-    const actualizarTamanoFuente = (nuevoTamano) => {
-      if (isUpdatingFont) return;
-      isUpdatingFont = true;
-      
-      // CRÍTICO: Actualizar la variable persistente
-      currentFontSize = parseInt(nuevoTamano);
-      
-      // Actualizar todos los elementos visuales
-      fontDisplay.textContent = `${currentFontSize}px`;
-      fontSlider.value = currentFontSize.toString();
-      
-      // Actualizar vista previa
-      actualizarVistaPrevia();
-      
-      console.log('🔤 Tamaño de fuente actualizado a:', currentFontSize);
-      
-      // Actualizar botones rápidos cuando existan
-      const botonesRapidos = modal.querySelector('.botones-rapidos');
-      if (botonesRapidos) {
-        botonesRapidos.querySelectorAll('button').forEach(btn => {
-          const btnSize = parseInt(btn.dataset.size);
-          const isActive = btnSize === currentFontSize;
-          btn.style.background = isActive ? '#2196f3' : 'white';
-          btn.style.color = isActive ? 'white' : '#2196f3';
-        });
-      }
-      
-      isUpdatingFont = false;
-    };
-    
-    // Event listeners
-    textarea.addEventListener('input', actualizarContador);
-    fontSlider.addEventListener('input', (e) => {
-      actualizarTamanoFuente(e.target.value);
-    });
-    
-    // Botones de tamaño rápido CORREGIDOS
-    const controlesTamano = modal.querySelector('.font-controls');
-    const botonesRapidos = document.createElement('div');
-    botonesRapidos.className = 'botones-rapidos';
-    botonesRapidos.style.cssText = `
-      display: flex;
-      gap: 4px;
-      margin-left: 8px;
-    `;
-    
-    [
-      { label: 'S', size: 12, title: 'Pequeño' },
-      { label: 'M', size: 14, title: 'Mediano' },
-      { label: 'L', size: 18, title: 'Grande' },
-      { label: 'XL', size: 22, title: 'Extra grande' }
-    ].forEach(({ label, size, title }) => {
-      const btn = document.createElement('button');
-      btn.textContent = label;
-      btn.title = `${title} (${size}px)`;
-      btn.dataset.size = size.toString();
-      btn.style.cssText = `
-        background: ${currentFontSize === size ? '#2196f3' : 'white'};
-        color: ${currentFontSize === size ? 'white' : '#2196f3'};
-        border: 1px solid #2196f3;
-        padding: 4px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        min-width: 28px;
-      `;
-      
-      btn.addEventListener('click', () => {
-        if (guardandoEnProgreso) return;
-        actualizarTamanoFuente(size);
-      });
-      
-      btn.addEventListener('mouseenter', () => {
-        if (currentFontSize !== size && !guardandoEnProgreso) {
-          btn.style.background = '#e3f2fd';
-        }
-      });
-      
-      btn.addEventListener('mouseleave', () => {
-        if (currentFontSize !== size) {
-          btn.style.background = 'white';
-        }
-      });
-      
-      botonesRapidos.appendChild(btn);
-    });
-    
-    controlesTamano.appendChild(botonesRapidos);
-    
-    // Inicializar estados
-    actualizarContador();
-    
-    // Inicializar dimensiones después de un delay
-    setTimeout(() => {
-      updateModalDimensions();
-    }, 100);
-    
-    // Focus styles
-    textarea.addEventListener('focus', () => {
-      if (!guardandoEnProgreso) {
-        textarea.style.borderColor = '#2196f3';
-        textarea.style.boxShadow = '0 0 0 3px rgba(33, 150, 243, 0.1)';
-      }
-    });
-    
-    textarea.addEventListener('blur', () => {
-      textarea.style.borderColor = '#e0e0e0';
-      textarea.style.boxShadow = 'none';
-    });
-    
-    // CORREGIDO: Event handlers con fontSize Y dimensiones del modal
-    btnGuardar?.addEventListener('click', async () => {
-      if (guardandoEnProgreso) return;
-      
-      const texto = textarea.value.trim();
-      if (!texto) {
-        alert('El texto no puede estar vacío');
-        return;
-      }
-      
-      try {
-        mostrarGuardando(true);
-        console.log('💾 Guardando con TODAS las dimensiones:', {
-          texto: texto.substring(0, 50) + '...',
-          fontSize: currentFontSize,
-          width: currentModalWidth,
-          height: currentModalHeight
-        });
-        
-        // CRÍTICO: Usar TODAS las variables actualizadas
-        await onGuardar(texto, currentFontSize, currentModalWidth, currentModalHeight);
-        
-        console.log('✅ Texto guardado con dimensiones completas');
-        // Modal se cerrará automáticamente
-        
-      } catch (error) {
-        console.error('❌ Error guardando texto:', error);
-        mostrarGuardando(false);
-        
-        const errorMsg = document.createElement('div');
-        errorMsg.style.cssText = `
-          margin-top: 8px;
-          padding: 8px 12px;
-          background: rgba(244, 67, 54, 0.1);
-          border: 1px solid rgba(244, 67, 54, 0.3);
-          border-radius: 6px;
-          color: #d32f2f;
-          font-size: 13px;
-        `;
-        errorMsg.textContent = `Error: ${error.message || 'No se pudo guardar el texto'}`;
-        
-        const errorAnterior = modal.querySelector('.error-message');
-        if (errorAnterior) errorAnterior.remove();
-        
-        errorMsg.className = 'error-message';
-        modal.querySelector('.modal-body').insertBefore(errorMsg, modal.querySelector('.modal-body').lastElementChild);
-        
-        setTimeout(() => {
-          if (errorMsg.parentNode) errorMsg.remove();
-        }, 5000);
-      }
-    });
-    
-    btnCancelar?.addEventListener('click', () => {
-      if (guardandoEnProgreso) {
-        const confirmar = confirm('Hay una operación de guardado en progreso. ¿Cancelar de todas formas?');
-        if (!confirmar) return;
-      }
-      onCancelar();
-    });
-    
-    btnEliminar?.addEventListener('click', async () => {
-      if (guardandoEnProgreso) {
-        alert('Espera a que termine de guardarse antes de eliminar');
-        return;
-      }
-      
-      const confirmar = confirm('¿Estás seguro de que quieres eliminar este texto?');
-      if (!confirmar) return;
-      
-      try {
-        mostrarGuardando(true);
-        await onEliminar();
-        console.log('✅ Texto eliminado exitosamente');
-      } catch (error) {
-        console.error('❌ Error eliminando texto:', error);
-        mostrarGuardando(false);
-        alert(`Error eliminando texto: ${error.message || 'Error desconocido'}`);
-      }
-    });
-    
-    // Keyboard shortcuts
-    textarea.addEventListener('keydown', async (e) => {
-      if (guardandoEnProgreso) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          return;
-        }
-        return;
-      }
-      
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancelar();
-      } else if (e.key === 'Enter' && e.ctrlKey) {
-        e.preventDefault();
-        const texto = textarea.value.trim();
-        if (texto) {
-          btnGuardar.click();
-        }
-      } else if (e.key === '=' && e.ctrlKey) {
-        e.preventDefault();
-        const nuevoTamano = Math.min(24, currentFontSize + 1);
-        actualizarTamanoFuente(nuevoTamano);
-      } else if (e.key === '-' && e.ctrlKey) {
-        e.preventDefault();
-        const nuevoTamano = Math.max(10, currentFontSize - 1);
-        actualizarTamanoFuente(nuevoTamano);
-      }
-    });
-    
-    // Drag para mover modal
-    let isDraggingModal = false;
-    let dragStartModal = { x: 0, y: 0 };
-    let modalStartPos = { x: 0, y: 0 };
-    
-    modal.querySelector('.modal-header').addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      
-      isDraggingModal = true;
-      dragStartModal = { x: e.clientX, y: e.clientY };
-      
-      const modalRect = modal.getBoundingClientRect();
-      modalStartPos = {
-        x: modalRect.left,
-        y: modalRect.top
+      dragOffset = {
+        x: (e.clientX - centerX) / overlayRect.width,
+        y: (e.clientY - centerY) / overlayRect.height
       };
       
-      e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDraggingModal) return;
-      
-      const deltaX = e.clientX - dragStartModal.x;
-      const deltaY = e.clientY - dragStartModal.y;
-      
-      const newX = modalStartPos.x + deltaX;
-      const newY = modalStartPos.y + deltaY;
-      
-      modal.style.left = `${newX}px`;
-      modal.style.top = `${newY}px`;
-      modal.style.transform = 'none';
-    });
-    
-    document.addEventListener('mouseup', () => {
-      isDraggingModal = false;
-    });
-    
-    // Estilos hover para botones
-    modal.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('mouseenter', () => {
-        if (!btn.disabled && !btn.textContent.match(/^[SMLX]+$/)) { 
-          btn.style.transform = 'translateY(-1px)';
-          btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        }
-      });
-      
-      btn.addEventListener('mouseleave', () => {
-        if (!btn.textContent.match(/^[SMLX]+$/)) {
-          btn.style.transform = 'translateY(0)';
-          btn.style.boxShadow = 'none';
-        }
-      });
-    });
-    
-    // Prevenir cierre accidental durante guardado
-    const handleBeforeUnload = (e) => {
-      if (guardandoEnProgreso) {
-        e.preventDefault();
-        e.returnValue = 'Hay una operación de guardado en progreso';
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Cleanup cuando se cierre el modal
-    const cleanup = () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      resizeObserver.disconnect();
-    };
-    
-    modal.cleanup = cleanup;
-    
-    document.body.appendChild(modal);
-    setModalAbierto(true);
-    
-    // Focus con delay
-    setTimeout(() => {
-      if (!guardandoEnProgreso) {
-        textarea.focus();
-        if (valor) {
-          textarea.select();
-        }
-      }
-    }, 100);
-    
-    return modal;
-  }, [modalAbierto, guardandoTexto]);
-
-  // ===================== CREAR TEXTO TEMPORAL CON BACKEND Y DIMENSIONES =====================
-  
-  const crearTextoTemporal = useCallback((overlay, x, y, numeroPagina) => {
-    console.log('💬 Creando texto temporal:', { numeroPagina, x, y });
-    
-    const modal = crearModal({
-      titulo: `Nuevo texto - Página ${numeroPagina}`,
-      fontSize: 14,
-      width: 300, // Tamaño inicial más grande
-      height: 120,
-      onGuardar: async (texto, fontSize, modalWidth, modalHeight) => {
-        console.log('💾 Guardando nuevo texto con dimensiones:', { 
-          texto: texto.substring(0, 30) + '...', 
-          fontSize, 
-          modalWidth, 
-          modalHeight, 
-          x, 
-          y, 
-          numeroPagina 
-        });
+      const handleMouseMove = (e) => {
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - startPos.x, 2) + 
+          Math.pow(e.clientY - startPos.y, 2)
+        );
         
-        return new Promise((resolve, reject) => {
-          onAddTexto({ 
+        if (distance > 5 && !isDragging) {
+          isDragging = true;
+          setOperacionEnCurso(true);
+          textoElement.dataset.dragging = 'true';
+          textoElement.style.opacity = '0.8';
+          textoElement.style.zIndex = '300';
+          textoElement.style.filter = 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))';
+          
+          console.log(`🎯 Drag iniciado para texto: ${textoId}`);
+        }
+        
+        if (isDragging) {
+          const currentOverlayRect = overlay.getBoundingClientRect();
+          let newX = (e.clientX - currentOverlayRect.left) / currentOverlayRect.width - dragOffset.x;
+          let newY = (e.clientY - currentOverlayRect.top) / currentOverlayRect.height - dragOffset.y;
+          
+          newX = Math.max(0.05, Math.min(0.95, newX));
+          newY = Math.max(0.05, Math.min(0.95, newY));
+          
+          textoElement.style.left = `${newX * 100}%`;
+          textoElement.style.top = `${newY * 100}%`;
+        }
+      };
+      
+      const handleMouseUp = async () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        
+        if (isDragging) {
+          const finalOverlayRect = overlay.getBoundingClientRect();
+          const finalTextoRect = textoElement.getBoundingClientRect();
+          const finalCenterX = finalTextoRect.left + finalTextoRect.width / 2;
+          const finalCenterY = finalTextoRect.top + finalTextoRect.height / 2;
+          
+          const finalX = (finalCenterX - finalOverlayRect.left) / finalOverlayRect.width;
+          const finalY = (finalCenterY - finalOverlayRect.top) / finalOverlayRect.height;
+          
+          console.log(`💾 Guardando nueva posición: ${textoId}`, { x: finalX.toFixed(4), y: finalY.toFixed(4) });
+          
+          try {
+            // Mostrar indicador de guardado
+            mostrarIndicadorGuardado(textoId, true);
+            
+            await onEditTexto({ 
+              id: texto.id, 
+              x: finalX, 
+              y: finalY,
+              texto: texto.texto,
+              width: texto.width,
+              height: texto.height,
+              fontSize: texto.fontSize,
+              pagina: texto.pagina
+            });
+            
+            console.log(`✅ Posición guardada exitosamente: ${textoId}`);
+          } catch (error) {
+            console.error(`❌ Error guardando posición: ${textoId}`, error);
+            mostrarError('Error guardando posición');
+          } finally {
+            mostrarIndicadorGuardado(textoId, false);
+          }
+          
+          // Restaurar estilos
+          textoElement.style.opacity = '1';
+          textoElement.style.zIndex = '210';
+          textoElement.style.filter = 'none';
+          delete textoElement.dataset.dragging;
+          isDragging = false;
+          setOperacionEnCurso(false);
+        }
+      };
+      
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
+      document.addEventListener('mouseup', handleMouseUp, { passive: false });
+    };
+
+    // ===== RESIZE =====
+    let isResizing = false;
+    let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
+    
+    const handleResizeStart = (e) => {
+      if (!activo || operacionEnCurso) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+      
+      console.log(`📏 Iniciando resize para texto: ${textoId}`);
+      
+      isResizing = true;
+      setOperacionEnCurso(true);
+      textoElement.dataset.resizing = 'true';
+      
+      const rect = textoElement.getBoundingClientRect();
+      resizeStart = {
+        x: e.clientX,
+        y: e.clientY,
+        width: rect.width,
+        height: rect.height
+      };
+      
+      document.body.style.cursor = 'se-resize';
+      
+      const handleResizeMove = (e) => {
+        if (!isResizing) return;
+        
+        const deltaX = e.clientX - resizeStart.x;
+        const deltaY = e.clientY - resizeStart.y;
+        
+        const newWidth = Math.max(Math.round(DIMENSIONES.MIN_WIDTH * escala), resizeStart.width + deltaX);
+        const newHeight = Math.max(Math.round(DIMENSIONES.MIN_HEIGHT * escala), resizeStart.height + deltaY);
+        
+        textoElement.style.width = `${newWidth}px`;
+        textoElement.style.height = `${newHeight}px`;
+      };
+      
+      const handleResizeEnd = async () => {
+        if (isResizing) {
+          const finalRect = textoElement.getBoundingClientRect();
+          
+          // Convertir el tamaño escalado de vuelta a tamaño base
+          const baseWidth = Math.round(finalRect.width / escala);
+          const baseHeight = Math.round(finalRect.height / escala);
+          
+          console.log(`💾 Guardando nuevo tamaño: ${textoId}`, { 
+            escalado: `${finalRect.width}x${finalRect.height}`,
+            base: `${baseWidth}x${baseHeight}`,
+            escala: escala.toFixed(3)
+          });
+          
+          try {
+            mostrarIndicadorGuardado(textoId, true);
+            
+            await onEditTexto({ 
+              id: texto.id, 
+              x: texto.x,
+              y: texto.y,
+              texto: texto.texto,
+              width: baseWidth,
+              height: baseHeight,
+              fontSize: texto.fontSize,
+              pagina: texto.pagina
+            });
+            
+            console.log(`✅ Tamaño guardado exitosamente: ${textoId}`);
+          } catch (error) {
+            console.error(`❌ Error guardando tamaño: ${textoId}`, error);
+            mostrarError('Error guardando tamaño');
+          } finally {
+            mostrarIndicadorGuardado(textoId, false);
+          }
+          
+          isResizing = false;
+          delete textoElement.dataset.resizing;
+          document.body.style.cursor = '';
+          setOperacionEnCurso(false);
+        }
+        
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', handleResizeEnd);
+      };
+      
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    };
+
+    // Registrar todos los eventos
+    textoElement.addEventListener('mouseenter', handleMouseEnter);
+    textoElement.addEventListener('mouseleave', handleMouseLeave);
+    textoElement.addEventListener('dblclick', handleDoubleClick);
+    textoElement.addEventListener('mousedown', handleMouseDown);
+    
+    if (resizeHandle) {
+      resizeHandle.addEventListener('mousedown', handleResizeStart);
+      cleanups.push(() => resizeHandle.removeEventListener('mousedown', handleResizeStart));
+    }
+
+    cleanups.push(() => {
+      textoElement.removeEventListener('mouseenter', handleMouseEnter);
+      textoElement.removeEventListener('mouseleave', handleMouseLeave);
+      textoElement.removeEventListener('dblclick', handleDoubleClick);
+      textoElement.removeEventListener('mousedown', handleMouseDown);
+    });
+
+    // Guardar cleanups
+    eventListenersRef.current.set(textoId, cleanups);
+    
+    return cleanups;
+  }, [activo, operacionEnCurso, getOverlay, onEditTexto, escala, DIMENSIONES]);
+
+  // ===================== UTILIDADES AUXILIARES =====================
+  
+  /**
+   * Muestra/oculta indicador de guardado
+   */
+  const mostrarIndicadorGuardado = useCallback((textoId, mostrar) => {
+    const elemento = textosElementsRef.current.get(textoId);
+    if (!elemento) return;
+    
+    const indicador = elemento.querySelector('.indicador-guardado-consolidado');
+    if (indicador) {
+      indicador.style.display = mostrar ? 'flex' : 'none';
+    }
+    
+    if (mostrar) {
+      setTextoGuardando(textoId);
+    } else {
+      setTextoGuardando(null);
+    }
+  }, []);
+
+  /**
+   * Muestra error temporal
+   */
+  const mostrarError = useCallback((mensaje) => {
+    console.error('Error:', mensaje);
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.textContent = mensaje;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #f44336;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      z-index: 10001;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+      animation: slideInRight 0.3s ease;
+    `;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => errorDiv.remove(), 300);
+      }
+    }, 3000);
+  }, []);
+
+  // ===================== GESTIÓN DE MODALES =====================
+  
+  /**
+   * Abre modal para crear nuevo texto
+   */
+  const abrirModalCreacion = useCallback((numeroPagina, x, y) => {
+    if (modalConfig || operacionEnCurso) {
+      console.warn('Modal ya abierto o operación en curso');
+      return;
+    }
+
+    console.log('Abriendo modal de creación:', { numeroPagina, x, y });
+    setOperacionEnCurso(true);
+    
+    setModalConfig({
+      titulo: `Nuevo texto - Página ${numeroPagina}`,
+      valor: '',
+      fontSize: DIMENSIONES.DEFAULT_FONT_SIZE,
+      width: DIMENSIONES.DEFAULT_WIDTH,
+      height: DIMENSIONES.DEFAULT_HEIGHT,
+      onGuardar: async (texto, fontSize, modalWidth, modalHeight) => {
+        try {
+          console.log('Guardando nuevo texto:', { 
+            texto: texto.substring(0, 30) + '...',
+            fontSize,
+            modalWidth,
+            modalHeight
+          });
+
+          await onAddTexto({ 
             pagina: numeroPagina, 
             x, 
             y, 
             texto, 
-            width: modalWidth || 300,  // CORREGIDO: usar dimensiones del modal
-            height: modalHeight || 120, // CORREGIDO: usar dimensiones del modal
-            fontSize: fontSize || 14
-          })
-          .then(() => {
-            if (modal && modal.cleanup) modal.cleanup();
-            document.querySelector('.modal-texto-con-fuente')?.remove();
-            setModalAbierto(false);
-            onDesactivarHerramienta();
-            resolve();
-          })
-          .catch((error) => {
-            reject(error);
+            width: modalWidth || DIMENSIONES.DEFAULT_WIDTH,
+            height: modalHeight || DIMENSIONES.DEFAULT_HEIGHT,
+            fontSize: fontSize || DIMENSIONES.DEFAULT_FONT_SIZE
           });
-        });
+
+          console.log('Texto creado exitosamente');
+          cerrarModal();
+          onDesactivarHerramienta();
+        } catch (error) {
+          console.error('Error creando texto:', error);
+          throw error;
+        }
       },
       onCancelar: () => {
-        if (modal && modal.cleanup) modal.cleanup();
-        document.querySelector('.modal-texto-con-fuente')?.remove();
-        setModalAbierto(false);
+        console.log('Cancelando creación de texto');
+        cerrarModal();
         onDesactivarHerramienta();
       }
     });
-  }, [onAddTexto, onDesactivarHerramienta, crearModal]);
+  }, [modalConfig, operacionEnCurso, onAddTexto, onDesactivarHerramienta, DIMENSIONES]);
 
-  // ===================== EDITAR TEXTO CON BACKEND Y DIMENSIONES =====================
-  
+  /**
+   * Abre modal para editar texto existente
+   */
   const abrirModalEdicion = useCallback((texto) => {
-    console.log('✏️ Editando texto con dimensiones:', {
-      id: texto.id,
-      currentWidth: texto.width,
-      currentHeight: texto.height,
-      fontSize: texto.fontSize
-    });
+    if (modalConfig || operacionEnCurso) {
+      console.warn('Modal ya abierto o operación en curso');
+      return;
+    }
+
+    console.log('Abriendo modal de edición:', texto.id);
+    setOperacionEnCurso(true);
     
-    setTextoEditando(texto.id);
-    
-    const modal = crearModal({
+    setModalConfig({
       titulo: `Editar texto - Página ${texto.pagina}`,
       valor: texto.texto,
-      fontSize: texto.fontSize || 14,
-      width: texto.width || 300,  // CRÍTICO: usar dimensiones actuales
-      height: texto.height || 120, // CRÍTICO: usar dimensiones actuales
+      fontSize: texto.fontSize || DIMENSIONES.DEFAULT_FONT_SIZE,
+      width: texto.width || DIMENSIONES.DEFAULT_WIDTH,
+      height: texto.height || DIMENSIONES.DEFAULT_HEIGHT,
       onGuardar: async (nuevoTexto, fontSize, modalWidth, modalHeight) => {
-        console.log('💾 Guardando edición con dimensiones:', { 
-          id: texto.id, 
-          nuevoTexto: nuevoTexto.substring(0, 30) + '...', 
-          fontSize,
-          modalWidth,
-          modalHeight
-        });
-        
-        return new Promise((resolve, reject) => {
-          onEditTexto({ 
+        try {
+          console.log('Guardando edición:', { 
+            id: texto.id,
+            nuevoTexto: nuevoTexto.substring(0, 30) + '...'
+          });
+
+          await onEditTexto({ 
             id: texto.id, 
             texto: nuevoTexto,
             x: texto.x,
             y: texto.y,
-            width: modalWidth || texto.width,   // CORREGIDO: usar nuevas dimensiones
-            height: modalHeight || texto.height, // CORREGIDO: usar nuevas dimensiones
+            width: modalWidth || texto.width,
+            height: modalHeight || texto.height,
             pagina: texto.pagina,
-            fontSize: fontSize || 14
-          })
-          .then(() => {
-            if (modal && modal.cleanup) modal.cleanup();
-            document.querySelector('.modal-texto-con-fuente')?.remove();
-            setModalAbierto(false);
-            setTextoEditando(null);
-            onDesactivarHerramienta();
-            resolve();
-          })
-          .catch((error) => {
-            reject(error);
+            fontSize: fontSize || texto.fontSize
           });
-        });
+
+          console.log('Texto editado exitosamente');
+          cerrarModal();
+          onDesactivarHerramienta();
+        } catch (error) {
+          console.error('Error editando texto:', error);
+          throw error;
+        }
       },
       onCancelar: () => {
-        if (modal && modal.cleanup) modal.cleanup();
-        document.querySelector('.modal-texto-con-fuente')?.remove();
-        setModalAbierto(false);
-        setTextoEditando(null);
+        console.log('Cancelando edición de texto');
+        cerrarModal();
       },
       onEliminar: async () => {
-        return new Promise((resolve, reject) => {
-          onDeleteTexto(texto.id)
-          .then(() => {
-            if (modal && modal.cleanup) modal.cleanup();
-            document.querySelector('.modal-texto-con-fuente')?.remove();
-            setModalAbierto(false);
-            setTextoEditando(null);
-            onDesactivarHerramienta();
-            resolve();
-          })
-          .catch((error) => {
-            reject(error);
-          });
-        });
-      }
-    });
-  }, [onEditTexto, onDeleteTexto, onDesactivarHerramienta, crearModal]);
+        try {
+          console.log('Eliminando texto:', texto.id);
 
-  // ===================== CONFIGURAR EVENTOS DE OVERLAY =====================
-  
-  const configurarEventosOverlay = useCallback(async () => {
-    if (!activo) return;
-    
-    console.log('🎧 Configurando eventos de overlay...');
-    
-    const buscarPaginas = () => {
-      const selectores = [
-        '.rpv-core__inner-page',
-        '[data-testid="core__page-layer"]',
-        '.dual-page canvas'
-      ];
-      
-      for (const selector of selectores) {
-        const paginas = document.querySelectorAll(selector);
-        if (paginas.length > 0) {
-          return Array.from(paginas);
+          await onDeleteTexto(texto.id);
+
+          console.log('Texto eliminado exitosamente');
+          cerrarModal();
+          onDesactivarHerramienta();
+        } catch (error) {
+          console.error('Error eliminando texto:', error);
+          throw error;
         }
       }
-      return [];
+    });
+  }, [modalConfig, operacionEnCurso, onEditTexto, onDeleteTexto, onDesactivarHerramienta, DIMENSIONES]);
+
+  /**
+   * Cierra modal y limpia estado
+   */
+  const cerrarModal = useCallback(() => {
+    console.log('Cerrando modal de texto');
+    setModalConfig(null);
+    setOperacionEnCurso(false);
+  }, []);
+
+  // ===================== RENDERIZADO DE TEXTOS =====================
+  
+  /**
+   * Renderiza todos los textos en el DOM
+   */
+  const renderizarTextos = useCallback(() => {
+    console.log('🎨 Renderizando textos consolidados:', textos.length);
+    
+    // Limpiar elementos de textos que ya no existen
+    const textosActualesIds = new Set(textos.map(t => t.id.toString()));
+    
+    textosElementsRef.current.forEach((elemento, textoId) => {
+      if (!textosActualesIds.has(textoId)) {
+        // Limpiar eventos
+        const eventos = eventListenersRef.current.get(textoId);
+        if (eventos) {
+          eventos.forEach(cleanup => cleanup());
+          eventListenersRef.current.delete(textoId);
+        }
+        
+        // Remover del DOM
+        if (elemento.parentNode) {
+          elemento.remove();
+        }
+        textosElementsRef.current.delete(textoId);
+        
+        console.log(`🗑️ Texto ${textoId} eliminado del DOM`);
+      }
+    });
+
+    // Renderizar textos existentes
+    textos.forEach(texto => {
+      const textoId = texto.id.toString();
+      let elementoExistente = textosElementsRef.current.get(textoId);
+      
+      const overlay = getOverlay(texto.pagina);
+      if (!overlay) {
+        console.warn(`⚠️ No se pudo obtener overlay para texto ${textoId} en página ${texto.pagina}`);
+        return;
+      }
+      
+      if (!elementoExistente || !elementoExistente.parentNode) {
+        // Crear nuevo elemento
+        elementoExistente = crearElementoTexto(texto);
+        overlay.appendChild(elementoExistente);
+        textosElementsRef.current.set(textoId, elementoExistente);
+        
+        // Configurar eventos (solo una vez)
+        configurarEventosTexto(elementoExistente, texto);
+        
+        console.log(`✅ Texto ${textoId} creado en página ${texto.pagina}`);
+      } else {
+        // Actualizar elemento existente
+        const dimensiones = validarDimensiones(texto.width, texto.height, texto.fontSize);
+        
+        // Actualizar posición y dimensiones
+        elementoExistente.style.left = `${texto.x * 100}%`;
+        elementoExistente.style.top = `${texto.y * 100}%`;
+        elementoExistente.style.width = `${dimensiones.scaledWidth}px`;
+        elementoExistente.style.height = `${dimensiones.scaledHeight}px`;
+        
+        // Actualizar contenido
+        const contenido = elementoExistente.querySelector('.texto-contenido-consolidado');
+        if (contenido) {
+          contenido.textContent = texto.texto;
+          contenido.style.fontSize = `${dimensiones.scaledFontSize}px`;
+          contenido.style.padding = `${Math.round(8 * escala)}px ${Math.round(12 * escala)}px`;
+        }
+        
+        // Actualizar handle de resize
+        const resizeHandle = elementoExistente.querySelector('.resize-handle-consolidado');
+        if (resizeHandle) {
+          resizeHandle.style.width = `${Math.round(12 * escala)}px`;
+          resizeHandle.style.height = `${Math.round(12 * escala)}px`;
+          resizeHandle.style.bottom = `${Math.round(-4 * escala)}px`;
+          resizeHandle.style.right = `${Math.round(-4 * escala)}px`;
+        }
+        
+        console.log(`🔄 Texto ${textoId} actualizado`);
+      }
+    });
+  }, [textos, getOverlay, crearElementoTexto, configurarEventosTexto, validarDimensiones, escala]);
+
+  // ===================== MANEJO DE CLICKS EN OVERLAY =====================
+  
+  /**
+   * Maneja clicks en overlay para crear nuevo texto
+   */
+  const handleOverlayClick = useCallback((numeroPagina, overlay) => {
+    return (e) => {
+      if (!activo || operacionEnCurso || modalConfig) return;
+      
+      // Evitar clicks en textos existentes
+      if (e.target.closest('.texto-consolidado')) {
+        return;
+      }
+      
+      const coords = convertirARelativas(e, overlay);
+      if (!coords) {
+        console.warn('⚠️ No se pudieron calcular coordenadas relativas');
+        return;
+      }
+      
+      console.log('🖱️ Click para crear texto:', { numeroPagina, coords });
+      abrirModalCreacion(numeroPagina, coords.x, coords.y);
     };
+  }, [activo, operacionEnCurso, modalConfig, convertirARelativas, abrirModalCreacion]);
+
+  /**
+   * Configura eventos de overlay para todas las páginas
+   */
+  const configurarEventosOverlay = useCallback(() => {
+    if (!activo) return;
     
-    const paginas = buscarPaginas();
+    const paginas = document.querySelectorAll('.rpv-core__inner-page[aria-label^="Page "]');
     
-    paginas.forEach((paginaElement, index) => {
-      const numeroPagina = index + 1;
+    console.log(`🎧 Configurando eventos de overlay para ${paginas.length} páginas`);
+    
+    paginas.forEach((paginaElement) => {
+      const ariaLabel = paginaElement.getAttribute('aria-label');
+      const numeroPagina = parseInt(ariaLabel.replace('Page ', ''));
+      
+      if (isNaN(numeroPagina)) {
+        console.warn('⚠️ No se pudo extraer número de página de:', ariaLabel);
+        return;
+      }
+      
       const overlay = getOverlay(numeroPagina);
       
       if (overlay) {
-        // Limpiar eventos anteriores
-        const nuevoOverlay = overlay.cloneNode(false);
-        overlay.parentNode.replaceChild(nuevoOverlay, overlay);
-        overlaysRef.current.set(numeroPagina, nuevoOverlay);
+        // Limpiar evento anterior
+        const eventoAnterior = overlay._clickHandler;
+        if (eventoAnterior) {
+          overlay.removeEventListener('mousedown', eventoAnterior);
+        }
         
-        // Configurar click para crear texto
-        const handleClick = (e) => {
-          if (e.target.closest('.texto-zoom-fixed') || modalAbierto || guardandoTexto) return;
-          
-          const rect = nuevoOverlay.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width;
-          const y = (e.clientY - rect.top) / rect.height;
-          
-          if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
-            crearTextoTemporal(nuevoOverlay, x, y, numeroPagina);
-          }
-        };
+        // Agregar nuevo evento
+        const clickHandler = handleOverlayClick(numeroPagina, overlay);
+        overlay.addEventListener('mousedown', clickHandler, { passive: false });
+        overlay._clickHandler = clickHandler;
         
-        nuevoOverlay.addEventListener('mousedown', handleClick, { passive: false });
-        console.log(`✅ Overlay configurado para página ${numeroPagina}`);
+        console.log(`✅ Eventos configurados para página ${numeroPagina}`);
       }
     });
-    
-    // Renderizar textos después de configurar overlays
-    setTimeout(() => {
-      renderizarTextos();
-    }, 100);
-    
-  }, [activo, getOverlay, crearTextoTemporal, modalAbierto, renderizarTextos, guardandoTexto]);
+  }, [activo, getOverlay, handleOverlayClick]);
 
-  // ===================== EFECTOS =====================
+  // ===================== EFECTOS PRINCIPALES =====================
 
-  // Configurar cuando está activo
+  // Renderizar textos cuando cambien los datos o la escala
   useEffect(() => {
-    if (visorInfo?.mode !== 'single') return;
-    
-    if (activo) {
-      console.log('🔄 Herramienta ACTIVA - configurando');
-      configurarEventosOverlay();
-    } else {
-      console.log('🔄 Herramienta INACTIVA - limpiando');
-      
-      // Limpiar eventos
-      eventosRef.current.forEach(cleanups => {
-        cleanups.forEach(cleanup => cleanup());
-      });
-      eventosRef.current.clear();
-      
-      // Limpiar modales
-      document.querySelectorAll('.modal-texto-con-fuente').forEach(modal => {
-        if (modal.cleanup) modal.cleanup();
-        modal.remove();
-      });
-      
-      setModalAbierto(false);
-      setTextoEditando(null);
-      setGuardandoTexto(false);
+    if (visorInfo?.mode === 'single') {
+      renderizarTextos();
+    }
+  }, [textos, escala, visorInfo?.mode, renderizarTextos]);
+
+  // Configurar eventos cuando esté activo
+  useEffect(() => {
+    if (visorInfo?.mode === 'single' && activo) {
+      // Pequeño delay para asegurar que las páginas estén disponibles
+      const timer = setTimeout(() => {
+        configurarEventosOverlay();
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [activo, visorInfo?.mode, configurarEventosOverlay]);
 
-  // Re-renderizar cuando cambien los textos
+  // Limpiar al desactivar
   useEffect(() => {
-    if (activo && visorInfo?.mode === 'single') {
-      console.log('🔄 Textos cambiaron, re-renderizando');
-      setTimeout(() => {
-        renderizarTextos();
-      }, 10);
+    if (!activo) {
+      setModalConfig(null);
+      setOperacionEnCurso(false);
+      setTextoGuardando(null);
     }
-  }, [textos, activo, visorInfo?.mode, renderizarTextos]);
+  }, [activo]);
 
-  // Observer para detectar cambios de zoom del PDF
+  // Cleanup al desmontar
   useEffect(() => {
-    if (!activo || visorInfo?.mode !== 'single') return;
-    
-    console.log('📍 Configurando observer para cambios de zoom...');
-    
-    let lastScale = visorInfo?.scale || 1;
-    let timeoutId = null;
-    
-    const checkScaleChange = () => {
-      const pdfInfo = getPDFInfo();
-      const currentScale = pdfInfo.scale;
-      
-      if (Math.abs(currentScale - lastScale) > 0.05) {
-        console.log(`📏 Cambio de escala detectado: ${lastScale.toFixed(3)} → ${currentScale.toFixed(3)}`);
-        lastScale = currentScale;
-        
-        // Debounce para evitar múltiples re-renders
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          console.log('🎨 Re-renderizando por cambio de escala...');
-          renderizarTextos();
-        }, 150);
-      }
-    };
-    
-    // Observer para el contenedor del PDF
-    let observer = null;
-    const setupObserver = () => {
-      const targetElements = [
-        document.querySelector('.rpv-core__viewer'),
-        document.querySelector('.rpv-core__inner-pages'),
-        document.querySelector('.rpv-core__inner-page')
-      ].filter(Boolean);
-      
-      if (targetElements.length > 0) {
-        observer = new MutationObserver((mutations) => {
-          let shouldCheck = false;
-          mutations.forEach(mutation => {
-            if (mutation.type === 'attributes' && 
-                (mutation.attributeName === 'style' || 
-                 mutation.attributeName === 'transform')) {
-              shouldCheck = true;
-            }
-          });
-          
-          if (shouldCheck) {
-            checkScaleChange();
-          }
-        });
-        
-        targetElements.forEach(element => {
-          observer.observe(element, {
-            attributes: true,
-            attributeFilter: ['style', 'transform', 'class'],
-            subtree: false
-          });
-        });
-        
-        console.log(`✅ Observer configurado en ${targetElements.length} elementos`);
-      }
-    };
-    
-    // ResizeObserver para canvas y páginas
-    let resizeObserver = null;
-    const setupResizeObserver = () => {
-      const canvasElements = [
-        document.querySelector('.rpv-core__canvas-layer canvas'),
-        document.querySelector('.rpv-core__inner-page')
-      ].filter(Boolean);
-      
-      if (canvasElements.length > 0) {
-        resizeObserver = new ResizeObserver(() => {
-          checkScaleChange();
-        });
-        
-        canvasElements.forEach(element => {
-          resizeObserver.observe(element);
-        });
-        
-        console.log(`✅ ResizeObserver configurado en ${canvasElements.length} elementos`);
-      }
-    };
-    
-    // Polling como backup
-    const pollingInterval = setInterval(checkScaleChange, 2000);
-    
-    // Configurar observers
-    setupObserver();
-    setupResizeObserver();
-    
-    // Check inicial después de un delay
-    setTimeout(checkScaleChange, 500);
-    
     return () => {
-      if (observer) {
-        observer.disconnect();
-      }
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      clearInterval(pollingInterval);
-      console.log('🧹 Limpieza de observers completada');
+      console.log('🧹 TextosLayer: Iniciando cleanup completo');
+      
+      // Limpiar todos los event listeners
+      eventListenersRef.current.forEach(cleanups => {
+        cleanups.forEach(cleanup => cleanup());
+      });
+      eventListenersRef.current.clear();
+      
+      // Limpiar overlays
+      overlaysRef.current.forEach(overlay => {
+        if (overlay.parentNode) {
+          overlay.remove();
+        }
+      });
+      overlaysRef.current.clear();
+      
+      // Limpiar elementos de texto
+      textosElementsRef.current.clear();
+      
+      console.log('✅ TextosLayer: Cleanup completo');
     };
-  }, [activo, visorInfo?.mode, visorInfo?.scale, renderizarTextos, getPDFInfo]);
+  }, []);
+
+  // Solo modo single soportado por ahora
+  if (visorInfo?.mode !== 'single') {
+    return null;
+  }
 
   // ===================== RENDER =====================
 
   return (
-    <div 
-      style={{ display: 'none' }}
-      data-active={activo}
-      data-elementos={textos.length}
-      data-modal-abierto={modalAbierto}
-      data-guardando={guardandoTexto}
-      data-version="backend-ready-v16-modal-size-fixed"
-      data-pdf-scale={visorInfo?.scale?.toFixed(3) || 'unknown'}
-    />
+    <>
+      {/* Modal unificado */}
+      {modalConfig && (
+        <TextoModal
+          isOpen={true}
+          titulo={modalConfig.titulo}
+          valor={modalConfig.valor || ''}
+          fontSize={modalConfig.fontSize || DIMENSIONES.DEFAULT_FONT_SIZE}
+          width={modalConfig.width || DIMENSIONES.DEFAULT_WIDTH}
+          height={modalConfig.height || DIMENSIONES.DEFAULT_HEIGHT}
+          currentPDFScale={escala}
+          onGuardar={modalConfig.onGuardar}
+          onCancelar={modalConfig.onCancelar}
+          onEliminar={modalConfig.onEliminar}
+          showBackendStatus={true}
+        />
+      )}
+
+      {/* Debug info (solo en desarrollo) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div 
+          style={{
+            position: 'fixed',
+            bottom: '10px',
+            left: '10px',
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '8px 12px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            zIndex: 9999,
+            display: activo ? 'block' : 'none'
+          }}
+        >
+          TextosLayer v2 | Activo: {activo ? '✅' : '❌'} | 
+          Textos: {textos.length} | 
+          DOM: {textosElementsRef.current.size} | 
+          Overlays: {overlaysRef.current.size} | 
+          Escala: {escala.toFixed(2)} | 
+          Modal: {modalConfig ? '📝' : '❌'} | 
+          Guardando: {textoGuardando || '❌'}
+        </div>
+      )}
+
+      {/* Container invisible para debugging React */}
+      <div 
+        style={{ display: 'none' }}
+        data-active={activo}
+        data-pagina-actual={paginaActual}
+        data-elementos={textos.length}
+        data-elementos-dom={textosElementsRef.current.size}
+        data-overlays={overlaysRef.current.size}
+        data-modal-abierto={!!modalConfig}
+        data-operacion-en-curso={operacionEnCurso}
+        data-texto-guardando={textoGuardando}
+        data-escala={escala.toFixed(2)}
+        data-version="consolidado-v2"
+        data-sistema="sin-dependencias-externas"
+      />
+
+      {/* CSS para animaciones */}
+      <style jsx>{`
+        @keyframes pulse {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.1); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </>
   );
 };
 
