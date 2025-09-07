@@ -75,3 +75,10 @@ class LibroResponse(SQLModel):
     lib_portada: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class LibroSimpleResponse(SQLModel):
+    lib_id: int
+    lib_titulo: str
+
+    model_config = {"from_attributes": True}

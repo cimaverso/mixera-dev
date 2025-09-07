@@ -15,7 +15,7 @@ from app.models.texto.modelo_texto import Texto
 
 
 
-from app.routers import usuario, autenticacion, pago, autor, categoria, editorial, libro, webhook, texto, progreso, lectura
+from app.routers import usuario, autenticacion, pago, autor, categoria, editorial, libro, webhook, texto, progreso, lectura, administrador
 
 
 app = FastAPI(
@@ -48,6 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(administrador.router)
 app.include_router(usuario.router)
 app.include_router(autenticacion.router)
 app.include_router(pago.router)

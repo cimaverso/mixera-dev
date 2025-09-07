@@ -37,3 +37,11 @@ class ProgresoLecturaResponse(SQLModel):
     pro_pagina_total: Optional[int]
 
     model_config = {"from_attributes": True}
+
+
+class ProgresoSimpleResponse(SQLModel):
+    pro_id: int
+    pro_pagina_actual: Optional[int]
+    pro_pagina_total: Optional[int]
+
+    model_config = {"from_attributes": True}
