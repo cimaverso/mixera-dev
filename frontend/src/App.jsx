@@ -20,10 +20,16 @@ import Estadisticas from "./Paginas/usuario/EstadisticasUsuario";
 
 import PrivateRoute from "./Componentes/PrivateRoute"; // importa el PrivateRoute
 
+
 import Lector from "./Componentes/Lector/Lector";
 import LectorPage from "./Paginas/lector/LectorPage.jsx";
 
-
+// Componentes de administrador
+import Dashboard from "./Paginas/admin/Dashboard";
+import Usuarios from "./Paginas/admin/usuarios/Usuarios";
+import Libros from "./Paginas/admin/libros/Libros";
+import Ecommerce from "./Paginas/admin/ecommerce/Ecommerce";
+// import Ecommerce from "./Paginas/admin/ecommerce/Ecommerce"; // TODO: Crear cuando esté listo
 
 function App() {
   return (
@@ -88,6 +94,48 @@ function App() {
           element={
             <PrivateRoute>
               <Estadisticas />
+            </PrivateRoute>
+          }
+        />
+
+        {/* RUTAS DE ADMIN PROTEGIDAS */}
+        <Route
+          path="/admin"
+          element={
+            <PrivateRoute>
+              <Navigate to="/admin/dashboard" replace />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/usuarios"
+          element={
+            <PrivateRoute>
+              <Usuarios />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/libros"
+          element={
+            <PrivateRoute>
+              <Libros />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/ecommerce"
+          element={
+            <PrivateRoute>
+              <Ecommerce />
             </PrivateRoute>
           }
         />

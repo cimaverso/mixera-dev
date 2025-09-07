@@ -1,4 +1,4 @@
-// VisorPDF.jsx - OPTIMIZADO PARA COORDENADAS Y DETECCIÓN v3
+// VisorPDF.jsx - CON RESTRICCIONES DE ZOOM 120%-240%
 import React, {
   useImperativeHandle,
   forwardRef,
@@ -21,12 +21,10 @@ import "@react-pdf-viewer/full-screen/lib/styles/index.css";
 import "./lector.css";
 
 /**
- * VisorPDF optimizado con:
- * - Mejor detección y tracking de páginas
- * - Sistema de coordenadas consistente
- * - Eventos de escala mejorados
- * - Integración optimizada con TextosLayer
- * - Manejo robusto de modo dual y simple
+ * VisorPDF con restricciones de zoom:
+ * - Mínimo: 120% (1.2)
+ * - Máximo: 240% (2.4)
+ * - Versión limpia para producción
  */
 const VisorPDF = forwardRef(
   (
@@ -42,16 +40,17 @@ const VisorPDF = forwardRef(
     },
     ref
   ) => {
-    console.log('VisorPDF optimizado v3:', {
-      fileUrl: fileUrl ? 'loaded' : 'empty',
-      herramientaActiva,
-      paginaInicial
-    });
+
+    // ===================== CONFIGURACIÓN DE ZOOM =====================
+    const ZOOM_LIMITS = {
+      MIN: 1.2,  // 120%
+      MAX: 2.4   // 240%
+    };
 
     // ===================== ESTADO LOCAL =====================
     const [mode, setMode] = useState("single");
-    const [scaleSingle, setScaleSingle] = useState(1.0);
-    const [scaleDual, setScaleDual] = useState(1.0);
+    const [scaleSingle, setScaleSingle] = useState(1.2); // Iniciar en 120%
+    const [scaleDual, setScaleDual] = useState(1.2);
     const [docPages, setDocPages] = useState(0);
     const [paginaActualSimple, setPaginaActualSimple] = useState(paginaInicial);
     const [leftPageDual, setLeftPageDual] = useState(1);
@@ -77,14 +76,16 @@ const VisorPDF = forwardRef(
     const { zoomTo } = zoomPluginInstance;
     const { enterFullScreen } = fullScreenPluginInstance;
 
-    // ===================== DETECCIÓN DE PÁGINAS MEJORADA =====================
+    // ===================== FUNCIÓN DE VALIDACIÓN DE ZOOM =====================
     
-    /**
-     * Busca y monitorea páginas del PDF con estrategias múltiples
-     */
+    const validarEscala = useCallback((nuevaEscala) => {
+      return Math.max(ZOOM_LIMITS.MIN, Math.min(ZOOM_LIMITS.MAX, nuevaEscala));
+    }, [ZOOM_LIMITS]);
+
+    // ===================== DETECCIÓN DE PÁGINAS =====================
+    
     const detectarPaginas = useCallback(() => {
       try {
-        // Estrategias de detección ordenadas por prioridad
         const estrategias = [
           () => document.querySelectorAll('.rpv-core__inner-page[aria-label^="Page "]'),
           () => document.querySelectorAll('.rpv-core__inner-page'),
@@ -93,30 +94,25 @@ const VisorPDF = forwardRef(
         ];
 
         let paginasEncontradas = [];
-        let estrategiaExitosa = null;
 
-        for (const [index, estrategia] of estrategias.entries()) {
+        for (const estrategia of estrategias) {
           try {
             const paginas = Array.from(estrategia());
             const paginasValidas = paginas.filter(pagina => {
               const rect = pagina.getBoundingClientRect();
-              return rect.width > 50 && rect.height > 50; // Páginas con dimensiones válidas
+              return rect.width > 50 && rect.height > 50;
             });
 
             if (paginasValidas.length > 0) {
               paginasEncontradas = paginasValidas;
-              estrategiaExitosa = index;
               break;
             }
           } catch (error) {
-            console.warn(`Estrategia ${index} falló:`, error);
+            // Continuar con siguiente estrategia
           }
         }
 
         if (paginasEncontradas.length > 0) {
-          console.log(`Páginas detectadas con estrategia ${estrategiaExitosa}:`, paginasEncontradas.length);
-          
-          // Verificar que las páginas tienen los atributos necesarios
           const paginasConAtributos = paginasEncontradas.map((pagina, index) => {
             if (!pagina.getAttribute('aria-label')) {
               pagina.setAttribute('aria-label', `Page ${index + 1}`);
@@ -129,14 +125,12 @@ const VisorPDF = forwardRef(
 
         return [];
       } catch (error) {
-        console.error('Error detectando páginas:', error);
         return [];
       }
     }, []);
 
-    /**
-     * Obtiene información detallada de escala actual
-     */
+    // ===================== INFORMACIÓN DE ESCALA =====================
+    
     const obtenerInfoEscala = useCallback(() => {
       try {
         if (mode === 'dual') {
@@ -147,7 +141,6 @@ const VisorPDF = forwardRef(
           };
         }
 
-        // Para modo simple, detectar escala real del visor
         const canvas = document.querySelector('.rpv-core__canvas-layer canvas');
         const page = document.querySelector('.rpv-core__inner-page');
         
@@ -160,22 +153,18 @@ const VisorPDF = forwardRef(
         }
 
         const canvasRect = canvas.getBoundingClientRect();
-        const pageRect = page.getBoundingClientRect();
-        
-        // Calcular escala real basada en el canvas
         const realScale = canvasRect.width / canvas.width;
         
         return {
           scale: realScale,
           mode: 'single',
-          pageWidth: pageRect.width,
-          pageHeight: pageRect.height,
+          pageWidth: page.getBoundingClientRect().width,
+          pageHeight: page.getBoundingClientRect().height,
           canvasWidth: canvas.width,
           canvasHeight: canvas.height,
           found: true
         };
       } catch (error) {
-        console.warn('Error obteniendo info de escala:', error);
         return {
           scale: mode === 'single' ? scaleSingle : scaleDual,
           mode,
@@ -184,13 +173,9 @@ const VisorPDF = forwardRef(
       }
     }, [mode, scaleSingle, scaleDual]);
 
-    // ===================== OBSERVERS PARA CAMBIOS =====================
+    // ===================== OBSERVERS =====================
     
-    /**
-     * Configura observers para detectar cambios en páginas y escala
-     */
     const configurarObservers = useCallback(() => {
-      // Limpiar observers anteriores
       if (scaleObserverRef.current) {
         scaleObserverRef.current.disconnect();
       }
@@ -200,10 +185,7 @@ const VisorPDF = forwardRef(
 
       try {
         const viewer = document.querySelector('.rpv-core__viewer');
-        if (!viewer) {
-          console.warn('Viewer no encontrado para observers');
-          return;
-        }
+        if (!viewer) return;
 
         // Observer para cambios de escala
         scaleObserverRef.current = new MutationObserver((mutations) => {
@@ -219,15 +201,24 @@ const VisorPDF = forwardRef(
 
           if (scaleChanged) {
             const info = obtenerInfoEscala();
-            if (info.found && Math.abs(info.scale - (mode === 'single' ? scaleSingle : scaleDual)) > 0.1) {
-              console.log('Cambio de escala detectado:', info.scale.toFixed(3));
+            if (info.found) {
+              const escalaValidada = validarEscala(info.scale);
               
-              if (mode === 'single') {
-                setScaleSingle(info.scale);
+              // Si la escala está fuera de límites, corregirla
+              if (Math.abs(info.scale - escalaValidada) > 0.01) {
+                setTimeout(() => {
+                  if (mode === 'single') {
+                    zoomTo(escalaValidada);
+                  }
+                }, 50);
               }
               
-              // Notificar cambio al padre
-              onScaleChange(info.scale);
+              if (Math.abs(escalaValidada - (mode === 'single' ? scaleSingle : scaleDual)) > 0.01) {
+                if (mode === 'single') {
+                  setScaleSingle(escalaValidada);
+                }
+                onScaleChange(escalaValidada);
+              }
             }
           }
         });
@@ -252,8 +243,6 @@ const VisorPDF = forwardRef(
             setTimeout(() => {
               const paginas = detectarPaginas();
               if (paginas.length > 0) {
-                console.log('Nuevas páginas detectadas:', paginas.length);
-                // Disparar evento personalizado para notificar a TextosLayer
                 window.dispatchEvent(new CustomEvent('paginasActualizadas', {
                   detail: { 
                     paginas: paginas.length,
@@ -265,7 +254,6 @@ const VisorPDF = forwardRef(
           }
         });
 
-        // Configurar observers
         scaleObserverRef.current.observe(viewer, {
           attributes: true,
           attributeFilter: ['style'],
@@ -277,11 +265,10 @@ const VisorPDF = forwardRef(
           subtree: true
         });
 
-        console.log('Observers configurados exitosamente');
       } catch (error) {
-        console.error('Error configurando observers:', error);
+        // Error configurando observers
       }
-    }, [mode, scaleSingle, scaleDual, obtenerInfoEscala, onScaleChange, detectarPaginas]);
+    }, [mode, scaleSingle, scaleDual, obtenerInfoEscala, onScaleChange, detectarPaginas, validarEscala, zoomTo]);
 
     // ===================== NOTIFICACIONES AL PADRE =====================
 
@@ -294,7 +281,7 @@ const VisorPDF = forwardRef(
       onModeChange(mode);
     }, [scaleSingle, scaleDual, mode, onScaleChange, onModeChange]);
 
-    // ===================== MODO DUAL MEJORADO =====================
+    // ===================== MODO DUAL =====================
 
     useEffect(() => {
       if (mode !== "dual" || !fileUrl) return;
@@ -337,7 +324,6 @@ const VisorPDF = forwardRef(
       setUltimaPaginaDual(left);
       onPageChange?.(left);
 
-      // Notificar páginas duales renderizadas
       setTimeout(() => {
         const event = new CustomEvent("dualPagesRendered", {
           detail: { leftPage: left, rightPage: right, scale: scl },
@@ -364,7 +350,7 @@ const VisorPDF = forwardRef(
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const snapToLeft = (p) => (p % 2 === 0 ? p - 1 : p);
 
-    // ===================== NAVEGACIÓN CON TECLADO MEJORADA =====================
+    // ===================== NAVEGACIÓN CON TECLADO =====================
 
     useEffect(() => {
       if (mode !== "dual") return;
@@ -395,53 +381,51 @@ const VisorPDF = forwardRef(
       return () => window.removeEventListener("keydown", handleKey);
     }, [mode, docPages]);
 
-    // ===================== CAMBIO DE MODO INTELIGENTE =====================
+    // ===================== CAMBIO DE MODO =====================
 
     const cambiarAVistaNormal = useCallback((paginaDestino) => {
-      console.log('Cambiando a vista normal, página:', paginaDestino || ultimaPaginaDual);
       paginaPendienteSimple.current = paginaDestino || ultimaPaginaDual;
       setMode("single");
       onModeChange("single");
     }, [ultimaPaginaDual, onModeChange]);
 
     const cambiarAVistaDoble = useCallback((paginaOrigen) => {
-      console.log('Cambiando a vista doble, página origen:', paginaOrigen || paginaActualSimple);
       const nuevaPaginaIzquierda = snapToLeft(paginaOrigen || paginaActualSimple);
       setLeftPageDual(nuevaPaginaIzquierda);
-      setScaleDual(1.0);
+      setScaleDual(validarEscala(1.2)); // Asegurar escala mínima
       setMode("dual");
       onModeChange("dual");
-    }, [paginaActualSimple, onModeChange]);
+    }, [paginaActualSimple, onModeChange, validarEscala]);
 
-    // ===================== ZOOM MEJORADO PARA AMBOS MODOS =====================
+    // ===================== ZOOM CON RESTRICCIONES =====================
 
     const aumentarZoom = useCallback(() => {
       if (mode === "dual") {
-        const nuevoScale = parseFloat((scaleDual + 0.2).toFixed(2));
+        const nuevoScale = validarEscala(scaleDual + 0.2);
         setScaleDual(nuevoScale);
         onScaleChange(nuevoScale);
       } else {
-        const nuevoScale = parseFloat((scaleSingle + 0.2).toFixed(2));
+        const nuevoScale = validarEscala(scaleSingle + 0.2);
         setScaleSingle(nuevoScale);
         zoomTo(nuevoScale);
         onScaleChange(nuevoScale);
       }
-    }, [mode, scaleDual, scaleSingle, zoomTo, onScaleChange]);
+    }, [mode, scaleDual, scaleSingle, zoomTo, onScaleChange, validarEscala]);
 
     const reducirZoom = useCallback(() => {
       if (mode === "dual") {
-        const nuevoScale = Math.max(0.3, parseFloat((scaleDual - 0.2).toFixed(2)));
+        const nuevoScale = validarEscala(scaleDual - 0.2);
         setScaleDual(nuevoScale);
         onScaleChange(nuevoScale);
       } else {
-        const nuevoScale = Math.max(0.2, parseFloat((scaleSingle - 0.2).toFixed(2)));
+        const nuevoScale = validarEscala(scaleSingle - 0.2);
         setScaleSingle(nuevoScale);
         zoomTo(nuevoScale);
         onScaleChange(nuevoScale);
       }
-    }, [mode, scaleDual, scaleSingle, zoomTo, onScaleChange]);
+    }, [mode, scaleDual, scaleSingle, zoomTo, onScaleChange, validarEscala]);
 
-    // ===================== API PÚBLICA MEJORADA =====================
+    // ===================== API PÚBLICA =====================
 
     useImperativeHandle(ref, () => ({
       // Navegación
@@ -469,7 +453,7 @@ const VisorPDF = forwardRef(
         }
       },
 
-      // Zoom
+      // Zoom con restricciones
       zoomIn: aumentarZoom,
       zoomOut: reducirZoom,
 
@@ -505,10 +489,11 @@ const VisorPDF = forwardRef(
               ? leftPageDual + 1
               : null
             : null,
-        pdfListo
+        pdfListo,
+        zoomLimits: ZOOM_LIMITS
       }),
 
-      // Nuevas funciones para integración con TextosLayer
+      // Funciones para integración
       detectarPaginas,
       obtenerInfoEscala,
       getPdfDocument: () => pdfDocRef.current
@@ -563,11 +548,6 @@ const VisorPDF = forwardRef(
                   fullScreenPluginInstance,
                 ]}
                 onDocumentLoad={(e) => {
-                  console.log('Documento PDF cargado:', {
-                    numPages: e.doc.numPages,
-                    paginaInicial
-                  });
-                  
                   setDocPages(e.doc.numPages);
                   setTotalPaginas?.(e.doc.numPages);
                   setPdfListo(true);
@@ -587,6 +567,11 @@ const VisorPDF = forwardRef(
                     paginaPendienteSimple.current = null;
                   }
 
+                  // Aplicar zoom inicial
+                  setTimeout(() => {
+                    zoomTo(ZOOM_LIMITS.MIN);
+                  }, 300);
+
                   // Disparar evento de PDF listo
                   setTimeout(() => {
                     window.dispatchEvent(new CustomEvent('pdfListo', {
@@ -595,14 +580,13 @@ const VisorPDF = forwardRef(
                         mode: 'single'
                       }
                     }));
-                  }, 300);
+                  }, 500);
                 }}
                 onPageChange={(e) => {
                   const curr = e.currentPage + 1;
-                  console.log('Cambio de página detectado:', curr);
                   setPaginaActualSimple(curr);
                 }}
-                defaultScale={SpecialZoomLevel.PageFit}
+                defaultScale={ZOOM_LIMITS.MIN}
               />
             </Worker>
           </div>
@@ -627,26 +611,6 @@ const VisorPDF = forwardRef(
                 className="dual-canvas"
                 data-page-number={leftPageDual}
               />
-              {process.env.NODE_ENV === "development" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    left: "4px",
-                    background: "rgba(33, 150, 243, 0.8)",
-                    color: "white",
-                    padding: "2px 6px",
-                    borderRadius: "3px",
-                    fontSize: "11px",
-                    fontFamily: "monospace",
-                    fontWeight: "bold",
-                    zIndex: 10,
-                    pointerEvents: "none",
-                  }}
-                >
-                  Página {leftPageDual}
-                </div>
-              )}
             </div>
 
             {/* Canvas derecho */}
@@ -661,27 +625,6 @@ const VisorPDF = forwardRef(
                 className="dual-canvas"
                 data-page-number={leftPageDual + 1}
               />
-              {process.env.NODE_ENV === "development" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    left: "4px",
-                    background: "rgba(255, 152, 0, 0.8)",
-                    color: "white",
-                    padding: "2px 6px",
-                    borderRadius: "3px",
-                    fontSize: "11px",
-                    fontFamily: "monospace",
-                    fontWeight: "bold",
-                    zIndex: 10,
-                    pointerEvents: "none",
-                  }}
-                >
-                  Página{" "}
-                  {leftPageDual + 1 <= docPages ? leftPageDual + 1 : "Vacía"}
-                </div>
-              )}
             </div>
 
             {/* Controles de vista doble */}
@@ -723,37 +666,40 @@ const VisorPDF = forwardRef(
           </div>
         )}
 
-        {/* Indicador de estado global optimizado */}
-        {process.env.NODE_ENV === "development" && (
+        {/* Indicador de límites de zoom */}
+        {((mode === 'single' && (scaleSingle >= ZOOM_LIMITS.MAX - 0.1 || scaleSingle <= ZOOM_LIMITS.MIN + 0.1)) ||
+          (mode === 'dual' && (scaleDual >= ZOOM_LIMITS.MAX - 0.1 || scaleDual <= ZOOM_LIMITS.MIN + 0.1))) && (
           <div
             style={{
               position: "absolute",
               top: "10px",
-              right: "60px",
-              background:
-                mode === "dual"
-                  ? "rgba(255, 152, 0, 0.9)"
-                  : "rgba(33, 150, 243, 0.9)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(255, 152, 0, 0.9)",
               color: "white",
               padding: "6px 12px",
               borderRadius: "6px",
               fontSize: "12px",
-              fontFamily: "monospace",
-              fontWeight: "bold",
+              fontWeight: "600",
               zIndex: 100,
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              animation: "fadeInOut 3s ease-in-out"
             }}
           >
-            {mode === "dual" ? "💥 DOBLE" : "📄 NORMAL"} | 🔍{" "}
-            {Math.round((mode === "single" ? scaleSingle : scaleDual) * 100)}% |
-            📖{" "}
-            {mode === "single"
-              ? paginaActualSimple
-              : `${leftPageDual}-${leftPageDual + 1}`} |
-            🎯 {herramientaActiva} |
-            📡 {pdfListo ? 'LISTO' : 'CARGANDO'}
+            Zoom: {Math.round((mode === 'single' ? scaleSingle : scaleDual) * 100)}% 
+            (Límite {Math.round((mode === 'single' ? scaleSingle : scaleDual) >= ZOOM_LIMITS.MAX - 0.1 ? ZOOM_LIMITS.MAX * 100 : ZOOM_LIMITS.MIN * 100)}%)
           </div>
         )}
+
+        {/* CSS para animaciones */}
+        <style jsx>{`
+          @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          }
+        `}</style>
       </div>
     );
   }

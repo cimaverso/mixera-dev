@@ -1,4 +1,4 @@
-// Lector.jsx - VERSIÓN SIMPLIFICADA ANTI-BUCLE v3
+// Lector.jsx - VERSIÓN PRODUCCIÓN LIMPIA
 import React, {
   useState,
   useRef,
@@ -16,37 +16,27 @@ import { textosAPI } from "../../servicios/textosAPI.js";
 import { progresoAPI } from "../../servicios/progresoAPI";
 import "./lector.css";
 
-/**
- * Lector simplificado - Sin bucles infinitos
- * Enfoque: Estados independientes con carga única
- */
 function Lector() {
   const token = localStorage.getItem("access_token");
   const { libroId } = useParams();
-
-  console.log('Lector simplificado v3 - Render:', {
-    libroId,
-    hasToken: !!token,
-    timestamp: Date.now()
-  });
 
   // ===================== ESTADOS BÁSICOS =====================
   const [herramientaActiva, setHerramientaActiva] = useState("cursor");
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
   
-  // Estado del libro - SIMPLIFICADO
+  // Estado del libro
   const [libro, setLibro] = useState(null);
   const [libroLoading, setLibroLoading] = useState(true);
   const [libroError, setLibroError] = useState(null);
   const [paginaInicial, setPaginaInicial] = useState(1);
 
-  // Estado de textos - SIMPLIFICADO  
+  // Estado de textos
   const [textos, setTextos] = useState([]);
   const [textosLoading, setTextosLoading] = useState(false);
   const [textosError, setTextosError] = useState(null);
 
-  // Estado del visor - SIMPLIFICADO
+  // Estado del visor
   const [visorInfo, setVisorInfo] = useState({
     mode: 'single',
     scale: 1.0,
@@ -58,9 +48,9 @@ function Lector() {
   // Referencias
   const visorRef = useRef(null);
   const textosLayerRef = useRef(null);
-  const yaCargoTextos = useRef(false); // Flag para evitar carga múltiple
+  const yaCargoTextos = useRef(false);
 
-  // ===================== CARGA DEL LIBRO - SIMPLIFICADA =====================
+  // ===================== CARGA DEL LIBRO =====================
   
   useEffect(() => {
     let mounted = true;
@@ -68,41 +58,31 @@ function Lector() {
     async function cargarLibro() {
       if (!libroId || !mounted) return;
       
-      console.log('Iniciando carga única del libro:', libroId);
-      
       try {
-        // Cargar libro
         const { data: libroData } = await getLibroById(libroId);
-        console.log('Libro recibido:', libroData.titulo);
         
         if (!mounted) return;
         
-        // Cargar progreso si hay token
         let pagina = 1;
         if (token) {
           try {
             const progreso = await progresoAPI.getProgreso(libroId, token);
             if (progreso?.pro_pagina_actual > 0) {
               pagina = progreso.pro_pagina_actual;
-              console.log('Progreso recuperado:', pagina);
             }
           } catch (progresoError) {
-            console.warn('Sin progreso guardado');
+            // Sin progreso guardado
           }
         }
         
         if (!mounted) return;
         
-        // Establecer estados
         setLibro(libroData);
         setPaginaInicial(pagina);
         setPaginaActual(pagina);
         setLibroLoading(false);
         
-        console.log('Libro cargado exitosamente');
-        
       } catch (error) {
-        console.error('Error cargando libro:', error);
         if (mounted) {
           setLibroError(error.message);
           setLibroLoading(false);
@@ -117,16 +97,10 @@ function Lector() {
     };
   }, [libroId, token]);
 
-  // ===================== CARGA DE TEXTOS - SIMPLIFICADA Y CONTROLADA =====================
+  // ===================== CARGA DE TEXTOS =====================
   
   const cargarTextosUnaVez = useCallback(async () => {
     if (!libroId || !token || yaCargoTextos.current || textosLoading) {
-      console.log('Saltando carga de textos:', {
-        noLibroId: !libroId,
-        noToken: !token, 
-        yaCargo: yaCargoTextos.current,
-        loading: textosLoading
-      });
       return;
     }
     
@@ -134,7 +108,6 @@ function Lector() {
     setTextosLoading(true);
     
     try {
-      console.log('Cargando textos por única vez...');
       const textosFromAPI = await textosAPI.getTextos(libroId, token);
       
       const textosValidos = textosFromAPI
@@ -152,30 +125,23 @@ function Lector() {
 
       setTextos(textosValidos);
       setTextosLoading(false);
-      console.log('Textos cargados:', textosValidos.length);
       
     } catch (error) {
-      console.error('Error cargando textos:', error);
       setTextosError(error.message);
       setTextosLoading(false);
-      // NO resetear yaCargoTextos para evitar reintentos automáticos
     }
   }, [libroId, token, textosLoading]);
 
-  // Cargar textos cuando el libro esté listo
   useEffect(() => {
     if (libro && !libroLoading && !yaCargoTextos.current) {
-      console.log('Libro listo, cargando textos...');
       cargarTextosUnaVez();
     }
   }, [libro, libroLoading, cargarTextosUnaVez]);
 
-  // ===================== FUNCIONES CRUD SIMPLIFICADAS =====================
+  // ===================== FUNCIONES CRUD =====================
 
   const handleAddTexto = useCallback(async (datosTexto) => {
     if (!libroId || !token) throw new Error('Datos insuficientes');
-    
-    console.log('Creando texto...');
     
     try {
       const textoCreado = await textosAPI.createTexto({
@@ -184,9 +150,7 @@ function Lector() {
       }, token);
       
       setTextos(prev => [...prev, textoCreado]);
-      console.log('Texto creado exitosamente');
     } catch (error) {
-      console.error('Error creando texto:', error);
       throw error;
     }
   }, [libroId, token]);
@@ -195,14 +159,10 @@ function Lector() {
     const { id, ...cambios } = datosTexto;
     if (!id || !libroId || !token) throw new Error('Datos insuficientes');
     
-    console.log('Editando texto:', id);
-    
     try {
       const textoActualizado = await textosAPI.updateTexto(id, datosTexto, token);
       setTextos(prev => prev.map(t => t.id === id ? textoActualizado : t));
-      console.log('Texto editado exitosamente');
     } catch (error) {
-      console.error('Error editando texto:', error);
       throw error;
     }
   }, [libroId, token]);
@@ -210,14 +170,10 @@ function Lector() {
   const handleDeleteTexto = useCallback(async (id) => {
     if (!id || !libroId || !token) throw new Error('Datos insuficientes');
     
-    console.log('Eliminando texto:', id);
-    
     try {
       await textosAPI.deleteTexto(id, token);
       setTextos(prev => prev.filter(t => t.id !== id));
-      console.log('Texto eliminado exitosamente');
     } catch (error) {
-      console.error('Error eliminando texto:', error);
       throw error;
     }
   }, [libroId, token]);
@@ -232,7 +188,6 @@ function Lector() {
     if (page !== paginaActual && page > 0 && page <= totalPaginas) {
       setPaginaActual(page);
       
-      // Guardar progreso
       if (libroId && token) {
         try {
           await progresoAPI.guardarProgreso({
@@ -241,7 +196,7 @@ function Lector() {
             totalPaginas: totalPaginas,
           }, token);
         } catch (error) {
-          console.warn('Error guardando progreso:', error);
+          // Error guardando progreso
         }
       }
     }
@@ -267,9 +222,8 @@ function Lector() {
     textosEnPaginaActual: textos.filter(t => t.pagina === paginaActual).length,
   }), [textos, paginaActual]);
 
-  // ===================== RENDER CONDICIONAL SIMPLIFICADO =====================
+  // ===================== RENDER CONDICIONAL =====================
 
-  // Loading del libro
   if (libroLoading) {
     return (
       <div className="lector-container">
@@ -289,15 +243,11 @@ function Lector() {
           textAlign: "center"
         }}>
           <div>Cargando libro...</div>
-          <div style={{ fontSize: "12px", marginTop: "8px", opacity: 0.8 }}>
-            ID: {libroId}
-          </div>
         </div>
       </div>
     );
   }
 
-  // Error del libro
   if (libroError) {
     return (
       <div className="lector-container">
@@ -341,7 +291,6 @@ function Lector() {
     );
   }
 
-  // Libro no disponible
   if (!libro) {
     return (
       <div className="lector-container">
@@ -361,9 +310,6 @@ function Lector() {
           textAlign: "center"
         }}>
           <div>Libro no encontrado</div>
-          <div style={{ fontSize: "14px", marginTop: "8px", opacity: 0.8 }}>
-            ID: {libroId}
-          </div>
         </div>
       </div>
     );
@@ -373,16 +319,13 @@ function Lector() {
 
   return (
     <div className="lector-container">
-      {/* Panel de herramientas */}
       <PanelHerramientas
         herramientaActiva={herramientaActiva}
         setHerramientaActiva={setHerramientaActiva}
         visorRef={visorRef}
       />
 
-      {/* Contenedor principal */}
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        {/* Layer de textos */}
         <TextosLayer
           ref={textosLayerRef}
           herramientaActiva={herramientaActiva}
@@ -395,7 +338,6 @@ function Lector() {
           onDesactivarHerramienta={handleDesactivarHerramienta}
         />
 
-        {/* Visor PDF */}
         <VisorPDF
           ref={visorRef}
           fileUrl={libro?.url || ''}
@@ -409,41 +351,12 @@ function Lector() {
         />
       </div>
 
-      {/* Barra inferior */}
       <BarraInferior
         paginaActual={paginaActual}
         totalPaginas={totalPaginas}
         visorRef={visorRef}
       />
 
-      {/* Debug info en desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{
-          position: 'fixed',
-          bottom: '60px',
-          left: '10px',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
-          zIndex: 9999,
-          maxWidth: '300px'
-        }}>
-          <div>Lector v3 | Herramienta: {herramientaActiva}</div>
-          <div>Página: {paginaActual}/{totalPaginas} | Escala: {(visorInfo.scale * 100).toFixed(0)}%</div>
-          <div>Textos: {estadisticas.totalTextos} total, {estadisticas.textosEnPaginaActual} aquí</div>
-          <div>Estados: Libro:{libro ? '✓' : '✗'} TextosLoading:{textosLoading ? '⏳' : '✓'}</div>
-          {textosError && (
-            <div style={{ color: '#ffcdd2', marginTop: '4px' }}>
-              Error: {textosError}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Indicador de carga de textos */}
       {textosLoading && (
         <div style={{
           position: 'fixed',
@@ -471,7 +384,6 @@ function Lector() {
         </div>
       )}
 
-      {/* Error de textos */}
       {textosError && (
         <div style={{
           position: 'fixed',
@@ -508,7 +420,6 @@ function Lector() {
         </div>
       )}
 
-      {/* CSS para animaciones */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

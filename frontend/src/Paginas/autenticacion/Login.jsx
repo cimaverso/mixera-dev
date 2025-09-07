@@ -44,10 +44,7 @@ const Login = () => {
       if (decoded.role === "USUARIO") {
         navigate("/perfil");
       } else if (decoded.role === "ADMINISTRADOR") {
-        setMensaje({
-          tipo: "alerta",
-          texto: "Bienvenido administrador, aún no tenemos su página.",
-        });
+        navigate("/admin/dashboard");
       }
     } catch (error) {
       if (error.response) {

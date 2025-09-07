@@ -1,17 +1,7 @@
-// TextosLayer.jsx - SISTEMA CONSOLIDADO SIN CONFLICTOS v2
+// TextosLayer.jsx - VERSIÓN PRODUCCIÓN LIMPIA
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import TextoModal from '../components/TextoModal';
 
-/**
- * TextosLayer - Sistema unificado para gestión de textos en PDF
- * 
- * Características:
- * - Sin dependencias externas (BaseLayer, PersistentRenderer)
- * - Gestión directa de overlays y elementos
- * - Coordenadas relativas consistentes (0-1)
- * - Escalado automático con zoom
- * - Integración limpia con backend
- */
 const TextosLayer = ({
   herramientaActiva,
   paginaActual,
@@ -24,68 +14,306 @@ const TextosLayer = ({
 }) => {
   // ===================== ESTADO LOCAL =====================
   const activo = herramientaActiva === 'texto';
-  const escala = visorInfo?.scale || 1;
+  const escalaOriginal = visorInfo?.scale || 1;
+  
+  const escalaControlada = useMemo(() => {
+    const factor = Math.max(0.1, Math.min(5.0, escalaOriginal));
+    return factor;
+  }, [escalaOriginal]);
   
   // Referencias para gestión directa
-  const overlaysRef = useRef(new Map()); // pagina -> overlay element
-  const textosElementsRef = useRef(new Map()); // textoId -> texto element
-  const eventListenersRef = useRef(new Map()); // textoId -> cleanup functions
+  const overlaysRef = useRef(new Map());
+  const textosElementsRef = useRef(new Map());
+  const eventListenersRef = useRef(new Map());
   
   // Estados del modal y operaciones
   const [modalConfig, setModalConfig] = useState(null);
   const [operacionEnCurso, setOperacionEnCurso] = useState(false);
   const [textoGuardando, setTextoGuardando] = useState(null);
+  
+  // Estado para manejar zoom con debouncing
+  const [escalaEstable, setEscalaEstable] = useState(escalaControlada);
+  const timeoutZoomRef = useRef(null);
+  
+  // Estados para tracking de dimensiones reales
+  const dimensionesRealesRef = useRef(new Map());
+  const bloqueoEventosRef = useRef(new Set());
 
   // Configuración de dimensiones
   const DIMENSIONES = useMemo(() => ({
-    MIN_WIDTH: 80,
-    MAX_WIDTH: 600,
-    MIN_HEIGHT: 30,
+    MIN_WIDTH: 120,
+    MAX_WIDTH: 800,
+    MIN_HEIGHT: 50,
     MAX_HEIGHT: 400,
-    DEFAULT_WIDTH: 200,
-    DEFAULT_HEIGHT: 60,
-    DEFAULT_FONT_SIZE: 14
+    DEFAULT_WIDTH: 300,
+    DEFAULT_HEIGHT: 120,
+    DEFAULT_FONT_SIZE: 16,
+    ABSOLUTE_MIN_WIDTH: 30,
+    ABSOLUTE_MIN_HEIGHT: 15,
+    ABSOLUTE_MIN_FONT: 6
   }), []);
 
-  console.log('TextosLayer consolidado v2:', {
-    activo,
-    paginaActual,
-    cantidadTextos: textos.length,
-    escala: escala.toFixed(2),
-    modal: !!modalConfig,
-    operacion: operacionEnCurso
-  });
+  // Debouncing para zoom
+  useEffect(() => {
+    if (timeoutZoomRef.current) {
+      clearTimeout(timeoutZoomRef.current);
+    }
+    
+    timeoutZoomRef.current = setTimeout(() => {
+      setEscalaEstable(escalaControlada);
+    }, 150);
+    
+    return () => {
+      if (timeoutZoomRef.current) {
+        clearTimeout(timeoutZoomRef.current);
+      }
+    };
+  }, [escalaControlada]);
+
+  // ===================== UTILIDADES AUXILIARES =====================
+  
+  const mostrarIndicadorGuardado = useCallback((textoId, mostrar) => {
+    const elemento = textosElementsRef.current.get(textoId);
+    if (!elemento) return;
+    
+    const indicador = elemento.querySelector('.indicador-guardado-mejorado');
+    if (indicador) {
+      indicador.style.display = mostrar ? 'flex' : 'none';
+    }
+    
+    if (mostrar) {
+      setTextoGuardando(textoId);
+    } else {
+      setTextoGuardando(null);
+    }
+  }, []);
+
+  const mostrarError = useCallback((mensaje) => {
+    const errorDiv = document.createElement('div');
+    errorDiv.textContent = mensaje;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 10001;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+      animation: slideInRight 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+      if (errorDiv.parentNode) {
+        errorDiv.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => errorDiv.remove(), 300);
+      }
+    }, 4000);
+  }, []);
+
+  // ===================== VALIDACIÓN DE DIMENSIONES =====================
+  
+  const validarDimensiones = useCallback((width, height, fontSize) => {
+    const validWidth = Math.max(
+      DIMENSIONES.MIN_WIDTH, 
+      Math.min(DIMENSIONES.MAX_WIDTH, width || DIMENSIONES.DEFAULT_WIDTH)
+    );
+    
+    const validHeight = Math.max(
+      DIMENSIONES.MIN_HEIGHT, 
+      Math.min(DIMENSIONES.MAX_HEIGHT, height || DIMENSIONES.DEFAULT_HEIGHT)
+    );
+    
+    const validFontSize = Math.max(10, Math.min(28, fontSize || DIMENSIONES.DEFAULT_FONT_SIZE));
+    
+    const factorEscalado = escalaEstable;
+    
+    const rawScaledWidth = validWidth * factorEscalado;
+    const rawScaledHeight = validHeight * factorEscalado;
+    const rawScaledFontSize = validFontSize * factorEscalado;
+    
+    // Aplicar límites absolutos para evitar desaparición
+    const scaledWidth = Math.max(DIMENSIONES.ABSOLUTE_MIN_WIDTH, Math.round(rawScaledWidth));
+    const scaledHeight = Math.max(DIMENSIONES.ABSOLUTE_MIN_HEIGHT, Math.round(rawScaledHeight));
+    const scaledFontSize = Math.max(DIMENSIONES.ABSOLUTE_MIN_FONT, Math.round(rawScaledFontSize));
+    
+    const basePadding = 8;
+    const baseBorderRadius = 6;
+    const scaledPadding = Math.max(2, Math.min(16, Math.round(basePadding * factorEscalado)));
+    const scaledBorderRadius = Math.max(2, Math.min(12, Math.round(baseBorderRadius * factorEscalado)));
+    
+    return {
+      baseWidth: validWidth,
+      baseHeight: validHeight,
+      baseFontSize: validFontSize,
+      scaledWidth,
+      scaledHeight,
+      scaledFontSize,
+      scaledPadding,
+      scaledBorderRadius,
+      factorEscalado,
+      rawScaledWidth,
+      rawScaledHeight,
+      isMinimumSize: scaledWidth === DIMENSIONES.ABSOLUTE_MIN_WIDTH || scaledHeight === DIMENSIONES.ABSOLUTE_MIN_HEIGHT
+    };
+  }, [escalaEstable, DIMENSIONES]);
+
+  // ===================== VERIFICACIÓN DE LÍMITE POR PÁGINA =====================
+  
+  const verificarLimitePorPagina = useCallback((numeroPagina) => {
+    const textosEnPagina = textos.filter(t => t.pagina === numeroPagina);
+    const limite = 1;
+    
+    if (textosEnPagina.length >= limite) {
+      mostrarError(`Solo se permite ${limite} texto por página. Esta página ya tiene ${textosEnPagina.length}.`);
+      return false;
+    }
+    
+    return true;
+  }, [textos, mostrarError]);
+
+  // ===================== DESACTIVACIÓN COMPLETA =====================
+  
+  const desactivarCompletamente = useCallback(() => {
+    // Limpiar todos los overlays activos
+    overlaysRef.current.forEach((overlay, numeroPagina) => {
+      if (overlay && overlay.parentNode) {
+        overlay.style.pointerEvents = 'none';
+        overlay.style.cursor = 'default';
+        overlay.style.background = 'transparent';
+        overlay.style.border = 'none';
+        overlay.dataset.activo = 'false';
+        
+        const eventoAnterior = overlay._clickHandler;
+        if (eventoAnterior) {
+          overlay.removeEventListener('mousedown', eventoAnterior);
+          overlay._clickHandler = null;
+        }
+      }
+    });
+    
+    // Limpiar eventos de elementos de texto
+    eventListenersRef.current.forEach(cleanups => {
+      cleanups.forEach(cleanup => {
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+      });
+    });
+    eventListenersRef.current.clear();
+    
+    // Remover estilos de hover de todos los elementos
+    textosElementsRef.current.forEach((elemento, textoId) => {
+      if (elemento && elemento.parentNode) {
+        const contenido = elemento.querySelector('.texto-contenido-mejorado');
+        const resizeHandle = elemento.querySelector('.resize-handle-mejorado');
+        
+        if (contenido) {
+          contenido.style.background = 'transparent';
+          contenido.style.borderColor = 'transparent';
+          contenido.style.borderStyle = 'solid';
+          contenido.style.boxShadow = 'none';
+          contenido.style.color = 'rgba(26, 26, 26, 0.7)';
+        }
+        
+        if (resizeHandle) {
+          resizeHandle.style.display = 'none';
+        }
+        
+        elemento.style.cursor = 'default';
+        elemento.style.pointerEvents = 'none';
+        elemento.style.zIndex = '210';
+      }
+    });
+    
+    // Limpiar estados
+    setModalConfig(null);
+    setOperacionEnCurso(false);
+    setTextoGuardando(null);
+    bloqueoEventosRef.current.clear();
+  }, []);
+
+  useEffect(() => {
+    if (!activo) {
+      desactivarCompletamente();
+    }
+  }, [activo, desactivarCompletamente]);
+
+  // ===================== FUNCIONES DE DIMENSIONES =====================
+  
+  const actualizarDimensionesReales = useCallback((textoId, datos) => {
+    const dimensionesActuales = dimensionesRealesRef.current.get(textoId.toString()) || {};
+    
+    const nuevasDimensiones = {
+      ...dimensionesActuales,
+      ...datos,
+      timestamp: Date.now()
+    };
+    
+    dimensionesRealesRef.current.set(textoId.toString(), nuevasDimensiones);
+    return nuevasDimensiones;
+  }, []);
+
+  const obtenerDimensionesReales = useCallback((textoId) => {
+    const dimensionesCache = dimensionesRealesRef.current.get(textoId.toString());
+    
+    if (dimensionesCache && (Date.now() - dimensionesCache.timestamp) < 1000) {
+      return dimensionesCache;
+    }
+    
+    const elemento = textosElementsRef.current.get(textoId.toString());
+    if (elemento) {
+      const baseWidth = parseFloat(elemento.dataset.baseWidth) || DIMENSIONES.DEFAULT_WIDTH;
+      const baseHeight = parseFloat(elemento.dataset.baseHeight) || DIMENSIONES.DEFAULT_HEIGHT;
+      
+      const dimensionesDOM = {
+        width: baseWidth,
+        height: baseHeight,
+        x: parseFloat(elemento.style.left) / 100,
+        y: parseFloat(elemento.style.top) / 100,
+        timestamp: Date.now()
+      };
+      
+      dimensionesRealesRef.current.set(textoId.toString(), dimensionesDOM);
+      return dimensionesDOM;
+    }
+    
+    const textoEnEstado = textos.find(t => t.id.toString() === textoId.toString());
+    return textoEnEstado ? {
+      width: textoEnEstado.width || DIMENSIONES.DEFAULT_WIDTH,
+      height: textoEnEstado.height || DIMENSIONES.DEFAULT_HEIGHT,
+      x: textoEnEstado.x || 0.5,
+      y: textoEnEstado.y || 0.5,
+      timestamp: Date.now()
+    } : null;
+  }, [textos, DIMENSIONES]);
 
   // ===================== GESTIÓN DE OVERLAYS =====================
   
-  /**
-   * Obtiene o crea overlay para una página específica
-   */
   const getOverlay = useCallback((numeroPagina) => {
     let overlay = overlaysRef.current.get(numeroPagina);
     
-    // Verificar si el overlay existe y está conectado
     if (!overlay || !overlay.parentNode || !document.contains(overlay)) {
-      console.log(`Creando overlay para página ${numeroPagina}`);
-      
-      // Buscar elemento de página específico
       const paginaElement = document.querySelector(
         `.rpv-core__inner-page[aria-label="Page ${numeroPagina}"]`
       );
       
       if (!paginaElement) {
-        console.warn(`No se encontró página ${numeroPagina}`);
         return null;
       }
       
-      // Crear overlay unificado
       overlay = document.createElement('div');
-      overlay.className = 'textos-overlay-consolidado';
+      overlay.className = 'textos-overlay-mejorado';
       overlay.dataset.pagina = numeroPagina.toString();
       overlay.dataset.activo = activo.toString();
-      overlay.dataset.version = 'consolidado-v2';
+      overlay.dataset.version = 'produccion-v1.0';
       
-      // Configurar estilos del overlay
       overlay.style.cssText = `
         position: absolute;
         top: 0;
@@ -93,44 +321,31 @@ const TextosLayer = ({
         width: 100%;
         height: 100%;
         pointer-events: ${activo ? 'auto' : 'none'};
-        z-index: 150;
+        z-index: 200;
         cursor: ${activo ? 'crosshair' : 'default'};
         overflow: visible;
         box-sizing: border-box;
-        background: ${activo && process.env.NODE_ENV === 'development' ? 'rgba(0, 255, 0, 0.02)' : 'transparent'};
-        border: ${activo && process.env.NODE_ENV === 'development' ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none'};
+        background: transparent;
+        border: none;
       `;
       
-      // Asegurar posición relativa en la página
       if (getComputedStyle(paginaElement).position === 'static') {
         paginaElement.style.position = 'relative';
       }
       
-      // Agregar al DOM y registrar
       paginaElement.appendChild(overlay);
       overlaysRef.current.set(numeroPagina, overlay);
-      
-      console.log(`✅ Overlay creado para página ${numeroPagina}`);
     } else {
-      // Actualizar estado existente
       overlay.dataset.activo = activo.toString();
       overlay.style.pointerEvents = activo ? 'auto' : 'none';
       overlay.style.cursor = activo ? 'crosshair' : 'default';
-      
-      if (process.env.NODE_ENV === 'development') {
-        overlay.style.background = activo ? 'rgba(0, 255, 0, 0.02)' : 'transparent';
-        overlay.style.border = activo ? '1px dashed rgba(0, 255, 0, 0.3)' : 'none';
-      }
+      overlay.style.background = 'transparent';
+      overlay.style.border = 'none';
     }
     
     return overlay;
   }, [activo]);
 
-  // ===================== UTILIDADES DE COORDENADAS =====================
-  
-  /**
-   * Convierte coordenadas de evento a relativas (0-1)
-   */
   const convertirARelativas = useCallback((event, overlayElement) => {
     if (!overlayElement) return null;
     
@@ -144,57 +359,24 @@ const TextosLayer = ({
         y: Math.max(0, Math.min(1, y))
       };
     } catch (error) {
-      console.warn('Error convirtiendo coordenadas:', error);
       return null;
     }
   }, []);
 
-  /**
-   * Valida y calcula dimensiones escaladas
-   */
-  const validarDimensiones = useCallback((width, height, fontSize) => {
-    const validWidth = Math.max(
-      DIMENSIONES.MIN_WIDTH, 
-      Math.min(DIMENSIONES.MAX_WIDTH, width || DIMENSIONES.DEFAULT_WIDTH)
-    );
-    
-    const validHeight = Math.max(
-      DIMENSIONES.MIN_HEIGHT, 
-      Math.min(DIMENSIONES.MAX_HEIGHT, height || DIMENSIONES.DEFAULT_HEIGHT)
-    );
-    
-    const validFontSize = Math.max(10, Math.min(24, fontSize || DIMENSIONES.DEFAULT_FONT_SIZE));
-    
-    return {
-      width: validWidth,
-      height: validHeight,
-      fontSize: validFontSize,
-      scaledWidth: Math.round(validWidth * escala),
-      scaledHeight: Math.round(validHeight * escala),
-      scaledFontSize: Math.round(validFontSize * escala)
-    };
-  }, [escala, DIMENSIONES]);
-
-  // ===================== CREACIÓN DE ELEMENTOS DE TEXTO =====================
+  // ===================== CREACIÓN DE ELEMENTOS =====================
   
-  /**
-   * Crea elemento DOM para un texto
-   */
   const crearElementoTexto = useCallback((texto) => {
     const dimensiones = validarDimensiones(texto.width, texto.height, texto.fontSize);
     
-    console.log(`🎨 Creando elemento texto: ${texto.id}`, {
-      base: `${texto.width || DIMENSIONES.DEFAULT_WIDTH}x${texto.height || DIMENSIONES.DEFAULT_HEIGHT}`,
-      escalado: `${dimensiones.scaledWidth}x${dimensiones.scaledHeight}`,
-      escala: escala.toFixed(2)
-    });
-    
-    // Container principal
     const textoContainer = document.createElement('div');
-    textoContainer.className = 'texto-consolidado';
+    textoContainer.className = 'texto-mejorado zoom-safe';
     textoContainer.dataset.textoId = texto.id.toString();
     textoContainer.dataset.pagina = texto.pagina.toString();
-    textoContainer.dataset.version = 'consolidado-v2';
+    textoContainer.dataset.version = 'produccion-v1.0';
+    
+    textoContainer.dataset.baseWidth = dimensiones.baseWidth.toString();
+    textoContainer.dataset.baseHeight = dimensiones.baseHeight.toString();
+    textoContainer.dataset.baseFontSize = dimensiones.baseFontSize.toString();
     
     textoContainer.style.cssText = `
       position: absolute;
@@ -204,126 +386,141 @@ const TextosLayer = ({
       width: ${dimensiones.scaledWidth}px;
       height: ${dimensiones.scaledHeight}px;
       z-index: 210;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: all 0.2s ease;
+      cursor: ${activo ? 'pointer' : 'default'};
+      pointer-events: ${activo ? 'auto' : 'none'};
+      transition: width 0.1s ease, height 0.1s ease, font-size 0.1s ease;
       box-sizing: border-box;
       user-select: none;
-      min-width: ${Math.round(DIMENSIONES.MIN_WIDTH * escala)}px;
-      min-height: ${Math.round(DIMENSIONES.MIN_HEIGHT * escala)}px;
-      max-width: ${Math.round(DIMENSIONES.MAX_WIDTH * escala)}px;
-      max-height: ${Math.round(DIMENSIONES.MAX_HEIGHT * escala)}px;
+      min-width: ${DIMENSIONES.ABSOLUTE_MIN_WIDTH}px !important;
+      min-height: ${DIMENSIONES.ABSOLUTE_MIN_HEIGHT}px !important;
+      max-width: 95vw;
+      max-height: 95vh;
+      opacity: ${dimensiones.isMinimumSize ? '0.8' : '1'};
     `;
 
-    // Contenido del texto
+    // Contenido
     const textoContent = document.createElement('div');
-    textoContent.className = 'texto-contenido-consolidado';
+    textoContent.className = 'texto-contenido-mejorado texto-handwriting';
     textoContent.style.cssText = `
       width: 100%;
       height: 100%;
       background: transparent;
-      color: #1a1a1a;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: rgba(26, 26, 26, ${dimensiones.isMinimumSize ? '0.9' : '0.7'});
+      font-family: 'Indie Flower', cursive;
       font-size: ${dimensiones.scaledFontSize}px;
-      font-weight: 500;
-      padding: ${Math.round(8 * escala)}px ${Math.round(12 * escala)}px;
+      font-weight: ${dimensiones.isMinimumSize ? '600' : '400'};
+      padding: ${dimensiones.scaledPadding}px;
       border: 2px solid transparent;
-      border-radius: ${Math.round(6 * escala)}px;
+      border-radius: ${dimensiones.scaledBorderRadius}px;
       box-sizing: border-box;
       word-wrap: break-word;
       white-space: pre-wrap;
       overflow: hidden;
-      line-height: 1.4;
-      text-shadow: 0 0 3px rgba(255,255,255,0.8);
+      line-height: ${dimensiones.isMinimumSize ? '1.2' : '1.4'};
       cursor: inherit;
-      transition: all 0.2s ease;
+      transition: all 0.1s ease;
       display: flex;
       align-items: flex-start;
       justify-content: flex-start;
       position: relative;
+      text-shadow: 0 0 2px rgba(255,255,255,0.5);
+      letter-spacing: ${dimensiones.isMinimumSize ? '0.2px' : '0.5px'};
+      min-height: ${DIMENSIONES.ABSOLUTE_MIN_HEIGHT - 4}px !important;
+      min-width: ${DIMENSIONES.ABSOLUTE_MIN_WIDTH - 4}px !important;
     `;
     textoContent.textContent = texto.texto;
 
     // Handle de resize
     const resizeHandle = document.createElement('div');
-    resizeHandle.className = 'resize-handle-consolidado';
+    resizeHandle.className = 'resize-handle-mejorado';
+    const handleSize = Math.max(8, Math.min(20, Math.round(12 * dimensiones.factorEscalado)));
     resizeHandle.style.cssText = `
       display: none;
       position: absolute;
-      bottom: ${Math.round(-4 * escala)}px;
-      right: ${Math.round(-4 * escala)}px;
-      width: ${Math.round(12 * escala)}px;
-      height: ${Math.round(12 * escala)}px;
-      background: #2196f3;
+      bottom: ${Math.round(-4 * dimensiones.factorEscalado)}px;
+      right: ${Math.round(-4 * dimensiones.factorEscalado)}px;
+      width: ${handleSize}px;
+      height: ${handleSize}px;
+      background: #de007e;
       border: 2px solid white;
       border-radius: 50%;
       cursor: se-resize;
       pointer-events: auto;
       z-index: 1001;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      transition: all 0.2s ease;
+      box-shadow: 0 ${Math.round(2 * dimensiones.factorEscalado)}px ${Math.round(6 * dimensiones.factorEscalado)}px rgba(222, 0, 126, 0.4);
+      transition: all 0.1s ease;
+      min-width: 8px !important;
+      min-height: 8px !important;
     `;
 
     // Indicador de guardado
     const indicadorGuardado = document.createElement('div');
-    indicadorGuardado.className = 'indicador-guardado-consolidado';
+    indicadorGuardado.className = 'indicador-guardado-mejorado';
+    const indicatorSize = Math.max(12, Math.min(24, Math.round(20 * dimensiones.factorEscalado)));
     indicadorGuardado.style.cssText = `
       display: none;
       position: absolute;
-      top: ${Math.round(-8 * escala)}px;
-      right: ${Math.round(-8 * escala)}px;
-      background: rgba(255, 152, 0, 0.9);
+      top: ${Math.round(-8 * dimensiones.factorEscalado)}px;
+      right: ${Math.round(-8 * dimensiones.factorEscalado)}px;
+      background: #de007e;
       color: white;
       border-radius: 50%;
-      width: ${Math.round(20 * escala)}px;
-      height: ${Math.round(20 * escala)}px;
+      width: ${indicatorSize}px;
+      height: ${indicatorSize}px;
       align-items: center;
       justify-content: center;
-      font-size: ${Math.round(10 * escala)}px;
+      font-size: ${Math.max(8, Math.min(14, Math.round(10 * dimensiones.factorEscalado)))}px;
       z-index: 1002;
-      animation: pulse 1s infinite;
-      box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.8);
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 ${Math.round(2 * dimensiones.factorEscalado)}px ${Math.round(8 * dimensiones.factorEscalado)}px rgba(222, 0, 126, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      font-weight: bold;
+      min-width: 12px !important;
+      min-height: 12px !important;
     `;
-    indicadorGuardado.textContent = '⏳';
+    indicadorGuardado.textContent = '💾';
 
-    // Ensamblar elemento
     textoContainer.appendChild(textoContent);
     textoContainer.appendChild(resizeHandle);
     textoContainer.appendChild(indicadorGuardado);
 
-    return textoContainer;
-  }, [validarDimensiones, escala, DIMENSIONES]);
+    actualizarDimensionesReales(texto.id, {
+      width: dimensiones.baseWidth,
+      height: dimensiones.baseHeight,
+      x: texto.x,
+      y: texto.y
+    });
 
-  // ===================== GESTIÓN DE EVENTOS DE TEXTO =====================
+    return textoContainer;
+  }, [validarDimensiones, DIMENSIONES, actualizarDimensionesReales, activo, escalaEstable]);
+
+  // ===================== GESTIÓN DE EVENTOS =====================
   
-  /**
-   * Configura todos los eventos para un elemento de texto
-   */
   const configurarEventosTexto = useCallback((textoElement, texto) => {
+    if (!activo) {
+      return [];
+    }
+    
     const textoId = texto.id.toString();
     
-    // Limpiar eventos anteriores
     const eventosAnteriores = eventListenersRef.current.get(textoId);
     if (eventosAnteriores) {
       eventosAnteriores.forEach(cleanup => cleanup());
     }
     
-    console.log(`🎧 Configurando eventos para texto: ${textoId}`);
-    
     const cleanups = [];
-    const contenido = textoElement.querySelector('.texto-contenido-consolidado');
-    const resizeHandle = textoElement.querySelector('.resize-handle-consolidado');
-    const indicadorGuardado = textoElement.querySelector('.indicador-guardado-consolidado');
+    const contenido = textoElement.querySelector('.texto-contenido-mejorado');
+    const resizeHandle = textoElement.querySelector('.resize-handle-mejorado');
     
-    // ===== EVENTOS HOVER =====
+    // Eventos hover
     const handleMouseEnter = () => {
-      if (!activo || operacionEnCurso) return;
+      if (!activo || operacionEnCurso || bloqueoEventosRef.current.has(textoId)) return;
       
-      contenido.style.background = 'rgba(33, 150, 243, 0.05)';
-      contenido.style.borderColor = 'rgba(33, 150, 243, 0.3)';
+      contenido.style.background = 'rgba(222, 0, 126, 0.08)';
+      contenido.style.borderColor = 'rgba(222, 0, 126, 0.4)';
       contenido.style.borderStyle = 'dashed';
-      contenido.style.boxShadow = `0 ${Math.round(2 * escala)}px ${Math.round(8 * escala)}px rgba(33, 150, 243, 0.15)`;
+      contenido.style.boxShadow = `0 ${Math.round(3 * escalaEstable)}px ${Math.round(12 * escalaEstable)}px rgba(222, 0, 126, 0.2)`;
+      contenido.style.color = 'rgba(26, 26, 26, 0.9)';
       
       if (resizeHandle) {
         resizeHandle.style.display = 'block';
@@ -336,6 +533,7 @@ const TextosLayer = ({
         contenido.style.borderColor = 'transparent';
         contenido.style.borderStyle = 'solid';
         contenido.style.boxShadow = 'none';
+        contenido.style.color = 'rgba(26, 26, 26, 0.7)';
         
         if (resizeHandle) {
           resizeHandle.style.display = 'none';
@@ -343,24 +541,28 @@ const TextosLayer = ({
       }
     };
 
-    // ===== DOBLE CLICK PARA EDITAR =====
+    // Doble click para editar
     const handleDoubleClick = (e) => {
-      if (!activo || operacionEnCurso) return;
+      if (!activo || operacionEnCurso || bloqueoEventosRef.current.has(textoId)) return;
       
       e.stopPropagation();
       e.preventDefault();
       
-      console.log(`🖱️ Doble click para editar texto: ${textoId}`);
+      bloqueoEventosRef.current.add(textoId);
+      setTimeout(() => {
+        bloqueoEventosRef.current.delete(textoId);
+      }, 500);
+      
       abrirModalEdicion(texto);
     };
 
-    // ===== DRAG & DROP =====
+    // Drag & drop
     let isDragging = false;
     let startPos = { x: 0, y: 0 };
     let dragOffset = { x: 0, y: 0 };
 
     const handleMouseDown = (e) => {
-      if (!activo || operacionEnCurso || e.target === resizeHandle) return;
+      if (!activo || operacionEnCurso || e.target === resizeHandle || bloqueoEventosRef.current.has(textoId)) return;
       if (e.button !== 0) return;
       
       e.stopPropagation();
@@ -390,12 +592,12 @@ const TextosLayer = ({
         if (distance > 5 && !isDragging) {
           isDragging = true;
           setOperacionEnCurso(true);
+          bloqueoEventosRef.current.add(textoId);
+          
           textoElement.dataset.dragging = 'true';
           textoElement.style.opacity = '0.8';
           textoElement.style.zIndex = '300';
-          textoElement.style.filter = 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))';
-          
-          console.log(`🎯 Drag iniciado para texto: ${textoId}`);
+          textoElement.style.filter = 'drop-shadow(0 6px 12px rgba(222, 0, 126, 0.4))';
         }
         
         if (isDragging) {
@@ -408,6 +610,8 @@ const TextosLayer = ({
           
           textoElement.style.left = `${newX * 100}%`;
           textoElement.style.top = `${newY * 100}%`;
+          
+          actualizarDimensionesReales(textoId, { x: newX, y: newY });
         }
       };
       
@@ -424,38 +628,44 @@ const TextosLayer = ({
           const finalX = (finalCenterX - finalOverlayRect.left) / finalOverlayRect.width;
           const finalY = (finalCenterY - finalOverlayRect.top) / finalOverlayRect.height;
           
-          console.log(`💾 Guardando nueva posición: ${textoId}`, { x: finalX.toFixed(4), y: finalY.toFixed(4) });
-          
           try {
-            // Mostrar indicador de guardado
             mostrarIndicadorGuardado(textoId, true);
+            
+            const dimensionesActuales = obtenerDimensionesReales(textoId);
             
             await onEditTexto({ 
               id: texto.id, 
               x: finalX, 
               y: finalY,
               texto: texto.texto,
-              width: texto.width,
-              height: texto.height,
+              width: dimensionesActuales?.width || texto.width,
+              height: dimensionesActuales?.height || texto.height,
               fontSize: texto.fontSize,
               pagina: texto.pagina
             });
             
-            console.log(`✅ Posición guardada exitosamente: ${textoId}`);
+            actualizarDimensionesReales(textoId, {
+              x: finalX,
+              y: finalY,
+              width: dimensionesActuales?.width || texto.width,
+              height: dimensionesActuales?.height || texto.height
+            });
           } catch (error) {
-            console.error(`❌ Error guardando posición: ${textoId}`, error);
             mostrarError('Error guardando posición');
           } finally {
             mostrarIndicadorGuardado(textoId, false);
           }
           
-          // Restaurar estilos
           textoElement.style.opacity = '1';
           textoElement.style.zIndex = '210';
           textoElement.style.filter = 'none';
           delete textoElement.dataset.dragging;
           isDragging = false;
           setOperacionEnCurso(false);
+          
+          setTimeout(() => {
+            bloqueoEventosRef.current.delete(textoId);
+          }, 200);
         }
       };
       
@@ -463,28 +673,30 @@ const TextosLayer = ({
       document.addEventListener('mouseup', handleMouseUp, { passive: false });
     };
 
-    // ===== RESIZE =====
+    // Resize
     let isResizing = false;
-    let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
+    let resizeStart = { x: 0, y: 0, baseWidth: 0, baseHeight: 0 };
     
     const handleResizeStart = (e) => {
-      if (!activo || operacionEnCurso) return;
+      if (!activo || operacionEnCurso || bloqueoEventosRef.current.has(textoId)) return;
       
       e.stopPropagation();
       e.preventDefault();
       
-      console.log(`📏 Iniciando resize para texto: ${textoId}`);
-      
       isResizing = true;
       setOperacionEnCurso(true);
+      bloqueoEventosRef.current.add(textoId);
+      
       textoElement.dataset.resizing = 'true';
       
-      const rect = textoElement.getBoundingClientRect();
+      const currentBaseWidth = parseFloat(textoElement.dataset.baseWidth);
+      const currentBaseHeight = parseFloat(textoElement.dataset.baseHeight);
+      
       resizeStart = {
         x: e.clientX,
         y: e.clientY,
-        width: rect.width,
-        height: rect.height
+        baseWidth: currentBaseWidth,
+        baseHeight: currentBaseHeight
       };
       
       document.body.style.cursor = 'se-resize';
@@ -495,44 +707,52 @@ const TextosLayer = ({
         const deltaX = e.clientX - resizeStart.x;
         const deltaY = e.clientY - resizeStart.y;
         
-        const newWidth = Math.max(Math.round(DIMENSIONES.MIN_WIDTH * escala), resizeStart.width + deltaX);
-        const newHeight = Math.max(Math.round(DIMENSIONES.MIN_HEIGHT * escala), resizeStart.height + deltaY);
+        const baseDeltaX = deltaX / escalaEstable;
+        const baseDeltaY = deltaY / escalaEstable;
         
-        textoElement.style.width = `${newWidth}px`;
-        textoElement.style.height = `${newHeight}px`;
+        const newBaseWidth = Math.max(DIMENSIONES.MIN_WIDTH, Math.min(DIMENSIONES.MAX_WIDTH, resizeStart.baseWidth + baseDeltaX));
+        const newBaseHeight = Math.max(DIMENSIONES.MIN_HEIGHT, Math.min(DIMENSIONES.MAX_HEIGHT, resizeStart.baseHeight + baseDeltaY));
+        
+        const newScaledWidth = Math.max(DIMENSIONES.ABSOLUTE_MIN_WIDTH, Math.round(newBaseWidth * escalaEstable));
+        const newScaledHeight = Math.max(DIMENSIONES.ABSOLUTE_MIN_HEIGHT, Math.round(newBaseHeight * escalaEstable));
+        
+        textoElement.style.width = `${newScaledWidth}px`;
+        textoElement.style.height = `${newScaledHeight}px`;
+        
+        textoElement.dataset.baseWidth = newBaseWidth.toString();
+        textoElement.dataset.baseHeight = newBaseHeight.toString();
+        
+        actualizarDimensionesReales(textoId, { width: newBaseWidth, height: newBaseHeight });
       };
       
       const handleResizeEnd = async () => {
         if (isResizing) {
-          const finalRect = textoElement.getBoundingClientRect();
-          
-          // Convertir el tamaño escalado de vuelta a tamaño base
-          const baseWidth = Math.round(finalRect.width / escala);
-          const baseHeight = Math.round(finalRect.height / escala);
-          
-          console.log(`💾 Guardando nuevo tamaño: ${textoId}`, { 
-            escalado: `${finalRect.width}x${finalRect.height}`,
-            base: `${baseWidth}x${baseHeight}`,
-            escala: escala.toFixed(3)
-          });
+          const finalBaseWidth = parseFloat(textoElement.dataset.baseWidth);
+          const finalBaseHeight = parseFloat(textoElement.dataset.baseHeight);
           
           try {
             mostrarIndicadorGuardado(textoId, true);
             
+            const dimensionesActuales = obtenerDimensionesReales(textoId);
+            
             await onEditTexto({ 
               id: texto.id, 
-              x: texto.x,
-              y: texto.y,
+              x: dimensionesActuales?.x || texto.x,
+              y: dimensionesActuales?.y || texto.y,
               texto: texto.texto,
-              width: baseWidth,
-              height: baseHeight,
+              width: finalBaseWidth,
+              height: finalBaseHeight,
               fontSize: texto.fontSize,
               pagina: texto.pagina
             });
             
-            console.log(`✅ Tamaño guardado exitosamente: ${textoId}`);
+            actualizarDimensionesReales(textoId, {
+              width: finalBaseWidth,
+              height: finalBaseHeight,
+              x: dimensionesActuales?.x || texto.x,
+              y: dimensionesActuales?.y || texto.y
+            });
           } catch (error) {
-            console.error(`❌ Error guardando tamaño: ${textoId}`, error);
             mostrarError('Error guardando tamaño');
           } finally {
             mostrarIndicadorGuardado(textoId, false);
@@ -542,6 +762,10 @@ const TextosLayer = ({
           delete textoElement.dataset.resizing;
           document.body.style.cursor = '';
           setOperacionEnCurso(false);
+          
+          setTimeout(() => {
+            bloqueoEventosRef.current.delete(textoId);
+          }, 200);
         }
         
         document.removeEventListener('mousemove', handleResizeMove);
@@ -552,95 +776,165 @@ const TextosLayer = ({
       document.addEventListener('mouseup', handleResizeEnd);
     };
 
-    // Registrar todos los eventos
-    textoElement.addEventListener('mouseenter', handleMouseEnter);
-    textoElement.addEventListener('mouseleave', handleMouseLeave);
-    textoElement.addEventListener('dblclick', handleDoubleClick);
-    textoElement.addEventListener('mousedown', handleMouseDown);
-    
-    if (resizeHandle) {
-      resizeHandle.addEventListener('mousedown', handleResizeStart);
-      cleanups.push(() => resizeHandle.removeEventListener('mousedown', handleResizeStart));
+    if (activo) {
+      textoElement.addEventListener('mouseenter', handleMouseEnter);
+      textoElement.addEventListener('mouseleave', handleMouseLeave);
+      textoElement.addEventListener('dblclick', handleDoubleClick);
+      textoElement.addEventListener('mousedown', handleMouseDown);
+      
+      if (resizeHandle) {
+        resizeHandle.addEventListener('mousedown', handleResizeStart);
+        cleanups.push(() => resizeHandle.removeEventListener('mousedown', handleResizeStart));
+      }
+
+      cleanups.push(() => {
+        textoElement.removeEventListener('mouseenter', handleMouseEnter);
+        textoElement.removeEventListener('mouseleave', handleMouseLeave);
+        textoElement.removeEventListener('dblclick', handleDoubleClick);
+        textoElement.removeEventListener('mousedown', handleMouseDown);
+      });
+
+      eventListenersRef.current.set(textoId, cleanups);
     }
-
-    cleanups.push(() => {
-      textoElement.removeEventListener('mouseenter', handleMouseEnter);
-      textoElement.removeEventListener('mouseleave', handleMouseLeave);
-      textoElement.removeEventListener('dblclick', handleDoubleClick);
-      textoElement.removeEventListener('mousedown', handleMouseDown);
-    });
-
-    // Guardar cleanups
-    eventListenersRef.current.set(textoId, cleanups);
     
     return cleanups;
-  }, [activo, operacionEnCurso, getOverlay, onEditTexto, escala, DIMENSIONES]);
+  }, [activo, operacionEnCurso, getOverlay, onEditTexto, DIMENSIONES, obtenerDimensionesReales, actualizarDimensionesReales, escalaEstable, mostrarIndicadorGuardado, mostrarError]);
 
-  // ===================== UTILIDADES AUXILIARES =====================
+  // ===================== RENDERIZADO DE TEXTOS =====================
   
-  /**
-   * Muestra/oculta indicador de guardado
-   */
-  const mostrarIndicadorGuardado = useCallback((textoId, mostrar) => {
-    const elemento = textosElementsRef.current.get(textoId);
-    if (!elemento) return;
+  const renderizarTextos = useCallback(() => {
+    const textosActualesIds = new Set(textos.map(t => t.id.toString()));
     
-    const indicador = elemento.querySelector('.indicador-guardado-consolidado');
-    if (indicador) {
-      indicador.style.display = mostrar ? 'flex' : 'none';
-    }
-    
-    if (mostrar) {
-      setTextoGuardando(textoId);
-    } else {
-      setTextoGuardando(null);
-    }
-  }, []);
-
-  /**
-   * Muestra error temporal
-   */
-  const mostrarError = useCallback((mensaje) => {
-    console.error('Error:', mensaje);
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.textContent = mensaje;
-    errorDiv.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #f44336;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 4px;
-      z-index: 10001;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-      animation: slideInRight 0.3s ease;
-    `;
-    document.body.appendChild(errorDiv);
-    
-    setTimeout(() => {
-      if (errorDiv.parentNode) {
-        errorDiv.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => errorDiv.remove(), 300);
+    // Limpiar elementos que ya no existen
+    textosElementsRef.current.forEach((elemento, textoId) => {
+      if (!textosActualesIds.has(textoId)) {
+        const eventos = eventListenersRef.current.get(textoId);
+        if (eventos) {
+          eventos.forEach(cleanup => cleanup());
+          eventListenersRef.current.delete(textoId);
+        }
+        
+        if (elemento.parentNode) {
+          elemento.remove();
+        }
+        textosElementsRef.current.delete(textoId);
+        
+        dimensionesRealesRef.current.delete(textoId);
+        bloqueoEventosRef.current.delete(textoId);
       }
-    }, 3000);
-  }, []);
+    });
+
+    // Renderizar textos
+    textos.forEach(texto => {
+      const textoId = texto.id.toString();
+      let elementoExistente = textosElementsRef.current.get(textoId);
+      
+      const overlay = getOverlay(texto.pagina);
+      if (!overlay) {
+        return;
+      }
+      
+      if (!elementoExistente || !elementoExistente.parentNode) {
+        elementoExistente = crearElementoTexto(texto);
+        overlay.appendChild(elementoExistente);
+        textosElementsRef.current.set(textoId, elementoExistente);
+        
+        if (activo) {
+          configurarEventosTexto(elementoExistente, texto);
+        }
+      } else {
+        // Actualizar elemento existente para nuevo zoom
+        const dimensiones = validarDimensiones(texto.width, texto.height, texto.fontSize);
+        
+        // Actualizar dimensiones principales
+        elementoExistente.style.left = `${texto.x * 100}%`;
+        elementoExistente.style.top = `${texto.y * 100}%`;
+        elementoExistente.style.width = `${dimensiones.scaledWidth}px`;
+        elementoExistente.style.height = `${dimensiones.scaledHeight}px`;
+        elementoExistente.style.opacity = dimensiones.isMinimumSize ? '0.8' : '1';
+        
+        // Asegurar visibilidad mínima
+        if (dimensiones.isMinimumSize) {
+          elementoExistente.style.minWidth = `${DIMENSIONES.ABSOLUTE_MIN_WIDTH}px !important`;
+          elementoExistente.style.minHeight = `${DIMENSIONES.ABSOLUTE_MIN_HEIGHT}px !important`;
+        }
+        
+        // Actualizar interactividad según estado de herramienta
+        elementoExistente.style.cursor = activo ? 'pointer' : 'default';
+        elementoExistente.style.pointerEvents = activo ? 'auto' : 'none';
+        
+        elementoExistente.dataset.baseWidth = dimensiones.baseWidth.toString();
+        elementoExistente.dataset.baseHeight = dimensiones.baseHeight.toString();
+        elementoExistente.dataset.baseFontSize = dimensiones.baseFontSize.toString();
+        
+        const contenido = elementoExistente.querySelector('.texto-contenido-mejorado');
+        if (contenido) {
+          contenido.textContent = texto.texto;
+          contenido.style.fontSize = `${dimensiones.scaledFontSize}px`;
+          contenido.style.padding = `${dimensiones.scaledPadding}px`;
+          contenido.style.borderRadius = `${dimensiones.scaledBorderRadius}px`;
+          contenido.style.color = `rgba(26, 26, 26, ${dimensiones.isMinimumSize ? '0.9' : '0.7'})`;
+          contenido.style.fontWeight = dimensiones.isMinimumSize ? '600' : '400';
+          contenido.style.lineHeight = dimensiones.isMinimumSize ? '1.2' : '1.4';
+          contenido.style.letterSpacing = dimensiones.isMinimumSize ? '0.2px' : '0.5px';
+          
+          // Asegurar tamaño mínimo del contenido
+          contenido.style.minHeight = `${DIMENSIONES.ABSOLUTE_MIN_HEIGHT - 4}px !important`;
+          contenido.style.minWidth = `${DIMENSIONES.ABSOLUTE_MIN_WIDTH - 4}px !important`;
+          
+          if (!activo) {
+            contenido.style.background = 'transparent';
+            contenido.style.borderColor = 'transparent';
+            contenido.style.borderStyle = 'solid';
+            contenido.style.boxShadow = 'none';
+          }
+        }
+        
+        const resizeHandle = elementoExistente.querySelector('.resize-handle-mejorado');
+        if (resizeHandle) {
+          const handleSize = Math.max(8, Math.min(20, Math.round(12 * dimensiones.factorEscalado)));
+          resizeHandle.style.width = `${handleSize}px`;
+          resizeHandle.style.height = `${handleSize}px`;
+          resizeHandle.style.bottom = `${Math.round(-4 * dimensiones.factorEscalado)}px`;
+          resizeHandle.style.right = `${Math.round(-4 * dimensiones.factorEscalado)}px`;
+          resizeHandle.style.display = 'none';
+          resizeHandle.style.minWidth = '8px !important';
+          resizeHandle.style.minHeight = '8px !important';
+        }
+        
+        const indicadorGuardado = elementoExistente.querySelector('.indicador-guardado-mejorado');
+        if (indicadorGuardado) {
+          const indicatorSize = Math.max(12, Math.min(24, Math.round(20 * dimensiones.factorEscalado)));
+          indicadorGuardado.style.top = `${Math.round(-8 * dimensiones.factorEscalado)}px`;
+          indicadorGuardado.style.right = `${Math.round(-8 * dimensiones.factorEscalado)}px`;
+          indicadorGuardado.style.width = `${indicatorSize}px`;
+          indicadorGuardado.style.height = `${indicatorSize}px`;
+          indicadorGuardado.style.fontSize = `${Math.max(8, Math.min(14, Math.round(10 * dimensiones.factorEscalado)))}px`;
+          indicadorGuardado.style.minWidth = '12px !important';
+          indicadorGuardado.style.minHeight = '12px !important';
+        }
+      }
+    });
+  }, [textos, getOverlay, crearElementoTexto, configurarEventosTexto, validarDimensiones, activo, escalaEstable, DIMENSIONES]);
 
   // ===================== GESTIÓN DE MODALES =====================
   
-  /**
-   * Abre modal para crear nuevo texto
-   */
+  const cerrarModal = useCallback(() => {
+    setModalConfig(null);
+    setOperacionEnCurso(false);
+    setTextoGuardando(null);
+    bloqueoEventosRef.current.clear();
+  }, []);
+
   const abrirModalCreacion = useCallback((numeroPagina, x, y) => {
     if (modalConfig || operacionEnCurso) {
-      console.warn('Modal ya abierto o operación en curso');
       return;
     }
 
-    console.log('Abriendo modal de creación:', { numeroPagina, x, y });
+    if (!verificarLimitePorPagina(numeroPagina)) {
+      return;
+    }
+
     setOperacionEnCurso(true);
     
     setModalConfig({
@@ -651,13 +945,6 @@ const TextosLayer = ({
       height: DIMENSIONES.DEFAULT_HEIGHT,
       onGuardar: async (texto, fontSize, modalWidth, modalHeight) => {
         try {
-          console.log('Guardando nuevo texto:', { 
-            texto: texto.substring(0, 30) + '...',
-            fontSize,
-            modalWidth,
-            modalHeight
-          });
-
           await onAddTexto({ 
             pagina: numeroPagina, 
             x, 
@@ -667,256 +954,188 @@ const TextosLayer = ({
             height: modalHeight || DIMENSIONES.DEFAULT_HEIGHT,
             fontSize: fontSize || DIMENSIONES.DEFAULT_FONT_SIZE
           });
-
-          console.log('Texto creado exitosamente');
-          cerrarModal();
-          onDesactivarHerramienta();
+          
+          setOperacionEnCurso(false);
+          setModalConfig(null);
+          setTextoGuardando(null);
+          bloqueoEventosRef.current.clear();
+          
+          setTimeout(() => {
+            onDesactivarHerramienta();
+            desactivarCompletamente();
+          }, 100);
+          
         } catch (error) {
-          console.error('Error creando texto:', error);
           throw error;
         }
       },
       onCancelar: () => {
-        console.log('Cancelando creación de texto');
         cerrarModal();
         onDesactivarHerramienta();
       }
     });
-  }, [modalConfig, operacionEnCurso, onAddTexto, onDesactivarHerramienta, DIMENSIONES]);
+  }, [modalConfig, operacionEnCurso, onAddTexto, onDesactivarHerramienta, DIMENSIONES, cerrarModal, verificarLimitePorPagina, desactivarCompletamente]);
 
-  /**
-   * Abre modal para editar texto existente
-   */
   const abrirModalEdicion = useCallback((texto) => {
     if (modalConfig || operacionEnCurso) {
-      console.warn('Modal ya abierto o operación en curso');
       return;
     }
 
-    console.log('Abriendo modal de edición:', texto.id);
     setOperacionEnCurso(true);
+    
+    const dimensionesReales = obtenerDimensionesReales(texto.id);
     
     setModalConfig({
       titulo: `Editar texto - Página ${texto.pagina}`,
       valor: texto.texto,
       fontSize: texto.fontSize || DIMENSIONES.DEFAULT_FONT_SIZE,
-      width: texto.width || DIMENSIONES.DEFAULT_WIDTH,
-      height: texto.height || DIMENSIONES.DEFAULT_HEIGHT,
+      width: dimensionesReales?.width || texto.width || DIMENSIONES.DEFAULT_WIDTH,
+      height: dimensionesReales?.height || texto.height || DIMENSIONES.DEFAULT_HEIGHT,
       onGuardar: async (nuevoTexto, fontSize, modalWidth, modalHeight) => {
         try {
-          console.log('Guardando edición:', { 
-            id: texto.id,
-            nuevoTexto: nuevoTexto.substring(0, 30) + '...'
-          });
+          const dimensionesActuales = obtenerDimensionesReales(texto.id);
 
           await onEditTexto({ 
             id: texto.id, 
             texto: nuevoTexto,
-            x: texto.x,
-            y: texto.y,
-            width: modalWidth || texto.width,
-            height: modalHeight || texto.height,
+            x: dimensionesActuales?.x || texto.x,
+            y: dimensionesActuales?.y || texto.y,
+            width: modalWidth || dimensionesActuales?.width || texto.width,
+            height: modalHeight || dimensionesActuales?.height || texto.height,
             pagina: texto.pagina,
             fontSize: fontSize || texto.fontSize
           });
 
-          console.log('Texto editado exitosamente');
-          cerrarModal();
-          onDesactivarHerramienta();
+          actualizarDimensionesReales(texto.id, {
+            x: dimensionesActuales?.x || texto.x,
+            y: dimensionesActuales?.y || texto.y,
+            width: modalWidth || dimensionesActuales?.width || texto.width,
+            height: modalHeight || dimensionesActuales?.height || texto.height
+          });
+          
+          setOperacionEnCurso(false);
+          setModalConfig(null);
+          setTextoGuardando(null);
+          bloqueoEventosRef.current.clear();
+          
+          setTimeout(() => {
+            onDesactivarHerramienta();
+            desactivarCompletamente();
+          }, 100);
+          
         } catch (error) {
-          console.error('Error editando texto:', error);
           throw error;
         }
       },
       onCancelar: () => {
-        console.log('Cancelando edición de texto');
         cerrarModal();
       },
       onEliminar: async () => {
         try {
-          console.log('Eliminando texto:', texto.id);
-
           await onDeleteTexto(texto.id);
 
-          console.log('Texto eliminado exitosamente');
+          dimensionesRealesRef.current.delete(texto.id.toString());
+          bloqueoEventosRef.current.delete(texto.id.toString());
+
           cerrarModal();
-          onDesactivarHerramienta();
+          
+          setTimeout(() => {
+            onDesactivarHerramienta();
+            desactivarCompletamente();
+          }, 100);
         } catch (error) {
-          console.error('Error eliminando texto:', error);
           throw error;
         }
       }
     });
-  }, [modalConfig, operacionEnCurso, onEditTexto, onDeleteTexto, onDesactivarHerramienta, DIMENSIONES]);
-
-  /**
-   * Cierra modal y limpia estado
-   */
-  const cerrarModal = useCallback(() => {
-    console.log('Cerrando modal de texto');
-    setModalConfig(null);
-    setOperacionEnCurso(false);
-  }, []);
-
-  // ===================== RENDERIZADO DE TEXTOS =====================
-  
-  /**
-   * Renderiza todos los textos en el DOM
-   */
-  const renderizarTextos = useCallback(() => {
-    console.log('🎨 Renderizando textos consolidados:', textos.length);
-    
-    // Limpiar elementos de textos que ya no existen
-    const textosActualesIds = new Set(textos.map(t => t.id.toString()));
-    
-    textosElementsRef.current.forEach((elemento, textoId) => {
-      if (!textosActualesIds.has(textoId)) {
-        // Limpiar eventos
-        const eventos = eventListenersRef.current.get(textoId);
-        if (eventos) {
-          eventos.forEach(cleanup => cleanup());
-          eventListenersRef.current.delete(textoId);
-        }
-        
-        // Remover del DOM
-        if (elemento.parentNode) {
-          elemento.remove();
-        }
-        textosElementsRef.current.delete(textoId);
-        
-        console.log(`🗑️ Texto ${textoId} eliminado del DOM`);
-      }
-    });
-
-    // Renderizar textos existentes
-    textos.forEach(texto => {
-      const textoId = texto.id.toString();
-      let elementoExistente = textosElementsRef.current.get(textoId);
-      
-      const overlay = getOverlay(texto.pagina);
-      if (!overlay) {
-        console.warn(`⚠️ No se pudo obtener overlay para texto ${textoId} en página ${texto.pagina}`);
-        return;
-      }
-      
-      if (!elementoExistente || !elementoExistente.parentNode) {
-        // Crear nuevo elemento
-        elementoExistente = crearElementoTexto(texto);
-        overlay.appendChild(elementoExistente);
-        textosElementsRef.current.set(textoId, elementoExistente);
-        
-        // Configurar eventos (solo una vez)
-        configurarEventosTexto(elementoExistente, texto);
-        
-        console.log(`✅ Texto ${textoId} creado en página ${texto.pagina}`);
-      } else {
-        // Actualizar elemento existente
-        const dimensiones = validarDimensiones(texto.width, texto.height, texto.fontSize);
-        
-        // Actualizar posición y dimensiones
-        elementoExistente.style.left = `${texto.x * 100}%`;
-        elementoExistente.style.top = `${texto.y * 100}%`;
-        elementoExistente.style.width = `${dimensiones.scaledWidth}px`;
-        elementoExistente.style.height = `${dimensiones.scaledHeight}px`;
-        
-        // Actualizar contenido
-        const contenido = elementoExistente.querySelector('.texto-contenido-consolidado');
-        if (contenido) {
-          contenido.textContent = texto.texto;
-          contenido.style.fontSize = `${dimensiones.scaledFontSize}px`;
-          contenido.style.padding = `${Math.round(8 * escala)}px ${Math.round(12 * escala)}px`;
-        }
-        
-        // Actualizar handle de resize
-        const resizeHandle = elementoExistente.querySelector('.resize-handle-consolidado');
-        if (resizeHandle) {
-          resizeHandle.style.width = `${Math.round(12 * escala)}px`;
-          resizeHandle.style.height = `${Math.round(12 * escala)}px`;
-          resizeHandle.style.bottom = `${Math.round(-4 * escala)}px`;
-          resizeHandle.style.right = `${Math.round(-4 * escala)}px`;
-        }
-        
-        console.log(`🔄 Texto ${textoId} actualizado`);
-      }
-    });
-  }, [textos, getOverlay, crearElementoTexto, configurarEventosTexto, validarDimensiones, escala]);
+  }, [modalConfig, operacionEnCurso, onEditTexto, onDeleteTexto, onDesactivarHerramienta, DIMENSIONES, obtenerDimensionesReales, actualizarDimensionesReales, cerrarModal, desactivarCompletamente]);
 
   // ===================== MANEJO DE CLICKS EN OVERLAY =====================
   
-  /**
-   * Maneja clicks en overlay para crear nuevo texto
-   */
   const handleOverlayClick = useCallback((numeroPagina, overlay) => {
     return (e) => {
       if (!activo || operacionEnCurso || modalConfig) return;
       
-      // Evitar clicks en textos existentes
-      if (e.target.closest('.texto-consolidado')) {
+      if (e.target.closest('.texto-mejorado')) {
         return;
       }
       
       const coords = convertirARelativas(e, overlay);
       if (!coords) {
-        console.warn('⚠️ No se pudieron calcular coordenadas relativas');
         return;
       }
       
-      console.log('🖱️ Click para crear texto:', { numeroPagina, coords });
       abrirModalCreacion(numeroPagina, coords.x, coords.y);
     };
   }, [activo, operacionEnCurso, modalConfig, convertirARelativas, abrirModalCreacion]);
 
-  /**
-   * Configura eventos de overlay para todas las páginas
-   */
   const configurarEventosOverlay = useCallback(() => {
-    if (!activo) return;
+    if (!activo) {
+      return;
+    }
     
     const paginas = document.querySelectorAll('.rpv-core__inner-page[aria-label^="Page "]');
-    
-    console.log(`🎧 Configurando eventos de overlay para ${paginas.length} páginas`);
     
     paginas.forEach((paginaElement) => {
       const ariaLabel = paginaElement.getAttribute('aria-label');
       const numeroPagina = parseInt(ariaLabel.replace('Page ', ''));
       
       if (isNaN(numeroPagina)) {
-        console.warn('⚠️ No se pudo extraer número de página de:', ariaLabel);
         return;
       }
       
       const overlay = getOverlay(numeroPagina);
       
       if (overlay) {
-        // Limpiar evento anterior
         const eventoAnterior = overlay._clickHandler;
         if (eventoAnterior) {
           overlay.removeEventListener('mousedown', eventoAnterior);
         }
         
-        // Agregar nuevo evento
         const clickHandler = handleOverlayClick(numeroPagina, overlay);
         overlay.addEventListener('mousedown', clickHandler, { passive: false });
         overlay._clickHandler = clickHandler;
-        
-        console.log(`✅ Eventos configurados para página ${numeroPagina}`);
       }
     });
   }, [activo, getOverlay, handleOverlayClick]);
 
   // ===================== EFECTOS PRINCIPALES =====================
 
-  // Renderizar textos cuando cambien los datos o la escala
+  // Renderizar cuando la escala se estabilice
   useEffect(() => {
     if (visorInfo?.mode === 'single') {
       renderizarTextos();
     }
-  }, [textos, escala, visorInfo?.mode, renderizarTextos]);
+  }, [textos, escalaEstable, visorInfo?.mode, renderizarTextos]);
 
-  // Configurar eventos cuando esté activo
+  // Renderizado inmediato para cambios de texto
+  useEffect(() => {
+    if (visorInfo?.mode === 'single') {
+      renderizarTextos();
+    }
+  }, [textos.length, visorInfo?.mode, renderizarTextos]);
+
+  useEffect(() => {
+    if (visorInfo?.mode === 'single' && activo && !operacionEnCurso) {
+      const timer = setTimeout(() => {
+        bloqueoEventosRef.current.clear();
+        
+        textosElementsRef.current.forEach((elemento, textoId) => {
+          const texto = textos.find(t => t.id.toString() === textoId);
+          if (texto && elemento.parentNode) {
+            configurarEventosTexto(elemento, texto);
+          }
+        });
+        
+        configurarEventosOverlay();
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [textos.length, activo, operacionEnCurso, visorInfo?.mode, configurarEventosTexto, configurarEventosOverlay]);
+
   useEffect(() => {
     if (visorInfo?.mode === 'single' && activo) {
-      // Pequeño delay para asegurar que las páginas estén disponibles
       const timer = setTimeout(() => {
         configurarEventosOverlay();
       }, 100);
@@ -924,27 +1143,13 @@ const TextosLayer = ({
     }
   }, [activo, visorInfo?.mode, configurarEventosOverlay]);
 
-  // Limpiar al desactivar
-  useEffect(() => {
-    if (!activo) {
-      setModalConfig(null);
-      setOperacionEnCurso(false);
-      setTextoGuardando(null);
-    }
-  }, [activo]);
-
-  // Cleanup al desmontar
   useEffect(() => {
     return () => {
-      console.log('🧹 TextosLayer: Iniciando cleanup completo');
-      
-      // Limpiar todos los event listeners
       eventListenersRef.current.forEach(cleanups => {
         cleanups.forEach(cleanup => cleanup());
       });
       eventListenersRef.current.clear();
       
-      // Limpiar overlays
       overlaysRef.current.forEach(overlay => {
         if (overlay.parentNode) {
           overlay.remove();
@@ -952,14 +1157,12 @@ const TextosLayer = ({
       });
       overlaysRef.current.clear();
       
-      // Limpiar elementos de texto
       textosElementsRef.current.clear();
-      
-      console.log('✅ TextosLayer: Cleanup completo');
+      dimensionesRealesRef.current.clear();
+      bloqueoEventosRef.current.clear();
     };
   }, []);
 
-  // Solo modo single soportado por ahora
   if (visorInfo?.mode !== 'single') {
     return null;
   }
@@ -968,7 +1171,8 @@ const TextosLayer = ({
 
   return (
     <>
-      {/* Modal unificado */}
+      <link href="https://fonts.googleapis.com/css?family=Indie+Flower&display=swap" rel="stylesheet" />
+      
       {modalConfig && (
         <TextoModal
           isOpen={true}
@@ -977,62 +1181,19 @@ const TextosLayer = ({
           fontSize={modalConfig.fontSize || DIMENSIONES.DEFAULT_FONT_SIZE}
           width={modalConfig.width || DIMENSIONES.DEFAULT_WIDTH}
           height={modalConfig.height || DIMENSIONES.DEFAULT_HEIGHT}
-          currentPDFScale={escala}
+          currentPDFScale={escalaOriginal}
           onGuardar={modalConfig.onGuardar}
           onCancelar={modalConfig.onCancelar}
           onEliminar={modalConfig.onEliminar}
           showBackendStatus={true}
+          modalColor="#de007e"
         />
       )}
 
-      {/* Debug info (solo en desarrollo) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div 
-          style={{
-            position: 'fixed',
-            bottom: '10px',
-            left: '10px',
-            background: 'rgba(0, 0, 0, 0.8)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            zIndex: 9999,
-            display: activo ? 'block' : 'none'
-          }}
-        >
-          TextosLayer v2 | Activo: {activo ? '✅' : '❌'} | 
-          Textos: {textos.length} | 
-          DOM: {textosElementsRef.current.size} | 
-          Overlays: {overlaysRef.current.size} | 
-          Escala: {escala.toFixed(2)} | 
-          Modal: {modalConfig ? '📝' : '❌'} | 
-          Guardando: {textoGuardando || '❌'}
-        </div>
-      )}
-
-      {/* Container invisible para debugging React */}
-      <div 
-        style={{ display: 'none' }}
-        data-active={activo}
-        data-pagina-actual={paginaActual}
-        data-elementos={textos.length}
-        data-elementos-dom={textosElementsRef.current.size}
-        data-overlays={overlaysRef.current.size}
-        data-modal-abierto={!!modalConfig}
-        data-operacion-en-curso={operacionEnCurso}
-        data-texto-guardando={textoGuardando}
-        data-escala={escala.toFixed(2)}
-        data-version="consolidado-v2"
-        data-sistema="sin-dependencias-externas"
-      />
-
-      {/* CSS para animaciones */}
-      <style jsx>{`
+      <style>{`
         @keyframes pulse {
           0% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
           100% { opacity: 1; transform: scale(1); }
         }
         
@@ -1056,6 +1217,34 @@ const TextosLayer = ({
             transform: translateX(100%);
             opacity: 0;
           }
+        }
+        
+        .texto-handwriting {
+          font-family: 'Indie Flower', cursive;
+        }
+        
+        .textos-overlay-mejorado {
+          transition: all 0.1s ease;
+        }
+        
+        .texto-mejorado.zoom-safe {
+          min-width: ${DIMENSIONES.ABSOLUTE_MIN_WIDTH}px !important;
+          min-height: ${DIMENSIONES.ABSOLUTE_MIN_HEIGHT}px !important;
+        }
+        
+        .texto-contenido-mejorado {
+          min-height: ${DIMENSIONES.ABSOLUTE_MIN_HEIGHT - 4}px !important;
+          min-width: ${DIMENSIONES.ABSOLUTE_MIN_WIDTH - 4}px !important;
+        }
+        
+        .resize-handle-mejorado {
+          min-width: 8px !important;
+          min-height: 8px !important;
+        }
+        
+        .indicador-guardado-mejorado {
+          min-width: 12px !important;
+          min-height: 12px !important;
         }
       `}</style>
     </>

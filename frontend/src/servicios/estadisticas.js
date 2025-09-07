@@ -18,3 +18,7 @@ export const getIntermitenciaLectura = async (libroId) => {
   const res = await api.get(`/lecturas/intermitencia/${libroId}`);
   return res.data; // { dias: 3.2 }
 };
+
+
+
+

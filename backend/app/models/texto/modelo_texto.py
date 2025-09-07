@@ -61,3 +61,12 @@ class TextoResponse(SQLModel):
     txt_actualizado: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TextoSimpleResponse(SQLModel):
+    txt_id: int
+    txt_pagina: int
+    txt_texto: str
+    
+
+    model_config = {"from_attributes": True}
