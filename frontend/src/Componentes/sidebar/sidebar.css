@@ -23,7 +23,7 @@
   overflow-y: auto;
   transition: width 0.3s ease;
   z-index: 1000;
-  gap: 50px; /* Reduce el gap general para mejor distribución */
+  gap: 50px;
 }
 
 /* Sidebar colapsado */
@@ -185,7 +185,7 @@
   padding-bottom: 90px;
 }
 
-/* 🎯 CORRECCIÓN PRINCIPAL: Ajustar contenido cuando sidebar está colapsado */
+/* Ajustar contenido cuando sidebar está colapsado */
 .sidebar-usuario.colapsado ~ .contenido-usuario {
   margin-left: 70px;
 }
@@ -288,7 +288,6 @@
     padding: 25px;
   }
   
-  /* Ajuste para sidebar colapsado en tablet grande */
   .sidebar-usuario.colapsado ~ .contenido-usuario {
     margin-left: 70px;
   }
@@ -322,9 +321,8 @@
     padding: 20px;
   }
   
-  /* En tablet mediano, el sidebar siempre está colapsado visualmente */
   .sidebar-usuario.colapsado ~ .contenido-usuario {
-    margin-left: 70px; /* Mismo valor porque siempre está "colapsado" */
+    margin-left: 70px;
   }
   
   .imagen-perfil {
@@ -366,55 +364,26 @@
   }
 }
 
-/* MOBILE (768px y menor) */
+/* ========== MOBILE (768px y menor) ========== */
 @media (max-width: 768px) {
-  .layout-usuario {
-    grid-template-columns: 1fr;
-  }
-
-  /* Sidebar móvil horizontal */
+  /* 🔴 OCULTAR COMPLETAMENTE EL SIDEBAR EN MÓVIL */
   .sidebar-usuario {
-    flex-direction: row;
-    justify-content: space-between;
-    width: 100%;
-    min-height: auto;
-    padding: 10px;
-    position: relative;
-    gap: 20px;
+    display: none !important;
   }
 
-  .sidebar-usuario.colapsado {
-    width: 100%;
-  }
-
-  /* Ajustar contenido para mobile */
+  /* Contenido ocupa todo el ancho sin margen izquierdo */
   .contenido-usuario {
+    margin-left: 0 !important;
     padding: 20px;
-    margin-left: 0;
-    padding-bottom: 85px; /* espacio para bottom nav */
+    padding-bottom: 85px; /* Espacio para el bottom nav */
   }
 
-  /* En móvil, no aplicar el margen del sidebar colapsado */
+  /* No aplicar márgenes del sidebar colapsado */
   .sidebar-usuario.colapsado ~ .contenido-usuario {
-    margin-left: 0;
-  }
-
-  /* Ajustar elementos del sidebar en móvil */
-  .sidebar-menu {
-    flex-direction: row;
-    gap: 10px;
-    margin-top: 0;
-  }
-
-  .logo-footer {
-    padding-bottom: 0;
-  }
-
-  .toggle-btn {
-    margin: 0;
+    margin-left: 0 !important;
   }
   
-  /* Mostrar bottom nav si existe */
+  /* 🟢 MOSTRAR EL BOTTOM NAV EN MÓVIL */
   .bottom-nav-usuario {
     display: flex;
   }
@@ -424,6 +393,7 @@
 @media (max-width: 480px) {
   .contenido-usuario {
     padding: 12px;
+    padding-bottom: 80px; /* Espacio para bottom nav más pequeño */
   }
   
   .bottom-nav-usuario {
