@@ -14,6 +14,10 @@ import { useParams } from "react-router-dom";
 import { getLibroById } from "../../servicios/libros";
 import { textosAPI } from "../../servicios/textosAPI.js";
 import { progresoAPI } from "../../servicios/progresoAPI";
+import {
+  iniciarSesionLectura,
+  finalizarSesionLectura,
+} from "../../servicios/sesionesLectura.js";
 import "./lector.css";
 
 function Lector() {
@@ -24,7 +28,7 @@ function Lector() {
   const [herramientaActiva, setHerramientaActiva] = useState("cursor");
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
-  
+
   // Estado del libro
   const [libro, setLibro] = useState(null);
   const [libroLoading, setLibroLoading] = useState(true);
@@ -36,13 +40,16 @@ function Lector() {
   const [textosLoading, setTextosLoading] = useState(false);
   const [textosError, setTextosError] = useState(null);
 
+  const sesionIdRef = useRef(null);
+
+
   // Estado del visor
   const [visorInfo, setVisorInfo] = useState({
-    mode: 'single',
+    mode: "single",
     scale: 1.0,
     totalPages: 0,
     currentPage: 1,
-    pdfListo: false
+    pdfListo: false,
   });
 
   // Referencias
@@ -51,18 +58,18 @@ function Lector() {
   const yaCargoTextos = useRef(false);
 
   // ===================== CARGA DEL LIBRO =====================
-  
+
   useEffect(() => {
     let mounted = true;
-    
+
     async function cargarLibro() {
       if (!libroId || !mounted) return;
-      
+
       try {
         const { data: libroData } = await getLibroById(libroId);
-        
+
         if (!mounted) return;
-        
+
         let pagina = 1;
         if (token) {
           try {
@@ -74,14 +81,13 @@ function Lector() {
             // Sin progreso guardado
           }
         }
-        
+
         if (!mounted) return;
-        
+
         setLibro(libroData);
         setPaginaInicial(pagina);
         setPaginaActual(pagina);
         setLibroLoading(false);
-        
       } catch (error) {
         if (mounted) {
           setLibroError(error.message);
@@ -89,30 +95,46 @@ function Lector() {
         }
       }
     }
-    
+
     cargarLibro();
-    
+
     return () => {
       mounted = false;
     };
   }, [libroId, token]);
 
+  // ===================== INICIAR LECTURA ===================== //
+
+  useEffect(() => {
+    // Inicia la sesión cuando el usuario entra al lector
+    iniciarSesionLectura(libroId).then((data) => {
+      sesionIdRef.current = data.ls_id;
+    });
+
+    // Finaliza la sesión cuando el usuario sale del lector
+    return () => {
+      if (sesionIdRef.current) {
+        finalizarSesionLectura(sesionIdRef.current);
+      }
+    };
+  }, [libroId]);
+
   // ===================== CARGA DE TEXTOS =====================
-  
+
   const cargarTextosUnaVez = useCallback(async () => {
     if (!libroId || !token || yaCargoTextos.current || textosLoading) {
       return;
     }
-    
+
     yaCargoTextos.current = true;
     setTextosLoading(true);
-    
+
     try {
       const textosFromAPI = await textosAPI.getTextos(libroId, token);
-      
+
       const textosValidos = textosFromAPI
-        .filter(t => t?.txt_id && typeof t.txt_pagina === "number")
-        .map(t => ({
+        .filter((t) => t?.txt_id && typeof t.txt_pagina === "number")
+        .map((t) => ({
           id: t.txt_id,
           pagina: t.txt_pagina,
           x: t.txt_x,
@@ -125,7 +147,6 @@ function Lector() {
 
       setTextos(textosValidos);
       setTextosLoading(false);
-      
     } catch (error) {
       setTextosError(error.message);
       setTextosLoading(false);
@@ -140,43 +161,61 @@ function Lector() {
 
   // ===================== FUNCIONES CRUD =====================
 
-  const handleAddTexto = useCallback(async (datosTexto) => {
-    if (!libroId || !token) throw new Error('Datos insuficientes');
-    
-    try {
-      const textoCreado = await textosAPI.createTexto({
-        libroId: parseInt(libroId),
-        ...datosTexto
-      }, token);
-      
-      setTextos(prev => [...prev, textoCreado]);
-    } catch (error) {
-      throw error;
-    }
-  }, [libroId, token]);
+  const handleAddTexto = useCallback(
+    async (datosTexto) => {
+      if (!libroId || !token) throw new Error("Datos insuficientes");
 
-  const handleEditTexto = useCallback(async (datosTexto) => {
-    const { id, ...cambios } = datosTexto;
-    if (!id || !libroId || !token) throw new Error('Datos insuficientes');
-    
-    try {
-      const textoActualizado = await textosAPI.updateTexto(id, datosTexto, token);
-      setTextos(prev => prev.map(t => t.id === id ? textoActualizado : t));
-    } catch (error) {
-      throw error;
-    }
-  }, [libroId, token]);
+      try {
+        const textoCreado = await textosAPI.createTexto(
+          {
+            libroId: parseInt(libroId),
+            ...datosTexto,
+          },
+          token
+        );
 
-  const handleDeleteTexto = useCallback(async (id) => {
-    if (!id || !libroId || !token) throw new Error('Datos insuficientes');
-    
-    try {
-      await textosAPI.deleteTexto(id, token);
-      setTextos(prev => prev.filter(t => t.id !== id));
-    } catch (error) {
-      throw error;
-    }
-  }, [libroId, token]);
+        setTextos((prev) => [...prev, textoCreado]);
+      } catch (error) {
+        throw error;
+      }
+    },
+    [libroId, token]
+  );
+
+  const handleEditTexto = useCallback(
+    async (datosTexto) => {
+      const { id, ...cambios } = datosTexto;
+      if (!id || !libroId || !token) throw new Error("Datos insuficientes");
+
+      try {
+        const textoActualizado = await textosAPI.updateTexto(
+          id,
+          datosTexto,
+          token
+        );
+        setTextos((prev) =>
+          prev.map((t) => (t.id === id ? textoActualizado : t))
+        );
+      } catch (error) {
+        throw error;
+      }
+    },
+    [libroId, token]
+  );
+
+  const handleDeleteTexto = useCallback(
+    async (id) => {
+      if (!id || !libroId || !token) throw new Error("Datos insuficientes");
+
+      try {
+        await textosAPI.deleteTexto(id, token);
+        setTextos((prev) => prev.filter((t) => t.id !== id));
+      } catch (error) {
+        throw error;
+      }
+    },
+    [libroId, token]
+  );
 
   // ===================== HANDLERS DEL VISOR =====================
 
@@ -184,64 +223,76 @@ function Lector() {
     setHerramientaActiva("cursor");
   }, []);
 
-  const handlePageChange = useCallback(async (page) => {
-    if (page !== paginaActual && page > 0 && page <= totalPaginas) {
-      setPaginaActual(page);
-      
-      if (libroId && token) {
-        try {
-          await progresoAPI.guardarProgreso({
-            libroId: parseInt(libroId),
-            paginaActual: page,
-            totalPaginas: totalPaginas,
-          }, token);
-        } catch (error) {
-          // Error guardando progreso
+  const handlePageChange = useCallback(
+    async (page) => {
+      if (page !== paginaActual && page > 0 && page <= totalPaginas) {
+        setPaginaActual(page);
+
+        if (libroId && token) {
+          try {
+            await progresoAPI.guardarProgreso(
+              {
+                libroId: parseInt(libroId),
+                paginaActual: page,
+                totalPaginas: totalPaginas,
+              },
+              token
+            );
+          } catch (error) {
+            // Error guardando progreso
+          }
         }
       }
-    }
-  }, [paginaActual, totalPaginas, libroId, token]);
+    },
+    [paginaActual, totalPaginas, libroId, token]
+  );
 
   const handleScaleChange = useCallback((scale) => {
-    setVisorInfo(prev => ({ ...prev, scale }));
+    setVisorInfo((prev) => ({ ...prev, scale }));
   }, []);
 
   const handleModeChange = useCallback((mode) => {
-    setVisorInfo(prev => ({ ...prev, mode }));
+    setVisorInfo((prev) => ({ ...prev, mode }));
   }, []);
 
   const handleTotalPaginasChange = useCallback((total) => {
     setTotalPaginas(total);
-    setVisorInfo(prev => ({ ...prev, totalPages: total, pdfListo: true }));
+    setVisorInfo((prev) => ({ ...prev, totalPages: total, pdfListo: true }));
   }, []);
 
   // ===================== INFORMACIÓN COMPUTADA =====================
 
-  const estadisticas = useMemo(() => ({
-    totalTextos: textos.length,
-    textosEnPaginaActual: textos.filter(t => t.pagina === paginaActual).length,
-  }), [textos, paginaActual]);
+  const estadisticas = useMemo(
+    () => ({
+      totalTextos: textos.length,
+      textosEnPaginaActual: textos.filter((t) => t.pagina === paginaActual)
+        .length,
+    }),
+    [textos, paginaActual]
+  );
 
   // ===================== RENDER CONDICIONAL =====================
 
   if (libroLoading) {
     return (
       <div className="lector-container">
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "rgba(33, 150, 243, 0.9)",
-          color: "white",
-          padding: "20px 30px",
-          borderRadius: "12px",
-          fontSize: "16px",
-          fontWeight: "bold",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-          zIndex: 10000,
-          textAlign: "center"
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(33, 150, 243, 0.9)",
+            color: "white",
+            padding: "20px 30px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            textAlign: "center",
+          }}
+        >
           <div>Cargando libro...</div>
         </div>
       </div>
@@ -251,27 +302,29 @@ function Lector() {
   if (libroError) {
     return (
       <div className="lector-container">
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "rgba(244, 67, 54, 0.9)",
-          color: "white",
-          padding: "20px 30px",
-          borderRadius: "12px",
-          fontSize: "16px",
-          fontWeight: "bold",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-          zIndex: 10000,
-          textAlign: "center",
-          maxWidth: "400px"
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(244, 67, 54, 0.9)",
+            color: "white",
+            padding: "20px 30px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            textAlign: "center",
+            maxWidth: "400px",
+          }}
+        >
           <div>Error cargando el libro</div>
           <div style={{ fontSize: "14px", marginTop: "8px", opacity: 0.8 }}>
             {libroError}
           </div>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             style={{
               marginTop: "12px",
@@ -281,7 +334,7 @@ function Lector() {
               padding: "8px 16px",
               borderRadius: "6px",
               cursor: "pointer",
-              fontSize: "14px"
+              fontSize: "14px",
             }}
           >
             Reintentar
@@ -294,21 +347,23 @@ function Lector() {
   if (!libro) {
     return (
       <div className="lector-container">
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "rgba(255, 152, 0, 0.9)",
-          color: "white",
-          padding: "20px 30px",
-          borderRadius: "12px",
-          fontSize: "16px",
-          fontWeight: "bold",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-          zIndex: 10000,
-          textAlign: "center"
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(255, 152, 0, 0.9)",
+            color: "white",
+            padding: "20px 30px",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            textAlign: "center",
+          }}
+        >
           <div>Libro no encontrado</div>
         </div>
       </div>
@@ -340,7 +395,7 @@ function Lector() {
 
         <VisorPDF
           ref={visorRef}
-          fileUrl={libro?.url || ''}
+          fileUrl={libro?.url || ""}
           herramientaActiva={herramientaActiva}
           onPageChange={handlePageChange}
           paginaInicial={paginaInicial}
@@ -358,61 +413,67 @@ function Lector() {
       />
 
       {textosLoading && (
-        <div style={{
-          position: 'fixed',
-          bottom: '120px',
-          right: '20px',
-          background: 'rgba(33, 150, 243, 0.9)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          fontSize: '13px',
-          zIndex: 10001,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '12px',
-            height: '12px',
-            border: '2px solid white',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
+        <div
+          style={{
+            position: "fixed",
+            bottom: "120px",
+            right: "20px",
+            background: "rgba(33, 150, 243, 0.9)",
+            color: "white",
+            padding: "8px 12px",
+            borderRadius: "6px",
+            fontSize: "13px",
+            zIndex: 10001,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <div
+            style={{
+              width: "12px",
+              height: "12px",
+              border: "2px solid white",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
           Cargando textos...
         </div>
       )}
 
       {textosError && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: '#f44336',
-          color: 'white',
-          padding: '12px 16px',
-          borderRadius: '6px',
-          fontSize: '14px',
-          zIndex: 10001,
-          maxWidth: '300px'
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            background: "#f44336",
+            color: "white",
+            padding: "12px 16px",
+            borderRadius: "6px",
+            fontSize: "14px",
+            zIndex: 10001,
+            maxWidth: "300px",
+          }}
+        >
           Error cargando textos: {textosError}
-          <button 
+          <button
             onClick={() => {
               setTextosError(null);
               yaCargoTextos.current = false;
               cargarTextosUnaVez();
             }}
             style={{
-              marginLeft: '12px',
-              background: 'none',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
-              color: 'white',
-              padding: '4px 8px',
-              borderRadius: '3px',
-              cursor: 'pointer',
-              fontSize: '12px'
+              marginLeft: "12px",
+              background: "none",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
+              color: "white",
+              padding: "4px 8px",
+              borderRadius: "3px",
+              cursor: "pointer",
+              fontSize: "12px",
             }}
           >
             Reintentar
@@ -422,8 +483,12 @@ function Lector() {
 
       <style jsx>{`
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </div>

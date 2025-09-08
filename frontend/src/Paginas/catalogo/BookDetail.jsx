@@ -38,11 +38,15 @@ const BookDetail = () => {
     try {
       const resp = await getLinkPago(libro.id);
 
+      console.log("Respuesta getLinkPago:", resp);
+
       if (!resp.link_pago) {
         alert("No se pudo generar el enlace de pago: respuesta vacía");
         setLoadingPago(false);
         return;
       }
+
+      console.log("LINK DE PAGO generado:", resp.link_pago);
       window.open(resp.link_pago, "_blank");
       setLinkPago(resp.link_pago);
     } catch (e) {
@@ -102,12 +106,13 @@ const BookDetail = () => {
               <li>
                 <b>Sección:</b> Psicología
               </li>
+     
               <li>
-                <b>Descripción:</b> {libro.descripcion}
+                <b>Idioma:</b> Español
               </li>
 
               <li>
-                <b>Idioma:</b> Español
+                <b>Descripción:</b> {libro.descripcion}
               </li>
             </ul>
 

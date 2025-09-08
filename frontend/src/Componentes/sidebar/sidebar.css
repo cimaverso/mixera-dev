@@ -23,7 +23,7 @@
   overflow-y: auto;
   transition: width 0.3s ease;
   z-index: 1000;
-  gap: 30px; /* Reduce el gap general para mejor distribución */
+  gap: 50px; /* Reduce el gap general para mejor distribución */
 }
 
 /* Sidebar colapsado */
