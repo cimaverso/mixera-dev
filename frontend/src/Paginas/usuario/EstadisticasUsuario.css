@@ -54,7 +54,7 @@
   padding: var(--spacing-lg);
   max-width: 1200px;
   margin: 0 auto;
-  background: var(--color-bg-page);
+  background: transparent;
   min-height: 100vh;
 }
 
@@ -585,5 +585,18 @@
   }
   .card-help {
     font-size: 12px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .estadisticas-page {
+    max-width: 1600px;
+    padding: var(--spacing-xxl);
+  }
+}
+
+@media (min-width: 1800px) {
+  .estadisticas-page {
+    max-width: 95%; /* casi ancho completo */
   }
 }
