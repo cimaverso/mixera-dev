@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // AÑADIR ESTA IMPORTACIÓN
 import SidebarUsuario, {
   CatalogoIcon,
   BibliotecaIcon,
@@ -6,8 +7,7 @@ import SidebarUsuario, {
   EstadisticasIcon,
 } from "./sidebar/SidebarUsuario.jsx";
 import "./sidebar/sidebar.css";
-import api from "../servicios/api"; 
-
+import api from "../servicios/api";
 
 // Ícono para cerrar sesión en bottom nav
 const LogoutIcon = () => (
@@ -26,6 +26,16 @@ const LogoutIcon = () => (
 
 const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
   const [fotoPerfil, setFotoPerfil] = useState("");
+  const navigate = useNavigate(); // AÑADIR HOOK DE NAVEGACIÓN
+
+  // AÑADIR MAPEO DE RUTAS
+  const rutas = {
+    perfil: "/perfil",
+    catalogo: "/catalogo",
+    biblioteca: "/biblioteca",
+    tutoriales: "/tutoriales",
+    estadisticas: "/estadisticas",
+  };
 
   useEffect(() => {
     const cargarFoto = async () => {
@@ -59,11 +69,13 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
     window.location.href = "/login";
   };
 
-  // Navegación para el bottom nav
+  // FUNCIÓN MEJORADA PARA NAVEGACIÓN
   const handleNav = (key) => {
     onChange?.(key); // mantiene resaltado activo
-    // Puedes hacer navegación aquí si lo necesitas (usa react-router-dom si es necesario)
-    // Por ejemplo: navigate(rutas[key]);
+    const path = rutas[key];
+    if (path) {
+      navigate(path); // NAVEGA A LA RUTA CORRESPONDIENTE
+    }
   };
 
   return (
@@ -71,15 +83,14 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
       <SidebarUsuario
         items={items}
         activeKey={activeKey}
-        onChange={onChange}z
+        onChange={onChange}
         onLogout={handleLogout}
-        logoSrc={"/assets/LogoLogin.webp"} 
+        logoSrc={"/assets/LogoLogin.webp"}
         fotoPerfil={fotoPerfil}
       />
 
       <main className="contenido-usuario">{children}</main>
 
-      
       {/* === BOTTOM NAV SOLO PARA MOBILE === */}
       <nav className="bottom-nav-usuario">
         <button
@@ -88,6 +99,7 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
           title="Catálogo"
         >
           <CatalogoIcon />
+          <span>Catálogo</span>
         </button>
         <button
           className={activeKey === "biblioteca" ? "activo" : ""}
@@ -95,6 +107,7 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
           title="Mi Biblioteca"
         >
           <BibliotecaIcon />
+          <span>Biblioteca</span>
         </button>
         <button
           className={activeKey === "tutoriales" ? "activo" : ""}
@@ -102,6 +115,7 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
           title="Tutoriales"
         >
           <TutorialesIcon />
+          <span>Tutoriales</span>
         </button>
         <button
           className={activeKey === "estadisticas" ? "activo" : ""}
@@ -109,12 +123,14 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
           title="Estadísticas"
         >
           <EstadisticasIcon />
+          <span>Estadísticas</span>
         </button>
         <button
           onClick={handleLogout}
           title="Cerrar sesión"
         >
           <LogoutIcon />
+          <span>Salir</span>
         </button>
       </nav>
     </div>

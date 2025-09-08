@@ -1,39 +1,37 @@
 import React from "react";
-import { RadialBarChart, RadialBar, Legend } from "recharts";
+import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
 
 const ChartCircular = ({ porcentaje, label }) => {
   const data = [
     {
-      name: label,
+      name: label || "Progreso",
       value: porcentaje,
       fill: "#e73180"
     }
   ];
 
   return (
-    <RadialBarChart
-      width={200}
-      height={200}
-      cx="50%"
-      cy="50%"
-      innerRadius="80%"
-      outerRadius="100%"
-      barSize={15}
-      data={data}
-    >
-      <RadialBar
-        minAngle={15}
-        background
-        clockWise
-        dataKey="value"
-      />
-      <Legend
-        iconSize={10}
-        layout="vertical"
-        verticalAlign="middle"
-        wrapperStyle={{ top: "50%", transform: "translateY(-50%)" }}
-      />
-    </RadialBarChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <RadialBarChart
+        cx="50%"
+        cy="50%"
+        innerRadius="60%"
+        outerRadius="90%"
+        barSize={12}
+        data={data}
+        startAngle={90}
+        endAngle={-270}
+      >
+        <RadialBar
+          minAngle={15}
+          background={{ fill: '#f3f4f6' }}
+          clockWise
+          dataKey="value"
+          cornerRadius={6}
+          fill="#e73180"
+        />
+      </RadialBarChart>
+    </ResponsiveContainer>
   );
 };
 
