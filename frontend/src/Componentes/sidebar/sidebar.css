@@ -12,6 +12,7 @@
   color: white;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: center;
   padding: 20px 10px;
   width: 220px;
@@ -23,7 +24,7 @@
   overflow-y: auto;
   transition: width 0.3s ease;
   z-index: 1000;
-  gap: 50px; /* Reduce el gap general para mejor distribución */
+  gap: 30px; /* Reduce el gap general para mejor distribución */
 }
 
 /* Sidebar colapsado */

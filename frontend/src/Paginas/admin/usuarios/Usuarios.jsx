@@ -118,7 +118,7 @@ const HistorialUsuario = ({ usuario, onBack }) => {
       setLoadingHist(true);
       try {
         const res = await api.get(
-          `/usuarios/${usuario.usu_id}/historial-compras`
+          `/administradores/usuarios/${usuario.usu_id}/historial`
         );
         setHistorial(res.data);
       } catch {
@@ -158,27 +158,22 @@ const HistorialUsuario = ({ usuario, onBack }) => {
               <tr>
                 <th>Libro</th>
                 <th>Fecha</th>
-                <th>Monto</th>
-                <th>Descarga</th>
-                <th>Progreso</th>
+                <th>Estado</th>
+                <th>Referencia</th>
               </tr>
             </thead>
             <tbody>
               {historial.map((c) => (
                 <tr key={c.id}>
                   <td>{c.libro_titulo}</td>
-                  <td>{new Date(c.fecha_compra).toLocaleDateString()}</td>
-                  <td>${c.monto}</td>
+                  <td>{formatearFecha(c.fecha_compra)}</td>
+
                   <td>
-                    <span
-                      className={`status-badge ${
-                        c.descargado ? "downloaded" : "pending"
-                      }`}
-                    >
-                      {c.descargado ? "Descargado" : "Pendiente"}
+                    <span className={`status-badge ${c.estado}`}>
+                      {c.estado}
                     </span>
                   </td>
-                  <td>{c.progreso_porcentaje || 0}%</td>
+                  <td>{c.referencia}</td>
                 </tr>
               ))}
             </tbody>
@@ -230,7 +225,15 @@ const Usuarios = () => {
     const cargar = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/administradores/usuarios");
+        const res = await api.get("/administradores/usuarios", {
+          params: {
+            busqueda: filtros.busqueda,
+            estado: filtros.estado,
+            fechaDesde: filtros.fechaDesde,
+            fechaHasta: filtros.fechaHasta,
+          },
+        });
+
         setUsuarios(res.data);
       } catch {}
       setLoading(false);
@@ -332,40 +335,54 @@ const Usuarios = () => {
       case "datos":
         return (
           <div className="tab-content">
-            <div className="filtros-row">
-              <input
-                placeholder="Buscar por nombre, email o usuario..."
-                value={filtros.busqueda}
-                onChange={(e) => handleFiltroChange("busqueda", e.target.value)}
-                className="filtro-input"
-              />
-              <select
-                value={filtros.estado}
-                onChange={(e) => handleFiltroChange("estado", e.target.value)}
-                className="filtro-select"
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="activo">Activos</option>
-                <option value="pendiente">Pendientes</option>
-                <option value="eliminado">Eliminados</option>
-              </select>
-              <input
-                type="date"
-                value={filtros.fechaDesde}
-                onChange={(e) =>
-                  handleFiltroChange("fechaDesde", e.target.value)
-                }
-                className="filtro-date"
-              />
-              <input
-                type="date"
-                value={filtros.fechaHasta}
-                onChange={(e) =>
-                  handleFiltroChange("fechaHasta", e.target.value)
-                }
-                className="filtro-date"
-              />
+            <div className="filtros-container">
+              {/* 🔎 Barra de búsqueda arriba */}
+              <div className="filtros-row filtros-top">
+                <input
+                  placeholder="Buscar por nombre, email o usuario..."
+                  value={filtros.busqueda}
+                  onChange={(e) =>
+                    handleFiltroChange("busqueda", e.target.value)
+                  }
+                  className="filtro-input"
+                />
+              </div>
+
+              {/* ⚙️ Filtros de estado y fechas abajo */}
+              <div className="filtros-row filtros-bottom">
+                <select
+                  value={filtros.estado}
+                  onChange={(e) => handleFiltroChange("estado", e.target.value)}
+                  className="filtro-select"
+                >
+                  <option value="todos">Todos los estados</option>
+                  <option value="activo">Activos</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="eliminado">Eliminados</option>
+                </select>
+
+
+                <p>Desde</p>
+
+                <input
+                  type="date"
+                  value={filtros.fechaDesde}
+                  onChange={(e) =>
+                    handleFiltroChange("fechaDesde", e.target.value)
+                  }
+                  className="filtro-date"
+                />
+                <input
+                  type="date"
+                  value={filtros.fechaHasta}
+                  onChange={(e) =>
+                    handleFiltroChange("fechaHasta", e.target.value)
+                  }
+                  className="filtro-date"
+                />
+              </div>
             </div>
+
             <TablaUsuarios
               usuarios={usuarios}
               onUsuarioClick={handleUsuarioClick}

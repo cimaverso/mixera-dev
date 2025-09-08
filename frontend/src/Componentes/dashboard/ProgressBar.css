@@ -1,26 +1,33 @@
 .progress-bar-container {
-  margin-bottom: 12px;
+  width: 100%;             /* 👈 ocupa todo el ancho del padre */
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
 }
 
 .progress-label {
-  display: block;
   font-weight: 500;
   margin-bottom: 4px;
 }
 
 .progress-bar {
+  width: 100%;             /* 👈 asegura que se estire */
+  height: 18px;            /* 👈 más gruesa */
   background: #eee;
-  height: 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: width 0.3s ease;
 }
 
 .progress-percent {
-  font-size: 12px;
-  margin-left: 4px;
+  font-size: 13px;
+  margin-top: 2px;
+  color: #555;
 }

@@ -289,6 +289,47 @@
   transform: translateY(-1px);
 }
 
+
+
+
+.progress-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  width: 100%; /* 👈 asegura que ocupe todo el ancho disponible */
+}
+
+.progress-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.progress-bar {
+  width: 100%;       /* 👈 siempre 100% del contenedor */
+  height: 18px;      /* 👈 grosor de la barra (ajústalo a tu gusto, ej. 14px, 20px) */
+  background: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;       /* 👈 relleno adapta su altura a la barra */
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+.progress-percent {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+
+
+
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .dashboard-grid {
