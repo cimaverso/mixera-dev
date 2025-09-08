@@ -1,5 +1,5 @@
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
 
 
@@ -10,7 +10,7 @@ class Autor(SQLModel, table=True):
     aut_biografia: Optional[str]
 
 
-    libro: Optional["Libro"] = Relationship(back_populates="autor")
+    #libro: Optional["Libro"] = Relationship(back_populates="autor")
 
 
 class AutorCreate(SQLModel):

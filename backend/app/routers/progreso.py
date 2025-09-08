@@ -13,21 +13,21 @@ router = APIRouter(prefix="/progresos", tags=["Progresos"])
 @router.get("/usuario/{id}", response_model=ProgresoLecturaResponse)
 def obtener_progreso_libro_usuario(
     id: int,
-    db: Session = Depends(get_session),
+    session: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario)
 ):
     usuario_id = usuario["usu_id"]
-    servicio = ProgresoLecturaServicio(db)
+    servicio = ProgresoLecturaServicio(session)
     progreso = servicio.obtener_progreso(usuario_id, id)
     return progreso
 
 @router.post("/usuario", response_model=ProgresoLecturaResponse)
 def guardar_progreso(
     progreso_data: ProgresoLecturaCreate,
-    db: Session = Depends(get_session),
+    session: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario)
 ):
 
-    servicio = ProgresoLecturaServicio(db)
+    servicio = ProgresoLecturaServicio(session)
     progreso = servicio.guardar_o_actualizar_progreso(usuario["usu_id"], progreso_data)
     return progreso

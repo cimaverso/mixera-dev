@@ -25,16 +25,16 @@ class CambioClave(BaseModel):
 
 @router.get("/libros")
 def obtener_libros_adquiridos(
-    db: Session = Depends(get_session),
+    session: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario),
 ):
     service = UsuarioServicio()
-    return service.libros_adquiridos_con_progreso(usuario["usu_id"], db)
+    return service.libros_adquiridos_con_progreso(usuario["usu_id"], session)
 
 @router.get("/verificar")
-def verificar_usuario(token: str = Query(...), db: Session = Depends(get_session)):
+def verificar_usuario(token: str = Query(...), session: Session = Depends(get_session)):
     try:
-        servicio_usuario.activar_usuario(token, db)
+        servicio_usuario.activar_usuario(token, session)
         return RedirectResponse("https://app.mixera.org/verificacion?status=ok",
                                 status_code=status.HTTP_303_SEE_OTHER)
     except (ValueError, JWTError):
@@ -42,61 +42,61 @@ def verificar_usuario(token: str = Query(...), db: Session = Depends(get_session
                                 status_code=status.HTTP_303_SEE_OTHER)
     
 @router.get("/perfil", response_model=UsuarioPerfilResponse)
-def obtener_perfil(db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
+def obtener_perfil(session: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     try:
-        return servicio_usuario.listar_perfil_usuario(usuario["usu_id"], db)
+        return servicio_usuario.listar_perfil_usuario(usuario["usu_id"], session)
     except ValueError as es:
         raise HTTPException(status_code=404, detail=str(es))
     except Exception:
         raise HTTPException(status_code=500, detail="Error al obtener el perfil de usuario")
 
 @router.post("/imagen")
-async def cargar_imagen(file: UploadFile = File(...), usuario = Depends(obtener_usuario), db: Session = Depends(get_session)):
+async def cargar_imagen(file: UploadFile = File(...), usuario = Depends(obtener_usuario), session: Session = Depends(get_session)):
     try:
-        return await servicio_usuario.subir_imagen_perfil(file, usuario["usu_id"], db)
+        return await servicio_usuario.subir_imagen_perfil(file, usuario["usu_id"], session)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception:
         raise HTTPException(status_code=500, detail="Error al subir la imagen")
 
 @router.post("/recuperar", response_model=dict)
-async def solicitar_recuperacion(usu_correo: str = Body(..., embed=True), db: Session = Depends(get_session)):
+async def solicitar_recuperacion(usu_correo: str = Body(..., embed=True), session: Session = Depends(get_session)):
     try:
-        return await servicio_usuario.enviar_solicitud(usu_correo, db)
+        return await servicio_usuario.enviar_solicitud(usu_correo, session)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception:
         raise HTTPException(status_code=500, detail="Error al enviar el correo de recuperación")
 
 @router.post("/registrar", response_model=UsuarioResponse)
-def registrar(usuario: UsuarioCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_session)):
+def registrar(usuario: UsuarioCreate, background_tasks: BackgroundTasks, session: Session = Depends(get_session)):
     try:
-        return servicio_usuario.registrar_usuario(usuario, db, background_tasks)
+        return servicio_usuario.registrar_usuario(usuario, session, background_tasks)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/restablecer", response_model=dict)
-def restablecer_clave(datos: RestablecerClave, db: Session = Depends(get_session)):
+def restablecer_clave(datos: RestablecerClave, session: Session = Depends(get_session)):
     try:
-        return servicio_usuario.actualizar_clave(datos.token, datos.nueva_clave, db)
+        return servicio_usuario.actualizar_clave(datos.token, datos.nueva_clave, session)
     except (ValueError, JWTError):
         raise HTTPException(status_code=400, detail="Token inválido o expirado")
     except Exception:
         raise HTTPException(status_code=500, detail="No se pudo restablecer la contraseña")
     
 @router.put("/clave", response_model=dict)
-def actualizar_clave(datos: CambioClave, usuario = Depends(obtener_usuario), db: Session = Depends(get_session)):
+def actualizar_clave(datos: CambioClave, usuario = Depends(obtener_usuario), session: Session = Depends(get_session)):
     try:
-        return servicio_usuario.actualizar_clave_usuario_autenticado(usuario["usu_id"], datos.actual, datos.nueva, db)
+        return servicio_usuario.actualizar_clave_usuario_autenticado(usuario["usu_id"], datos.actual, datos.nueva, session)
     except HTTPException as e:
         raise e
     except Exception:
         raise HTTPException(status_code=500, detail="No se pudo cambiar la contraseña")
 
 @router.put("/perfil", response_model=UsuarioResponse)
-def actualizar_perfil(datos: UsuarioUpdate, db: Session = Depends(get_session), usuario=Depends(obtener_usuario)):
+def actualizar_perfil(datos: UsuarioUpdate, session: Session = Depends(get_session), usuario=Depends(obtener_usuario)):
     try:
-        return servicio_usuario.actualizar_perfil_usuario(usuario["usu_id"], datos, db)
+        return servicio_usuario.actualizar_perfil_usuario(usuario["usu_id"], datos, session)
     except HTTPException as e:
         raise e
     except Exception:

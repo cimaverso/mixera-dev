@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -11,8 +11,8 @@ class LecturaSesion(SQLModel, table=True):
     ls_fecha_final: Optional[datetime] = None
 
     
-    usuarios: Optional["Usuario"] = Relationship(back_populates="sesion")  # Relación con Usuario
-    libro: Optional["Libro"] = Relationship(back_populates="sesion")    # Relación con Libro
+    # usuarios: Optional["Usuario"] = Relationship(back_populates="sesion")  # Relación con Usuario
+    # libro: Optional["Libro"] = Relationship(back_populates="sesion")    # Relación con Libro
 
     
     

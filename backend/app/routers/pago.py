@@ -10,10 +10,10 @@ from app.services.servicio_compra import CompraServicio
 
 router = APIRouter(prefix="/pago", tags=["Pago"])
 @router.get("/{libro}")
-def generar_enlace_pago(libro: int, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
+def generar_enlace_pago(libro: int, session: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     
-    compra_service = CompraServicio(db)
-    libro = LibroServicio(db).listar_libro_id(libro, usuario["usu_id"])
+    compra_service = CompraServicio(session)
+    libro = LibroServicio(session).listar_libro_id(libro, usuario["usu_id"])
     if not libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
 

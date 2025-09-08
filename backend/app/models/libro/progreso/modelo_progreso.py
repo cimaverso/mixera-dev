@@ -1,6 +1,6 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
-from datetime import datetime
+
 
 class ProgresoLectura(SQLModel, table=True):
     __tablename__ = "progreso_lectura"
@@ -11,8 +11,8 @@ class ProgresoLectura(SQLModel, table=True):
     pro_pagina_total: Optional[int] = None
 
 
-    usuarios: Optional["Usuario"] = Relationship(back_populates="progreso")  # Relación con Usuario
-    libro: Optional["Libro"] = Relationship(back_populates="progreso")    # Relación con Libro
+    # usuarios: Optional["Usuario"] = Relationship(back_populates="progreso")  # Relación con Usuario
+    # libro: Optional["Libro"] = Relationship(back_populates="progreso")    # Relación con Libro
 
 
 

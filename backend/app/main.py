@@ -5,13 +5,6 @@ from sqlmodel import SQLModel
 from fastapi.staticfiles import StaticFiles
 from app.database.database import engine
 from fastapi.middleware.cors import CORSMiddleware
-from app.models.usuario.modelo_usuario import Usuario
-from app.models.usuario.modelo_rol import Rol
-from app.models.libro.modelo_libro import Libro, LibroCreate
-from app.models.libro.modelo_editorial import Editorial
-from app.models.libro.modelo_autor import Autor
-from app.models.libro.modelo_categoria import Categoria
-from app.models.texto.modelo_texto import Texto
 
 
 

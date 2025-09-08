@@ -1,5 +1,5 @@
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
 class Editorial(SQLModel, table=True):
     __tablename__ = "editorial"
@@ -7,7 +7,7 @@ class Editorial(SQLModel, table=True):
     edi_nombre: str = Field(max_length=100)
     edi_biografia: Optional[str]
 
-    libro: Optional["Libro"] = Relationship(back_populates="editorial")
+    #libro: Optional["Libro"] = Relationship(back_populates="editorial")
 
 class EditorialCreate(SQLModel):
     edi_nombre: str

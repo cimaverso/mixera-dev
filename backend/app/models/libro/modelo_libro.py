@@ -1,6 +1,6 @@
 
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import date
 
@@ -20,12 +20,12 @@ class Libro(SQLModel, table=True):
     lib_idautor: Optional[int] = Field(default=None, foreign_key="autor.aut_id")
     lib_idcategoria: Optional[int] = Field(default=None, foreign_key="categoria.cat_id")
 
-    editorial: Optional["Editorial"] = Relationship(back_populates="libro") # type: ignore
-    categoria: Optional["Categoria"] = Relationship(back_populates="libro") # type: ignore
-    autor: Optional["Autor"] = Relationship(back_populates="libro") # type: ignore
-    texto: list["Texto"] = Relationship(back_populates="libro") # type: ignore
-    progreso: list["ProgresoLectura"] = Relationship(back_populates="libro") # type: ignore
-    sesion: list["LecturaSesion"] = Relationship(back_populates="libro") # type: ignore
+    # editorial: Optional["Editorial"] = Relationship(back_populates="libro") # type: ignore
+    # categoria: Optional["Categoria"] = Relationship(back_populates="libro") # type: ignore
+    # #autor: Optional["Autor"] = Relationship(back_populates="libro") # type: ignore
+    # texto: list["Texto"] = Relationship(back_populates="libro") # type: ignore
+    # progreso: list["ProgresoLectura"] = Relationship(back_populates="libro") # type: ignore
+    # sesion: list["LecturaSesion"] = Relationship(back_populates="libro") # type: ignore
     
     
 

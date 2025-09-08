@@ -17,7 +17,7 @@ class LibroCreateForm:
         lib_descripcion: str = Form(...),
         lib_precio: float = Form(...),
         lib_ideditorial: int = Form(...),
-        lib_idautor: int = Form(...),         # <--- Añadido
+        lib_idautor: int = Form(...),         
         lib_idcategoria: int = Form(...),  
         lib_estado: bool = Form(...),
         
@@ -36,28 +36,28 @@ class LibroCreateForm:
 @router.get("/usuario")
 def obtener_libros_comprados(
     request: Request,
-    db: Session = Depends(get_session),
+    session: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario)
 ):
     base_url = obtener_base_url(request)
-    servicio = LibroServicio(db)
+    servicio = LibroServicio(session)
     return servicio.listar_libros_comprados(usuario["usu_id"], base_url)
 
 
 
 @router.get("/{id}")
-def obtener_libro(id: int, request: Request, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
+def obtener_libro(id: int, request: Request, session: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
     base_url = obtener_base_url(request)
-    servicio_libro = LibroServicio(db).listar_libro_id(id, usuario["usu_id"], base_url)
+    servicio_libro = LibroServicio(session).listar_libro_id(id, usuario["usu_id"], base_url)
     if not servicio_libro:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
     return servicio_libro
 
 
 @router.get("/")
-def obtener_libros(request: Request, db: Session = Depends(get_session), q: str = ""):
+def obtener_libros(request: Request, session: Session = Depends(get_session), q: str = ""):
     base_url = obtener_base_url(request)
-    servicio = LibroServicio(db)
+    servicio = LibroServicio(session)
     libros = servicio.listar_libros(q=q)
     return [servicio.serializar_libros(libro, base_url) for libro in libros]
 

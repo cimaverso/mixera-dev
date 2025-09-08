@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
 class Texto(SQLModel, table=True):
     txt_id: Optional[int] = Field(default=None, primary_key=True)
@@ -17,8 +17,8 @@ class Texto(SQLModel, table=True):
     txt_actualizado: Optional[datetime] = Field(default_factory=datetime.utcnow)
     
     # Relaciones opcionales (si tienes modelos Libro/Usuario)
-    libro: Optional["Libro"] = Relationship(back_populates="texto")
-    usuarios: Optional["Usuario"] = Relationship(back_populates="texto")
+    # libro: Optional["Libro"] = Relationship(back_populates="texto")
+    # usuarios: Optional["Usuario"] = Relationship(back_populates="texto")
 
 
 

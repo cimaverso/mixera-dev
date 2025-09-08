@@ -9,8 +9,8 @@ from app.core.auth_core import obtener_usuario
 router = APIRouter(prefix="/textos", tags=["Textos"])
 
 @router.get("/usuario/{id}", response_model=List[TextoResponse])
-def obtener_textos(id: int, db: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
-    servicio = TextoServicio(db)
+def obtener_textos(id: int, session: Session = Depends(get_session), usuario: dict = Depends(obtener_usuario)):
+    servicio = TextoServicio(session)
     textos = servicio.listar_libro_id_usuario(id, usuario["usu_id"])
     return textos
 
@@ -18,10 +18,10 @@ def obtener_textos(id: int, db: Session = Depends(get_session), usuario: dict = 
 @router.post("/", response_model=TextoResponse)
 def crear_texto(
     texto_in: TextoCreate,
-    db: Session = Depends(get_session),
+    session: Session = Depends(get_session),
     usuario: dict = Depends(obtener_usuario)
 ):
-    servicio = TextoServicio(db)
+    servicio = TextoServicio(session)
     texto_creado = servicio.crear_texto(texto_in, usuario["usu_id"])
     return texto_creado
 
@@ -30,9 +30,9 @@ def crear_texto(
 def actualizar_texto(
     id: int,
     texto_in: TextoUpdate,
-    db: Session = Depends(get_session)
+    session: Session = Depends(get_session)
 ):
-    servicio = TextoServicio(db)
+    servicio = TextoServicio(session)
     texto = servicio.actualizar_texto(id, texto_in.dict(exclude_unset=True))
     if not texto:
         raise HTTPException(status_code=404, detail="Texto no encontrado")
@@ -40,8 +40,8 @@ def actualizar_texto(
 
 
 @router.delete("/{id}", response_model=dict)
-def eliminar_texto(id: int, db: Session = Depends(get_session)):
-    servicio = TextoServicio(db)
+def eliminar_texto(id: int, session: Session = Depends(get_session)):
+    servicio = TextoServicio(session)
     exito = servicio.eliminar_texto(id)
     if not exito:
         raise HTTPException(status_code=404, detail="Texto no encontrado")

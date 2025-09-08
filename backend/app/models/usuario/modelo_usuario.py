@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import date
 
@@ -19,10 +19,10 @@ class Usuario(SQLModel, table=True):
     usu_pais: Optional[str] = Field(max_length=30)
     usu_imagen: Optional[str] = Field(default=None, max_length=100)
 
-    rol: Optional["Rol"] = Relationship(back_populates="usuarios")
-    texto: list["Texto"] = Relationship(back_populates="usuarios")
-    progreso: list["ProgresoLectura"] = Relationship(back_populates="usuarios")  # type: ignore
-    sesion: list["LecturaSesion"] = Relationship(back_populates="usuarios")  # type: ignore
+    #rol: Optional["Rol"] = Relationship(back_populates="usuarios")
+    # texto: list["Texto"] = Relationship(back_populates="usuarios")
+    # progreso: list["ProgresoLectura"] = Relationship(back_populates="usuarios")  # type: ignore
+    # sesion: list["LecturaSesion"] = Relationship(back_populates="usuarios")  # type: ignore
 
 
 class UsuarioCreate(SQLModel):

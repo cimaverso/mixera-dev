@@ -1,5 +1,5 @@
 import os
-from sqlmodel import create_engine, Session, SQLModel
+from sqlmodel import create_engine, Session
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,6 +14,7 @@ def get_session():
         try:
             yield session
         finally:
+            
             session.close() 
 
 

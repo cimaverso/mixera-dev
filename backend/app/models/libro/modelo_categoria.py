@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from typing import Optional
 
 
@@ -8,7 +8,7 @@ class Categoria(SQLModel, table=True):
     cat_nombre: str = Field(max_length=50, unique=True)
     cat_descripcion: Optional[str]
 
-    libro: Optional["Libro"] = Relationship(back_populates="categoria")
+    #libro: Optional["Libro"] = Relationship(back_populates="categoria")
 
 
 class CategoriaCreate(SQLModel):

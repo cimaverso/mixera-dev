@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
 @router.post("/mercadopago")
-async def webhook_mercadopago(request: Request, db: Session = Depends(get_session)):
+async def webhook_mercadopago(request: Request, session: Session = Depends(get_session)):
 
-    compra_service = CompraServicio(db)
+    compra_service = CompraServicio(session)
     data = await request.json()
 
     topic = data.get("type") or data.get("topic")
