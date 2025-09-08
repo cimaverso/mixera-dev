@@ -3,12 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database.database import get_session
 from app.services.servicio_administrador import AdministradorServicio
-from app.models.usuario.modelo_usuario import UsuarioResponse
 
 
 
 router = APIRouter(
-    prefix="/adminitracion",
+    prefix="/administracion",
     tags=["Administración"],
     
 )
@@ -19,9 +18,8 @@ def dashboard(session: Session = Depends(get_session)):
     servicio = AdministradorServicio(session)
     return servicio.listar_dashboard()
 
-@router.get("/usuarios", response_model=List[UsuarioResponse])
-def obtener_usuarios(
-    session: Session = Depends(get_session),
+@router.get("/usuarios")
+def obtener_usuarios(session: Session = Depends(get_session),
     busqueda: str = Query(None, description="Buscar por nombre, email o usuario"),
     estado: str = Query("todos", description="Filtrar por estado"),
     fechaDesde: str = Query(None, description="Fecha inicial (YYYY-MM-DD)"),

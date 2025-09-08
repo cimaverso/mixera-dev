@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   const cargarDashboardData = async () => {
     try {
-      const { data } = await api.get("/administradores/dashboard");
+      const { data } = await api.get("/administracion/dashboard");
       setDashboardData({
         ...data,
         loading: false,

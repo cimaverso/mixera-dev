@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from app.models.usuario.modelo_usuario import Usuario
-from app.models.usuario.modelo_rol import Rol   # ✅ Import necesario
 from sqlalchemy import or_, func
 import os
 from dotenv import load_dotenv
@@ -127,13 +126,6 @@ def usuario_autenticado(identificador: str, usu_clave: str, db) -> Usuario:
     if not usuario.usu_verificado:
         raise HTTPException(status_code=403, detail="Usuario no verificado")
 
-    # ✅ Obtener nombre del rol sin Relationship
-    rol = db.get(Rol, usuario.usu_idrol)
-    rol_nombre = rol.rol_nombre if rol else "usuario"
-
-    # ⚡ Generar tokens aquí mismo (opcional, depende de tu flujo)
-    tokens = crear_tokens(usuario.usu_usuario, usuario.usu_id, rol_nombre)
-
     return usuario  # O podrías retornar también tokens si quieres
 
 
@@ -148,7 +140,7 @@ async def obtener_usuario(token: str = Depends(oauth2_bearer)) -> Dict[str, Unio
         return {
             "usu_usuario": payload["sub"],
             "usu_id": payload["id"],
-            "usu_rol": payload["role"],   # ✅ aquí tendrás el nombre del rol
+            "usu_rol": payload["role"],   
         }
     except JWTError:
         raise HTTPException(

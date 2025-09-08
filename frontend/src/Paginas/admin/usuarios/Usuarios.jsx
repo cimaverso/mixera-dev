@@ -2,10 +2,6 @@ import React, { useState, useEffect } from "react";
 import LayoutAdministrador from "../../../Componentes/LayoutAdministrador.jsx";
 import "./Usuarios.css";
 import api from "../../../servicios/api.js";
-import {
-  getTiempoTotalLectura,
-  getIntermitenciaLectura,
-} from "../../../servicios/estadisticas";
 
 // Componente de pestañas reutilizable
 const TabsNavigation = ({ tabs, activeTab, onTabChange }) => (
@@ -97,8 +93,12 @@ const TablaUsuarios = ({ usuarios, onUsuarioClick, loading }) => {
                   {u.usu_verificado ? "Activo" : "Pendiente"}
                 </span>
               </td>
-              <td>{new Date(u.usu_fecharegistro).toLocaleDateString()}</td>
-              <td>{u.ultima_actividad || "Nunca"}</td>
+              <td>{new Date(u.usu_fecha_registro).toLocaleDateString()}</td>
+              <td>
+                {u.ultima_actividad
+                  ? new Date(u.ultima_actividad).toLocaleDateString()
+                  : "Nunca"}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -118,7 +118,7 @@ const HistorialUsuario = ({ usuario, onBack }) => {
       setLoadingHist(true);
       try {
         const res = await api.get(
-          `/administradores/usuarios/${usuario.usu_id}/historial`
+          `/administracion/usuarios/${usuario.usu_id}/historial`
         );
         setHistorial(res.data);
       } catch {
@@ -148,9 +148,14 @@ const HistorialUsuario = ({ usuario, onBack }) => {
         </button>
       </div>
       {loadingHist ? (
-        <p>Cargando historial…</p>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando historial…</p>
+        </div>
       ) : historial.length === 0 ? (
-        <p>No hay compras.</p>
+        <div className="historial-empty">
+          <p>No hay compras registradas.</p>
+        </div>
       ) : (
         <div className="table-container">
           <table className="historial-table">
@@ -167,7 +172,6 @@ const HistorialUsuario = ({ usuario, onBack }) => {
                 <tr key={c.id}>
                   <td>{c.libro_titulo}</td>
                   <td>{formatearFecha(c.fecha_compra)}</td>
-
                   <td>
                     <span className={`status-badge ${c.estado}`}>
                       {c.estado}
@@ -185,9 +189,7 @@ const HistorialUsuario = ({ usuario, onBack }) => {
 };
 
 const Usuarios = () => {
-  // 1) MOCKS para Actividad
-
-  // 2) Estados generales
+  // Estados generales
   const [activeKey, setActiveKey] = useState("usuarios");
   const [activeTab, setActiveTab] = useState("datos");
   const [usuarios, setUsuarios] = useState([]);
@@ -199,33 +201,15 @@ const Usuarios = () => {
     fechaDesde: "",
     fechaHasta: "",
   });
-  const [librosUsuario, setLibrosUsuario] = useState([]); // empieza vacío
-  const [loadingLibros, setLoadingLibros] = useState(false);
-  const [libroActivo, setLibroActivo] = useState(null);
+  const [actividadUsuario, setActividadUsuario] = useState([]);
+  const [loadingActividad, setLoadingActividad] = useState(false);
 
-  const [estadisticasLibro, setEstadisticasLibro] = useState(null);
-
-  useEffect(() => {
-    if (!libroActivo) return;
-
-    // Asignamos datos simulados básicos, siempre.
-    const stats = {
-      paginasLeidas: 50,
-      paginasTotales: 100,
-      notasTomadas: 3,
-      tiempoMinutos: 45,
-      intermitenciaDias: 2,
-    };
-
-    setEstadisticasLibro(stats);
-  }, [libroActivo]);
-
-  // 5) Carga lista de usuarios
+  // Carga lista de usuarios
   useEffect(() => {
     const cargar = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/administradores/usuarios", {
+        const res = await api.get("/administracion/usuarios", {
           params: {
             busqueda: filtros.busqueda,
             estado: filtros.estado,
@@ -233,7 +217,6 @@ const Usuarios = () => {
             fechaHasta: filtros.fechaHasta,
           },
         });
-
         setUsuarios(res.data);
       } catch {}
       setLoading(false);
@@ -241,11 +224,7 @@ const Usuarios = () => {
     cargar();
   }, [filtros]);
 
-  const [actividadUsuario, setActividadUsuario] = useState([]);
-  const [loadingActividad, setLoadingActividad] = useState(false);
-
-  // 6) Handlers comunes
-
+  // Handlers
   const handleUsuarioClick = async (u) => {
     setUsuarioSel(u);
     setActiveTab("actividad");
@@ -253,9 +232,9 @@ const Usuarios = () => {
     setLoadingActividad(true);
     try {
       const res = await api.get(
-        `/administradores/usuarios/${u.usu_id}/actividad`
+        `/administracion/usuarios/${u.usu_id}/actividad`
       );
-      setActividadUsuario(res.data); // res.data es un array de libros con progreso
+      setActividadUsuario(res.data);
     } catch (err) {
       console.error("Error al cargar actividad:", err);
       setActividadUsuario([]);
@@ -265,17 +244,16 @@ const Usuarios = () => {
   };
 
   const handleUsuarioDeselect = () => {
-    setUsuarioSel(null); // quita el usuario
-    setActiveTab("datos"); // vuelve a la pestaña Datos
+    setUsuarioSel(null);
+    setActiveTab("datos");
   };
 
   const handleFiltroChange = (campo, val) =>
     setFiltros((f) => ({ ...f, [campo]: val }));
 
   const handleTabChange = (key) => {
-    // Si intentan ir a Actividad o Historial sin usuario seleccionado:
     if ((key === "actividad" || key === "historial") && !usuarioSel) {
-      return; // cancela el cambio de pestaña
+      return;
     }
     if (key === "datos") {
       setUsuarioSel(null);
@@ -283,7 +261,7 @@ const Usuarios = () => {
     setActiveTab(key);
   };
 
-  // 7) Definición de pestañas
+  // Definición de pestañas
   const tabs = [
     {
       key: "datos",
@@ -334,9 +312,8 @@ const Usuarios = () => {
     switch (activeTab) {
       case "datos":
         return (
-          <div className="tab-content">
+          <div className="tab-content datos-tab">
             <div className="filtros-container">
-              {/* 🔎 Barra de búsqueda arriba */}
               <div className="filtros-row filtros-top">
                 <input
                   placeholder="Buscar por nombre, email o usuario..."
@@ -348,7 +325,6 @@ const Usuarios = () => {
                 />
               </div>
 
-              {/* ⚙️ Filtros de estado y fechas abajo */}
               <div className="filtros-row filtros-bottom">
                 <select
                   value={filtros.estado}
@@ -360,7 +336,6 @@ const Usuarios = () => {
                   <option value="pendiente">Pendientes</option>
                   <option value="eliminado">Eliminados</option>
                 </select>
-
 
                 <p>Desde</p>
 
@@ -416,9 +391,14 @@ const Usuarios = () => {
                 </div>
 
                 {loadingActividad ? (
-                  <p>Cargando actividad…</p>
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Cargando actividad…</p>
+                  </div>
                 ) : actividadUsuario.length === 0 ? (
-                  <p>No hay libros en progreso.</p>
+                  <div className="actividad-empty">
+                    <p>No hay libros en progreso.</p>
+                  </div>
                 ) : (
                   <div className="actividad-libros-grid">
                     {actividadUsuario.map((libro) => {
@@ -479,7 +459,7 @@ const Usuarios = () => {
 
       case "historial":
         return (
-          <div className="tab-content">
+          <div className="tab-content historial-tab">
             <HistorialUsuario
               usuario={usuarioSel}
               onBack={handleUsuarioDeselect}

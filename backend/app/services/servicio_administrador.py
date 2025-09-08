@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from app.models.usuario.modelo_usuario import Usuario
 from app.models.libro.progreso.modelo_progreso import ProgresoLectura
@@ -6,11 +6,8 @@ from app.models.texto.modelo_texto import Texto
 from app.models.libro.lectura.modelo_lectura import LecturaSesion
 from app.models.compra.modelo_compra import Compra
 from app.models.libro.modelo_libro import Libro
-from sqlalchemy import func
-from datetime import date
-
-from sqlalchemy import or_
-from datetime import datetime
+from sqlalchemy import func, or_
+from datetime import date, datetime
 
 
 class AdministradorServicio:
@@ -18,11 +15,33 @@ class AdministradorServicio:
         self.session = session
 
     def listar_usuarios(
-        self, busqueda=None, estado="todos", fechaDesde=None, fechaHasta=None
-    ) -> List[Usuario]:
-        query = self.session.query(Usuario)
+        self,
+        busqueda: Optional[str] = None,
+        estado: str = "todos",
+        fechaDesde: Optional[str] = None,
+        fechaHasta: Optional[str] = None,
+    ) -> List[Dict]:
+        """
+        Retorna una lista de dicts con info de usuario + última actividad
+        """
+        query = (
+            self.session.query(
+                Usuario.usu_id,
+                Usuario.usu_nombre,
+                Usuario.usu_apellido,
+                Usuario.usu_usuario,
+                Usuario.usu_correo,
+                Usuario.usu_verificado,
+                Usuario.usu_fecharegistro,
+                Usuario.usu_ciudad,
+                Usuario.usu_pais,
+                func.max(LecturaSesion.ls_fecha_final).label("ultima_actividad"),
+            )
+            .outerjoin(LecturaSesion, Usuario.usu_id == LecturaSesion.ls_idusuario)
+            .group_by(Usuario.usu_id)
+        )
 
-        # 🔎 Filtro búsqueda (nombre, apellido, email, usuario)
+        # 🔎 Filtro búsqueda
         if busqueda:
             like = f"%{busqueda}%"
             query = query.filter(
@@ -34,12 +53,14 @@ class AdministradorServicio:
                 )
             )
 
+        # ✅ Estado
         if estado != "todos":
             if estado == "activo":
                 query = query.filter(Usuario.usu_verificado.is_(True))
             elif estado == "pendiente":
                 query = query.filter(Usuario.usu_verificado.is_(False))
 
+        # 📅 Fechas
         if fechaDesde:
             desde = datetime.fromisoformat(fechaDesde)
             query = query.filter(Usuario.usu_fecharegistro >= desde)
@@ -47,7 +68,46 @@ class AdministradorServicio:
             hasta = datetime.fromisoformat(fechaHasta)
             query = query.filter(Usuario.usu_fecharegistro <= hasta)
 
-        return query.all()
+        query = query.order_by(Usuario.usu_fecharegistro.desc())
+        filas = query.all()
+
+        usuarios: List[Dict] = []
+        for (
+            usu_id,
+            usu_nombre,
+            usu_apellido,
+            usu_usuario,
+            usu_correo,
+            usu_verificado,
+            usu_fecharegistro,
+            usu_ciudad,
+            usu_pais,
+            ultima_actividad,
+        ) in filas:
+            usuarios.append(
+                {
+                    "usu_id": usu_id,
+                    "usu_nombre": usu_nombre,
+                    "usu_apellido": usu_apellido,
+                    "usu_usuario": usu_usuario,
+                    "usu_correo": usu_correo,
+                    "usu_verificado": bool(usu_verificado),
+                    "usu_fecha_registro": (
+                        usu_fecharegistro.isoformat()
+                        if isinstance(usu_fecharegistro, datetime)
+                        else None
+                    ),
+                    "usu_ciudad": usu_ciudad,
+                    "usu_pais": usu_pais,
+                    "ultima_actividad": (
+                        ultima_actividad.isoformat()
+                        if isinstance(ultima_actividad, datetime)
+                        else None
+                    ),
+                }
+            )
+
+        return usuarios
 
     def listar_actividad_usuario(self, usu_id: int) -> List[dict]:
         progresos = (
@@ -64,14 +124,12 @@ class AdministradorServicio:
                 .all()
             )
 
-            # Calcular tiempo total en minutos sumando duración de cada sesión
             tiempo_minutos = 0
             for sesion in sesiones:
                 if sesion.ls_fecha_final:
                     duracion = sesion.ls_fecha_final - sesion.ls_fecha_inicial
                     tiempo_minutos += int(duracion.total_seconds() // 60)
 
-            # Obtener la última sesión con fecha_final más reciente
             ultima_sesion = (
                 self.session.query(LecturaSesion)
                 .filter_by(ls_idusuario=usu_id, ls_idlibro=prog.pro_idlibro)
@@ -80,17 +138,23 @@ class AdministradorServicio:
                 .first()
             )
 
-            # Total de notas creadas por el usuario en ese libro
             total_notas = (
                 self.session.query(Texto)
                 .filter_by(txt_idusuario=usu_id, txt_idlibro=prog.pro_idlibro)
                 .count()
             )
 
+            # Obtener título del libro sin relationship
+            libro = (
+                self.session.query(Libro)
+                .filter(Libro.lib_id == prog.pro_idlibro)
+                .first()
+            )
+
             libros_con_progreso.append(
                 {
                     "lib_id": prog.pro_idlibro,
-                    "lib_titulo": prog.libro.lib_titulo,
+                    "lib_titulo": libro.lib_titulo if libro else None,
                     "paginas_leidas": prog.pro_pagina_actual or 0,
                     "paginas_totales": prog.pro_pagina_total or 0,
                     "notas": total_notas,
@@ -126,7 +190,7 @@ class AdministradorServicio:
                     "id": compra.com_id,
                     "libro_titulo": libro.lib_titulo if libro else None,
                     "fecha_compra": compra.com_fecha.isoformat(),
-                    "monto": None,  # si en tu modelo no guardas monto, aquí queda vacío o lo sacas de otro lado
+                    "monto": None,
                     "estado": compra.com_estado,
                     "referencia": compra.com_referencia,
                 }
@@ -138,44 +202,34 @@ class AdministradorServicio:
         hoy = date.today()
         inicio_mes = date(hoy.year, hoy.month, 1)
 
-        # Total usuarios
         total_usuarios = self.session.query(Usuario).count()
 
-        # Usuarios activos
         usuarios_activos = (
             self.session.query(Usuario).filter(Usuario.usu_verificado.is_(True)).count()
         )
 
-        # Total libros
         total_libros = self.session.query(Libro).count()
 
-        # Ventas de hoy
         ventas_hoy = (
             self.session.query(Compra)
             .filter(func.date(Compra.com_fecha) == hoy, Compra.com_estado == "approved")
             .count()
         )
 
-        # Ventas del mes
         ventas_mes = (
             self.session.query(Compra)
             .filter(Compra.com_fecha >= inicio_mes, Compra.com_estado == "approved")
             .count()
         )
 
-        # Ingresos del mes
         ingresos_mes = (
             self.session.query(func.sum(Libro.lib_precio))
-            .select_from(Compra)  # 👈 empezamos desde Compra
-            .join(Libro, Compra.com_idlibro == Libro.lib_id)  # relación explícita
-            .filter(
-                Compra.com_fecha >= inicio_mes,
-                Compra.com_estado == "approved",  # 👈 tu estado real
-            )
+            .select_from(Compra)
+            .join(Libro, Compra.com_idlibro == Libro.lib_id)
+            .filter(Compra.com_fecha >= inicio_mes, Compra.com_estado == "approved")
             .scalar()
         ) or 0
 
-        # Descargas totales (puedes ajustar según tu lógica real)
         descargas = self.session.query(LecturaSesion).count()
 
         return {

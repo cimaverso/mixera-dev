@@ -1,9 +1,9 @@
 /* Página de Usuarios Admin */
 .usuarios-admin {
   padding: 20px 0;
-  display: grid;
-  gap: 20px;
-  
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .page-header {
@@ -33,6 +33,7 @@
   padding: 4px;
   overflow-x: auto;
   border: 1px solid #e9ecef;
+  margin-bottom: 0;
 }
 
 .tab-button {
@@ -80,36 +81,107 @@
   background: #fff;
   border: 1px solid #e7e7e7;
   border-radius: 12px;
-  padding: 20px;
+  padding: 0;
   box-sizing: border-box;
+  margin-top: 0;
+}
+
+/* === PESTAÑA ESPECÍFICA DE DATOS === */
+.tab-content.datos-tab {
+  padding: 0 !important;
+  gap: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Eliminar TODOS los márgenes y espaciados */
+.tab-content.datos-tab > * {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.tab-content.datos-tab > *:not(.filtros-container):not(.table-container) {
+  display: none !important;
+}
+
+/* Forzar posición exacta de filtros y tabla */
+.tab-content.datos-tab .filtros-container {
+  order: 1 !important;
+  margin: 20px 20px 0 20px !important;
+  padding: 0 0 16px 0 !important;
+  border-bottom: 1px solid #e9ecef !important;
+  flex-shrink: 0 !important;
+}
+
+.tab-content.datos-tab .table-container {
+  order: 2 !important;
+  margin: 0 20px 20px 20px !important;
+  padding: 0 !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* Eliminar cualquier espacio fantasma */
+.tab-content.datos-tab::before,
+.tab-content.datos-tab::after,
+.tab-content.datos-tab .filtros-container::before,
+.tab-content.datos-tab .filtros-container::after,
+.tab-content.datos-tab .table-container::before,
+.tab-content.datos-tab .table-container::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* Forzar que no haya espacios entre elementos */
+.tab-content.datos-tab .filtros-container + .table-container {
+  margin-top: 0 !important;
+}
+
+/* === PESTAÑAS DE ACTIVIDAD E HISTORIAL === */
+.tab-content.actividad-tab,
+.tab-content.historial-tab {
+  /* Permitir contenido normal sin restricciones */
+  padding: 20px;
+  gap: 16px;
+}
+
+.tab-content.actividad-tab > *,
+.tab-content.historial-tab > * {
+  /* Reset de los estilos agresivos */
+  margin: initial;
+  padding: initial;
+  display: initial;
 }
 
 /* === FILTROS === */
-/* Contenedor general de filtros */
 .filtros-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  gap: 8px;
+  margin: 20px 20px 0 20px;
+  padding: 0 0 16px 0;
   border-bottom: 1px solid #e9ecef;
 }
 
-/* Fila superior (solo la búsqueda) */
 .filtros-top {
   display: flex;
+  margin: 0;
+  padding: 0;
 }
 
 .filtros-top .filtro-input {
-  flex: 1;          /* ocupa todo el ancho */
-  max-width: 600px; /* límite opcional */
+  flex: 1;
+  max-width: 600px;
 }
 
-/* Fila inferior (estado + fechas) */
 .filtros-bottom {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  position: relative; /* Para contener el dropdown */
+  overflow: visible; /* Permitir que el dropdown se extienda */
 }
 
 .filtros-bottom .filtro-select {
@@ -119,7 +191,6 @@
 .filtros-bottom .filtro-date {
   min-width: 180px;
 }
-
 
 .filtros-row {
   display: grid;
@@ -156,11 +227,12 @@
 
 /* === TABLA DE USUARIOS === */
 .table-container {
-  flex: 1;             /* 👈 siempre llena el espacio disponible */
-  overflow-y: auto;    /* scroll vertical si hay muchos datos */
+  flex: 1;
+  overflow-y: auto;
   overflow-x: auto;
   border: 1px solid #e9ecef;
   border-radius: 8px;
+  margin: 0 20px 20px 20px;
 }
 
 .usuarios-table {
@@ -169,12 +241,11 @@
   background: white;
 }
 
-/* Cabecera sticky */
 .usuarios-table thead th {
   position: sticky;
   top: 0;
-  z-index: 10;           /* 👈 para que quede sobre las filas */
-  background: #f8f9fa;   /* 👈 evita que se trasluzca el contenido */
+  z-index: 10;
+  background: #f8f9fa;
   color: #495057;
   font-weight: 600;
   font-size: 0.85rem;
@@ -239,6 +310,7 @@
 .historial-usuario {
   display: grid;
   gap: 20px;
+  padding: 0; /* El padding se maneja en el tab-content */
 }
 
 .actividad-header,
@@ -306,118 +378,71 @@
   color: #6c757d;
 }
 
-/* === MÉTRICAS CONTAINER === */
-.metricas-container {
+/* === LIBROS ACTIVIDAD === */
+.actividad-libros-grid {
   display: grid;
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.libros-actividad h4 {
+.actividad-libro-card {
+  background: #fafafa;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.libro-titulo {
   margin: 0 0 16px 0;
-  color: #333;
   font-size: 1.1rem;
-}
-
-.libros-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
-
-.libro-actividad-card {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 16px;
-  display: grid;
-  gap: 12px;
-}
-
-.libro-info {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.libro-portada-mini {
-  width: 48px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 6px;
-  flex-shrink: 0;
-}
-
-.libro-detalles h5 {
-  margin: 0 0 4px 0;
-  color: #333;
-  font-size: 0.95rem;
-  line-height: 1.3;
-}
-
-.fecha-adquisicion {
-  margin: 0;
-  color: #666;
-  font-size: 0.8rem;
-}
-
-.metricas-libro {
-  display: grid;
-  gap: 10px;
-}
-
-.metrica {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.metrica:last-child {
-  border-bottom: none;
-}
-
-.metrica-label {
-  color: #666;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.metrica-value {
-  color: #333;
-  font-size: 0.9rem;
   font-weight: 600;
+  color: #333;
 }
 
-/* === PROGRESS BARS === */
-.progress-bar {
-  width: 60px;
-  height: 6px;
-  background: #e9ecef;
-  border-radius: 3px;
+.barra-progreso {
+  background: #e0e0e0;
+  height: 8px;
+  border-radius: 5px;
   overflow: hidden;
+  margin: 10px 0;
 }
 
-.progress-fill {
+.barra-progreso .relleno {
+  background: #0047ba;
   height: 100%;
-  background: #e73180;
-  border-radius: 3px;
   transition: width 0.3s ease;
 }
 
-.progress-mini {
-  width: 40px;
-  height: 4px;
-  background: #e9ecef;
-  border-radius: 2px;
-  overflow: hidden;
-  display: inline-block;
+.porcentaje {
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  margin: 8px 0;
 }
 
-.progress-text {
-  font-size: 0.8rem;
-  color: #666;
-  margin-left: 8px;
+.actividad-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.kpi {
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.kpi span {
+  display: block;
+  font-size: 13px;
+  color: #555;
+}
+
+.kpi strong {
+  font-size: 16px;
+  color: #222;
 }
 
 /* === HISTORIAL TABLE === */
@@ -444,20 +469,6 @@
   border-bottom: 1px solid #f1f3f4;
   font-size: 0.9rem;
   vertical-align: middle;
-}
-
-.libro-historial {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.libro-portada-micro {
-  width: 32px;
-  height: 42px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
 }
 
 /* === ESTADOS DE CARGA === */
@@ -495,7 +506,7 @@
     grid-column: 2 / -1;
   }
 
-  .libros-grid {
+  .actividad-libros-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 14px;
   }
@@ -527,17 +538,26 @@
   }
   
   .tab-content {
+    padding: 0;
+  }
+
+  .tab-content.actividad-tab,
+  .tab-content.historial-tab {
     padding: 16px;
   }
   
   .filtros-container {
-    margin-bottom: 10px;
-    padding-bottom: 10px;
+    margin: 16px 16px 0 16px;
+    padding: 0 0 10px 0;
   }
   
   .filtros-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+  
+  .table-container {
+    margin: 0 16px 16px 16px;
   }
   
   .usuarios-table {
@@ -556,17 +576,13 @@
     gap: 12px;
   }
 
-  .libros-grid {
+  .actividad-libros-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  .libro-actividad-card {
+  .actividad-libro-card {
     padding: 12px;
-  }
-
-  .metrica {
-    padding: 6px 0;
   }
 
   .historial-table {
@@ -584,13 +600,18 @@
     padding: 10px 0;
   }
   
-  .tab-content {
-    padding: 6px 12px;
+  .tab-content.actividad-tab,
+  .tab-content.historial-tab {
+    padding: 12px;
   }
   
   .filtros-container {
-    margin-bottom: 4px;
-    padding-bottom: 4px;
+    margin: 12px 12px 0 12px !important;
+    padding: 0 0 4px 0 !important;
+  }
+  
+  .table-container {
+    margin: 0 12px 12px 12px !important;
   }
   
   /* Ocultar columnas menos importantes en mobile */
@@ -603,33 +624,9 @@
     display: none;
   }
 
-  .libro-info {
+  .actividad-kpis {
+    grid-template-columns: 1fr;
     gap: 8px;
-  }
-
-  .libro-portada-mini {
-    width: 40px;
-    height: 54px;
-  }
-
-  .libro-detalles h5 {
-    font-size: 0.9rem;
-  }
-
-  .fecha-adquisicion {
-    font-size: 0.75rem;
-  }
-
-  .usuario-item-simple {
-    padding: 10px 12px;
-  }
-
-  .usuario-info-simple strong {
-    font-size: 0.9rem;
-  }
-
-  .usuario-info-simple span {
-    font-size: 0.8rem;
   }
 
   /* Ocultar algunas columnas del historial en mobile */
@@ -684,210 +681,9 @@
   outline-offset: -2px;
 }
 
-
-
-/* Grid de cards */
-.stats-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  margin-top: 16px;
-}
-
-/* Cards */
-.stats-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 16px;
-}
-.stats-card--xl {
-  grid-column: span 2;
-}
-
-/* Títulos */
-.card-title {
-  margin: 0 0 12px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* Barra de progreso grande */
-.progress-bar-large {
-  background: #eee;
-  border-radius: 4px;
-  height: 12px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-.progress-fill-large {
-  background: #0aa0d0;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-/* Texto de porcentaje */
-.stat-big {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 4px 0 12px;
-}
-.stat-large {
-  font-size: 20px;
-  margin: 8px 0;
-}
-
-/* KPI list */
-.kpis {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
-}
-.kpi span {
-  display: block;
-  font-size: 14px;
-  color: #666;
-}
-.kpi strong {
-  font-size: 16px;
-}
-
-
-.selector-usuario {
-  margin-top: 16px;
-}
-.selector-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-.selector-table th,
-.selector-table td {
-  padding: 12px 16px;
-  text-align: left;
-}
-.selector-table thead {
-  background: #f5f5f5;
-}
-.selector-table tbody tr {
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.selector-table tbody tr:hover {
-  background: #fafafa;
-}
-.selector-row td {
-  border-bottom: 1px solid #ececec;
-}
-
-
-
-/* Contenedor y etiqueta */
-.libro-selector {
-  display: flex;
-  align-items: center;
-  margin: 16px 0;
-  font-family: "Inter", sans-serif;
-}
-
-.libro-selector label {
-  margin-right: 8px;
-  font-weight: 500;
-  color: #333;
-}
-
-/* Select estilizado */
-.libro-selector select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  padding: 8px 32px 8px 12px;
-  font-size: 0.95rem;
-  color: #333;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  transition: border-color 0.2s;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6' stroke='%23666' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-
-/* Hover y focus */
-.libro-selector select:hover {
-  border-color: #999;
-}
-.libro-selector select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
-}
-
-/* Ajuste para que el área del arrow no tape el texto */
-.libro-selector select::-ms-expand {
-  display: none; /* IE10+ */
-}
-
-
-.actividad-libros-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
-}
-
-.actividad-libro-card {
-  background: #fafafa;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.barra-progreso {
-  background: #e0e0e0;
-  height: 8px;
-  border-radius: 5px;
-  overflow: hidden;
-  margin: 10px 0;
-}
-
-.barra-progreso .relleno {
-  background: #0047ba;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.actividad-kpis {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.kpi {
-  background: #f4f4f4;
-  padding: 12px;
-  border-radius: 8px;
-}
-
-.kpi span {
-  display: block;
-  font-size: 13px;
-  color: #555;
-}
-
-.kpi strong {
-  font-size: 16px;
-  color: #222;
-}
-
-
 /* === ANIMATIONS === */
 @media (prefers-reduced-motion: reduce) {
-  .progress-fill,
+  .barra-progreso .relleno,
   .loading-spinner {
     animation: none;
     transition: none;
