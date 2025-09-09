@@ -78,7 +78,8 @@ const NuevaContrasena = () => {
           </div>
 
           <p style={{ fontSize: "12px", color: "#fff", marginBottom: "10px" }}>
-            Mínimo 8 caracteres. Debe contener mayúsculas, minúsculas, números y símbolos.
+            Mínimo 8 caracteres. Debe contener mayúsculas, minúsculas, números y
+            símbolos.
           </p>
 
           <button type="submit" className="boton-ingresar">
@@ -87,6 +88,12 @@ const NuevaContrasena = () => {
 
           {mensaje && <p className="mensaje">{mensaje}</p>}
           {error && <p className="error">{error}</p>}
+
+          <div style={{ marginTop: "10px" }}>
+            <a href="login" className="enlace-login">
+              Iniciar sesión
+            </a>
+          </div>
         </form>
       </div>
     </div>
