@@ -29,7 +29,7 @@ import Dashboard from "./Paginas/admin/Dashboard";
 import Usuarios from "./Paginas/admin/usuarios/Usuarios";
 import Libros from "./Paginas/admin/libros/Libros";
 import Ecommerce from "./Paginas/admin/ecommerce/Ecommerce";
-// import Ecommerce from "./Paginas/admin/ecommerce/Ecommerce"; // TODO: Crear cuando esté listo
+import PerfilAdministrador from "./Paginas/admin/perfil/PerfilAdministrador"; // ✅ NUEVO
 
 function App() {
   return (
@@ -136,6 +136,15 @@ function App() {
           element={
             <PrivateRoute>
               <Ecommerce />
+            </PrivateRoute>
+          }
+        />
+        {/* ✅ NUEVA RUTA: Perfil de Administrador */}
+        <Route
+          path="/admin/perfil"
+          element={
+            <PrivateRoute>
+              <PerfilAdministrador />
             </PrivateRoute>
           }
         />

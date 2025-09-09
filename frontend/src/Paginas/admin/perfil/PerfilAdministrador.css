@@ -1,0 +1,354 @@
+/* ==========================================
+   ESTILOS DE PERFIL ADMINISTRADOR (Mobile First)
+   ========================================== */
+
+/* Container principal */
+.perfil-admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Títulos y separadores */
+.perfil-admin-container h1 { 
+  margin-bottom: 10px; 
+  color: #2c3e50; 
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+}
+
+.separador-admin { 
+  border: 1px solid #e73180; 
+  margin-bottom: clamp(20px, 5vw, 30px); 
+}
+
+.seccion-titulo-admin { 
+  color: #e73180; 
+  margin-bottom: 12px; 
+  font-weight: 600; 
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+}
+
+/* ==========================================
+   LAYOUT PRINCIPAL
+   ========================================== */
+
+/* Filas - Mobile First */
+.fila-admin { 
+  display: flex; 
+  flex-direction: column;
+  gap: clamp(20px, 5vw, 40px);
+  margin-bottom: clamp(20px, 5vw, 40px);
+}
+
+.col-admin { 
+  width: 100%;
+  min-width: unset;
+  background: white;
+  padding: clamp(20px, 4vw, 30px);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border: 1px solid #e1e8ed;
+}
+
+/* ==========================================
+   FORMULARIOS Y CONTROLES
+   ========================================== */
+
+.grupo-inputs-admin { 
+  display: flex; 
+  flex-direction: column; 
+  gap: clamp(12px, 3vw, 16px);
+}
+
+/* Inputs responsivos */
+.input-admin {   
+  width: 100%;
+  max-width: 450px;
+  padding: clamp(12px, 3vw, 14px);
+  border-radius: 8px; 
+  border: 2px solid #e1e8ed;   
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  background: #f8f9fa;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.input-admin:focus {
+  border-color: #e73180;
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Botones */
+.btn-admin {   
+  background: linear-gradient(135deg, #e73180, #e73180); 
+  color: white; 
+  padding: clamp(12px, 3vw, 14px) clamp(24px, 5vw, 32px);
+  width: 100%;
+  max-width: 220px;
+  border: none; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600;   
+  transition: all 0.3s ease;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-admin:hover { 
+  background: linear-gradient(135deg, #2980b9, #1f618d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-admin:active {
+  transform: translateY(0);
+}
+
+/* Input de imagen */
+.input-imagen-admin {   
+  width: 100%;
+  max-width: 450px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
+  border: 2px dashed #3498db; 
+  padding: clamp(20px, 5vw, 25px);   
+  text-align: center; 
+  border-radius: 12px; 
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  color: #2c3e50; 
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.input-imagen-admin::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(52, 152, 219, 0.05), rgba(41, 128, 185, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.input-imagen-admin:hover::before {
+  opacity: 1;
+}
+
+.input-imagen-admin:hover {
+  border-color: #2980b9;
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   IMAGEN DE PERFIL
+   ========================================== */
+
+.contenedor-imagen-perfil-admin {   
+  display: flex;   
+  justify-content: center;   
+  align-items: center;   
+  margin: clamp(15px, 4vw, 20px) 0; 
+}  
+
+.foto-perfil-admin {   
+  width: clamp(100px, 18vw, 140px);
+  height: clamp(100px, 18vw, 140px);
+  object-fit: cover;   
+  border-radius: 50%;   
+  border: 3px solid #e73180; 
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(231, 49, 128, 0.2);
+}
+
+.foto-perfil-admin:hover {
+  border-color: #c91f6d;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(231, 49, 128, 0.3);
+}
+
+.foto-placeholder-admin {   
+  width: clamp(100px, 18vw, 140px);
+  height: clamp(100px, 18vw, 140px);
+  background: linear-gradient(135deg, #ecf0f1, #bdc3c7);   
+  display: flex;   
+  align-items: center;   
+  justify-content: center;   
+  border-radius: 50%;   
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  color: #7f8c8d; 
+  border: 3px solid #bdc3c7;
+  transition: all 0.3s ease;
+}
+
+/* ==========================================
+   MENSAJES DE ESTADO
+   ========================================== */
+
+.mensaje-admin {   
+  width: 100%;
+  max-width: 450px;
+  padding: clamp(10px, 2.5vw, 12px);   
+  margin-top: 12px;   
+  border-radius: 8px;   
+  text-align: center;   
+  font-weight: 600;   
+  border: 1px solid transparent;   
+  transition: all 0.3s ease-in-out;   
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  position: relative;
+  overflow: hidden;
+}  
+
+.mensaje-admin::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.mensaje-admin.exito {   
+  background: linear-gradient(135deg, #d5f4e6, #c3e9d0);   
+  color: #1e7e34;   
+  border-color: #28a745; 
+}  
+
+.mensaje-admin.exito::before {
+  background: linear-gradient(90deg, transparent, rgba(40, 167, 69, 0.2), transparent);
+}
+
+.mensaje-admin.error {   
+  background: linear-gradient(135deg, #f8d7da, #f1b0b7);   
+  color: #721c24;   
+  border-color: #dc3545; 
+}
+
+.mensaje-admin.error::before {
+  background: linear-gradient(90deg, transparent, rgba(220, 53, 69, 0.2), transparent);
+}
+
+.mensaje-admin:hover::before {
+  left: 100%;
+}
+
+/* ==========================================
+   MEDIA QUERIES - RESPONSIVE BREAKPOINTS
+   ========================================== */
+
+/* Tablet Portrait: 600px+ */
+@media (min-width: 600px) {
+  .grupo-inputs-admin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(16px, 3vw, 20px);
+    align-items: end;
+  }
+  
+  .input-imagen-admin {
+    grid-column: 1 / -1;
+  }
+  
+  .btn-admin {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+/* Tablet Landscape: 768px+ */
+@media (min-width: 768px) {
+  .fila-admin {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
+  .col-admin { 
+    flex: 1; 
+    min-width: 300px;
+  }
+  
+  .grupo-inputs-admin {
+    grid-template-columns: 1fr;
+  }
+  
+  .input-admin, .btn-admin { 
+    max-width: 350px;
+  }
+}
+
+/* Desktop Small: 1000px+ */
+@media (min-width: 1000px) {
+  .fila-admin {
+    gap: 60px;
+    margin-bottom: 60px;
+  }
+  
+  .col-admin {
+    padding: 40px;
+  }
+  
+  .grupo-inputs-admin {
+    gap: 20px;
+  }
+  
+  .input-admin, .btn-admin { 
+    max-width: 400px;
+  }
+}
+
+/* Desktop Large: 1200px+ */
+@media (min-width: 1200px) {
+  .perfil-admin-container {
+    padding: 0 40px;
+  }
+  
+  .fila-admin {
+    gap: 80px;
+  }
+  
+  .input-admin, .btn-admin { 
+    max-width: 420px;
+  }
+  
+  /* Grid de 2 columnas para inputs en desktop grande */
+  .grupo-inputs-admin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: end;
+  }
+  
+  .input-imagen-admin {
+    grid-column: 1 / -1;
+  }
+  
+  .btn-admin {
+    grid-column: 1 / -1;
+    justify-self: start;
+    max-width: 250px;
+  }
+}
+
+/* Desktop XL: 1400px+ */
+@media (min-width: 1400px) {
+  .perfil-admin-container {
+    max-width: 1400px;
+    padding: 0 60px;
+  }
+  
+  .col-admin {
+    padding: 50px;
+  }
+}

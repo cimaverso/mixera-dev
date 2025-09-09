@@ -1,4 +1,4 @@
-/* Página de Usuarios Admin */
+/* Página de Usuarios Admin - Experiencia Móvil Mejorada */
 .usuarios-admin {
   padding: 20px 0;
   display: flex;
@@ -34,6 +34,10 @@
   overflow-x: auto;
   border: 1px solid #e9ecef;
   margin-bottom: 0;
+  /* Mejoras para móvil */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .tab-button {
@@ -51,12 +55,16 @@
   transition: all 0.2s ease;
   white-space: nowrap;
   min-width: fit-content;
+  /* Mejor área de toque en móvil */
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .tab-button svg {
   width: 16px;
   height: 16px;
   fill: currentColor;
+  flex-shrink: 0;
 }
 
 .tab-button:hover {
@@ -77,7 +85,8 @@
 .tab-content {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  min-height: 500px;
+  height: auto;
   background: #fff;
   border: 1px solid #e7e7e7;
   border-radius: 12px;
@@ -94,7 +103,6 @@
   flex-direction: column !important;
 }
 
-/* Eliminar TODOS los márgenes y espaciados */
 .tab-content.datos-tab > * {
   margin: 0 !important;
   padding: 0 !important;
@@ -104,7 +112,6 @@
   display: none !important;
 }
 
-/* Forzar posición exacta de filtros y tabla */
 .tab-content.datos-tab .filtros-container {
   order: 1 !important;
   margin: 20px 20px 0 20px !important;
@@ -121,7 +128,6 @@
   min-height: 0 !important;
 }
 
-/* Eliminar cualquier espacio fantasma */
 .tab-content.datos-tab::before,
 .tab-content.datos-tab::after,
 .tab-content.datos-tab .filtros-container::before,
@@ -132,7 +138,6 @@
   content: none !important;
 }
 
-/* Forzar que no haya espacios entre elementos */
 .tab-content.datos-tab .filtros-container + .table-container {
   margin-top: 0 !important;
 }
@@ -140,24 +145,22 @@
 /* === PESTAÑAS DE ACTIVIDAD E HISTORIAL === */
 .tab-content.actividad-tab,
 .tab-content.historial-tab {
-  /* Permitir contenido normal sin restricciones */
   padding: 20px;
   gap: 16px;
 }
 
 .tab-content.actividad-tab > *,
 .tab-content.historial-tab > * {
-  /* Reset de los estilos agresivos */
   margin: initial;
   padding: initial;
   display: initial;
 }
 
-/* === FILTROS === */
+/* === FILTROS MEJORADOS === */
 .filtros-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   margin: 20px 20px 0 20px;
   padding: 0 0 16px 0;
   border-bottom: 1px solid #e9ecef;
@@ -171,7 +174,7 @@
 
 .filtros-top .filtro-input {
   flex: 1;
-  max-width: 600px;
+  max-width: 100%;
 }
 
 .filtros-bottom {
@@ -180,23 +183,25 @@
   flex-wrap: wrap;
   margin: 0;
   padding: 0;
-  position: relative; /* Para contener el dropdown */
-  overflow: visible; /* Permitir que el dropdown se extienda */
+  position: relative;
+  overflow: visible;
 }
 
 .filtros-bottom .filtro-select {
-  min-width: 200px;
+  min-width: 160px;
+  flex: 1;
 }
 
 .filtros-bottom .filtro-date {
-  min-width: 180px;
+  min-width: 140px;
+  flex: 1;
 }
 
 .filtros-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
-  align-items: center;
+  align-items: stretch;
   margin: 0;
   padding: 0;
 }
@@ -204,11 +209,18 @@
 .filtro-input,
 .filtro-select,
 .filtro-date {
-  padding: 8px 12px;
+  padding: 12px 16px;
   border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  font-size: 16px; /* Evita zoom en iOS */
   transition: border-color 0.2s ease;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+  /* Mejor experiencia táctil */
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .filtro-input:focus,
@@ -216,27 +228,37 @@
 .filtro-date:focus {
   outline: none;
   border-color: #e73180;
-  box-shadow: 0 0 0 2px rgba(231, 49, 128, 0.1);
+  box-shadow: 0 0 0 3px rgba(231, 49, 128, 0.1);
 }
 
 .filtro-input {
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236c757d" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/></svg>') no-repeat right 12px center;
+  background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236c757d" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/></svg>') no-repeat right 16px center;
   background-size: 16px;
-  padding-right: 40px;
+  padding-right: 48px;
 }
 
-/* === TABLA DE USUARIOS === */
+/* Selector personalizado para móvil */
+.filtro-select {
+  background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%236c757d" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>') no-repeat right 16px center;
+  background-size: 12px;
+  padding-right: 48px;
+}
+
+/* === TABLA DE USUARIOS MEJORADA === */
 .table-container {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: auto;
   border: 1px solid #e9ecef;
   border-radius: 8px;
   margin: 0 20px 20px 20px;
+  /* Mejoras para scroll táctil */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .usuarios-table {
   width: 100%;
+  min-width: 600px; /* Asegurar ancho mínimo */
   border-collapse: collapse;
   background: white;
 }
@@ -251,34 +273,41 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 12px 16px;
+  padding: 16px 12px;
   text-align: left;
   border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
 }
 
 .usuarios-table td {
-  padding: 12px 16px;
+  padding: 16px 12px;
   border-bottom: 1px solid #f1f3f4;
   font-size: 0.9rem;
+  vertical-align: middle;
 }
 
 .usuario-row {
   cursor: pointer;
   transition: background-color 0.2s ease;
+  /* Mejor área de toque */
+  touch-action: manipulation;
 }
 
-.usuario-row:hover {
+.usuario-row:hover,
+.usuario-row:active {
   background: #f8f9fa;
 }
 
-/* Estados */
+/* Estados mejorados */
 .status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .status-badge.active {
@@ -310,7 +339,7 @@
 .historial-usuario {
   display: grid;
   gap: 20px;
-  padding: 0; /* El padding se maneja en el tab-content */
+  padding: 0;
 }
 
 .actividad-header,
@@ -320,32 +349,41 @@
   align-items: center;
   padding-bottom: 16px;
   border-bottom: 2px solid #e9ecef;
+  gap: 16px;
 }
 
 .usuario-info-header h3 {
   margin: 0;
   color: #333;
   font-size: 1.2rem;
+  word-break: break-word;
 }
 
 .usuario-info-header p {
   margin: 4px 0 0 0;
   color: #666;
   font-size: 0.9rem;
+  word-break: break-word;
 }
 
 .btn-back {
-  padding: 8px 16px;
+  padding: 12px 20px;
   background: #6c757d;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
+  /* Mejor área de toque */
+  min-height: 44px;
+  touch-action: manipulation;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.btn-back:hover {
+.btn-back:hover,
+.btn-back:active {
   background: #5a6268;
 }
 
@@ -381,8 +419,8 @@
 /* === LIBROS ACTIVIDAD === */
 .actividad-libros-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
   margin-top: 24px;
 }
 
@@ -391,6 +429,12 @@
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.actividad-libro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .libro-titulo {
@@ -398,27 +442,30 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .barra-progreso {
   background: #e0e0e0;
-  height: 8px;
+  height: 10px;
   border-radius: 5px;
   overflow: hidden;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
 .barra-progreso .relleno {
-  background: #0047ba;
+  background: linear-gradient(90deg, #0047ba, #0056d6);
   height: 100%;
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
 }
 
 .porcentaje {
   text-align: center;
   font-weight: 600;
   color: #333;
-  margin: 8px 0;
+  margin: 12px 0;
+  font-size: 1rem;
 }
 
 .actividad-kpis {
@@ -430,24 +477,33 @@
 
 .kpi {
   background: #f4f4f4;
-  padding: 12px;
+  padding: 16px 12px;
   border-radius: 8px;
+  text-align: center;
+  transition: background 0.2s ease;
+}
+
+.kpi:hover {
+  background: #eeeeee;
 }
 
 .kpi span {
   display: block;
-  font-size: 13px;
+  font-size: 0.8rem;
   color: #555;
+  margin-bottom: 4px;
 }
 
 .kpi strong {
-  font-size: 16px;
+  font-size: 1.1rem;
   color: #222;
+  font-weight: 700;
 }
 
 /* === HISTORIAL TABLE === */
 .historial-table {
   width: 100%;
+  min-width: 500px;
   border-collapse: collapse;
   background: white;
 }
@@ -459,13 +515,14 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 12px 16px;
+  padding: 16px 12px;
   text-align: left;
   border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
 }
 
 .historial-table td {
-  padding: 12px 16px;
+  padding: 16px 12px;
   border-bottom: 1px solid #f1f3f4;
   font-size: 0.9rem;
   vertical-align: middle;
@@ -483,10 +540,10 @@
 }
 
 .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #e73180;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #e73180;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -496,40 +553,55 @@
   100% { transform: rotate(360deg); }
 }
 
-/* === RESPONSIVE === */
+/* === RESPONSIVE MEJORADO === */
 @media (max-width: 1200px) {
-  .filtros-row {
-    grid-template-columns: 2fr 1fr 1fr;
+  .filtros-bottom {
+    flex-direction: column;
+    align-items: stretch;
   }
   
-  .filtros-row .filtro-date:last-child {
-    grid-column: 2 / -1;
+  .filtros-bottom .filtro-select,
+  .filtros-bottom .filtro-date {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .filtros-bottom p {
+    align-self: flex-start;
+    margin-top: 8px;
   }
 
   .actividad-libros-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
   }
 }
 
 @media (max-width: 768px) {
   .usuarios-admin {
-    padding: 15px 0;
+    padding: 12px 0;
   }
   
   .page-header h1 {
     font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  
+  .page-subtitle {
+    font-size: 0.9rem;
   }
   
   .tabs-navigation {
-    padding: 2px;
-    gap: 1px;
+    padding: 3px;
+    gap: 2px;
+    margin: 0 8px 0 8px;
   }
   
   .tab-button {
-    padding: 10px 12px;
+    padding: 12px 16px;
     font-size: 0.85rem;
     gap: 6px;
+    min-height: 48px;
   }
   
   .tab-button svg {
@@ -538,7 +610,8 @@
   }
   
   .tab-content {
-    padding: 0;
+    margin: 0 8px;
+    border-radius: 8px;
   }
 
   .tab-content.actividad-tab,
@@ -547,26 +620,34 @@
   }
   
   .filtros-container {
-    margin: 16px 16px 0 16px;
-    padding: 0 0 10px 0;
+    margin: 16px 16px 0 16px !important;
+    padding: 0 0 12px 0 !important;
+    gap: 8px;
   }
   
-  .filtros-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .filtros-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filtros-bottom .filtro-select,
+  .filtros-bottom .filtro-date {
+    width: 100%;
   }
   
   .table-container {
-    margin: 0 16px 16px 16px;
+    margin: 0 16px 16px 16px !important;
   }
   
   .usuarios-table {
-    font-size: 0.8rem;
+    min-width: 500px;
   }
   
   .usuarios-table th,
   .usuarios-table td {
-    padding: 8px 10px;
+    padding: 12px 8px;
+    font-size: 0.85rem;
   }
 
   .actividad-header,
@@ -576,28 +657,53 @@
     gap: 12px;
   }
 
+  .btn-back {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+  }
+
   .actividad-libros-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .actividad-libro-card {
-    padding: 12px;
+    padding: 16px;
+  }
+
+  .actividad-kpis {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .historial-table {
-    font-size: 0.8rem;
+    min-width: 400px;
   }
 
   .historial-table th,
   .historial-table td {
-    padding: 8px 10px;
+    padding: 12px 8px;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
   .usuarios-admin {
-    padding: 10px 0;
+    padding: 8px 0;
+  }
+  
+  .page-header h1 {
+    font-size: 1.3rem;
+  }
+  
+  .tabs-navigation {
+    margin: 0 4px 0 4px;
+  }
+  
+  .tab-content {
+    margin: 0 4px;
   }
   
   .tab-content.actividad-tab,
@@ -607,54 +713,98 @@
   
   .filtros-container {
     margin: 12px 12px 0 12px !important;
-    padding: 0 0 4px 0 !important;
+    padding: 0 0 8px 0 !important;
   }
   
   .table-container {
     margin: 0 12px 12px 12px !important;
   }
   
-  /* Ocultar columnas menos importantes en mobile */
-  .usuarios-table th:nth-child(1),
-  .usuarios-table td:nth-child(1),
+  .filtro-input,
+  .filtro-select,
+  .filtro-date {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+  
+  .filtro-input {
+    padding-right: 50px;
+  }
+  
+  .filtro-select {
+    padding-right: 50px;
+  }
+
+  /* Optimización de tabla para pantallas muy pequeñas */
+  .usuarios-table {
+    min-width: 350px;
+  }
+  
+  .usuarios-table th,
+  .usuarios-table td {
+    padding: 10px 6px;
+    font-size: 0.8rem;
+  }
+
+  /* Ocultar columnas menos importantes */
+  .usuarios-table th:nth-child(2),
+  .usuarios-table td:nth-child(2),
   .usuarios-table th:nth-child(6),
-  .usuarios-table td:nth-child(6),
-  .usuarios-table th:nth-child(7),
-  .usuarios-table td:nth-child(7) {
+  .usuarios-table td:nth-child(6) {
     display: none;
   }
 
-  .actividad-kpis {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .actividad-libro-card {
+    padding: 12px;
   }
 
-  /* Ocultar algunas columnas del historial en mobile */
+  .libro-titulo {
+    font-size: 1rem;
+  }
+
+  .kpi {
+    padding: 12px 8px;
+  }
+
+  .kpi span {
+    font-size: 0.75rem;
+  }
+
+  .kpi strong {
+    font-size: 1rem;
+  }
+
+  /* Historial table mobile optimization */
+  .historial-table {
+    min-width: 300px;
+  }
+  
+  .historial-table th:nth-child(4),
+  .historial-table td:nth-child(4),
   .historial-table th:nth-child(5),
-  .historial-table td:nth-child(5),
-  .historial-table th:nth-child(6),
-  .historial-table td:nth-child(6) {
+  .historial-table td:nth-child(5) {
     display: none;
   }
 }
 
-/* === SCROLL PERSONALIZADO === */
+/* === SCROLL MEJORADO === */
 .table-container::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
+  width: 6px;
 }
 
 .table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: #f8f9fa;
+  border-radius: 3px;
 }
 
 .table-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: #ced4da;
+  border-radius: 3px;
 }
 
 .table-container::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #adb5bd;
 }
 
 .tabs-navigation::-webkit-scrollbar {
@@ -670,22 +820,76 @@
   border-radius: 2px;
 }
 
-/* === FOCUS STATES === */
+/* === ESTADOS DE FOCUS MEJORADOS === */
 .btn-back:focus-visible {
-  outline: 2px solid #6c757d;
+  outline: 3px solid #6c757d;
   outline-offset: 2px;
 }
 
 .usuario-row:focus-visible {
-  outline: 2px solid #e73180;
+  outline: 3px solid #e73180;
   outline-offset: -2px;
 }
 
-/* === ANIMATIONS === */
+.tab-button:focus-visible {
+  outline: 3px solid #e73180;
+  outline-offset: 2px;
+}
+
+/* === ANIMACIONES === */
 @media (prefers-reduced-motion: reduce) {
   .barra-progreso .relleno,
-  .loading-spinner {
+  .loading-spinner,
+  .actividad-libro-card,
+  .tab-button,
+  .usuario-row,
+  .btn-back {
     animation: none;
     transition: none;
+  }
+}
+
+/* === MEJORAS DE ACCESIBILIDAD === */
+@media (prefers-contrast: high) {
+  .tab-button.active {
+    border: 2px solid #fff;
+  }
+  
+  .status-badge {
+    border-width: 2px;
+  }
+  
+  .table-container {
+    border-width: 2px;
+  }
+}
+
+/* === MEJORAS PARA DARK MODE === */
+@media (prefers-color-scheme: dark) {
+  .usuarios-admin {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+  
+  .tab-content {
+    background: #2d2d2d;
+    border-color: #404040;
+  }
+  
+  .usuarios-table {
+    background: #2d2d2d;
+  }
+  
+  .usuarios-table th {
+    background: #404040;
+    color: #e0e0e0;
+  }
+  
+  .filtro-input,
+  .filtro-select,
+  .filtro-date {
+    background: #404040;
+    border-color: #555;
+    color: #e0e0e0;
   }
 }

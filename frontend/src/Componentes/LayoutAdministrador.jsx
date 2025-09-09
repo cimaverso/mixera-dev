@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // 🔴 AGREGAR ESTA IMPORTACIÓN
 import SidebarAdministrador, {
   DashboardIcon,
   UsuariosIcon,
@@ -26,6 +27,22 @@ const LogoutIcon = () => (
 
 const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
   const [fotoPerfil, setFotoPerfil] = useState("");
+  const navigate = useNavigate(); // 🔴 AGREGAR HOOK DE NAVEGACIÓN
+
+  // 🔴 AGREGAR MAPEO DE RUTAS (igual que en SidebarAdministrador)
+  const rutas = {
+    dashboard: "/admin/dashboard",
+    usuarios: "/admin/usuarios",
+    libros: "/admin/libros", 
+    ecommerce: "/admin/ecommerce",
+  };
+
+  // 🔴 FUNCIÓN PARA MANEJAR NAVEGACIÓN TANTO EN SIDEBAR COMO BOTTOM NAV
+  const handleNav = (key) => {
+    onChange?.(key); // mantiene resaltado activo en el layout
+    const path = rutas[key];
+    if (path) navigate(path); // navega por URL real
+  };
 
   useEffect(() => {
     const cargarFoto = async () => {
@@ -67,7 +84,7 @@ const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
       <SidebarAdministrador
         items={items}
         activeKey={activeKey}
-        onChange={onChange}
+        onChange={handleNav} // 🔴 USAR handleNav EN LUGAR DE onChange
         onLogout={handleLogout}
         logoSrc={Logo}
         fotoPerfil={fotoPerfil}
@@ -79,7 +96,7 @@ const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
       <nav className="bottom-nav-usuario">
         <button
           className={activeKey === "dashboard" ? "activo" : ""}
-          onClick={() => onChange?.("dashboard")}
+          onClick={() => handleNav("dashboard")} // 🔴 CAMBIAR onChange POR handleNav
           title="Dashboard"
           aria-label="Ir a Dashboard"
         >
@@ -89,7 +106,7 @@ const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
         
         <button
           className={activeKey === "usuarios" ? "activo" : ""}
-          onClick={() => onChange?.("usuarios")}
+          onClick={() => handleNav("usuarios")} // 🔴 CAMBIAR onChange POR handleNav
           title="Usuarios"
           aria-label="Ir a Usuarios"
         >
@@ -99,7 +116,7 @@ const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
         
         <button
           className={activeKey === "libros" ? "activo" : ""}
-          onClick={() => onChange?.("libros")}
+          onClick={() => handleNav("libros")} // 🔴 CAMBIAR onChange POR handleNav
           title="Libros"
           aria-label="Ir a Libros"
         >
@@ -109,7 +126,7 @@ const LayoutAdministrador = ({ children, activeKey, onChange, onLogout }) => {
         
         <button
           className={activeKey === "ecommerce" ? "activo" : ""}
-          onClick={() => onChange?.("ecommerce")}
+          onClick={() => handleNav("ecommerce")} // 🔴 CAMBIAR onChange POR handleNav
           title="eCommerce"
           aria-label="Ir a eCommerce"
         >
