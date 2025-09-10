@@ -15,9 +15,8 @@ const OlvideContrasena = () => {
     setError("");
 
     try {
-      await api.post("/usuarios/recuperar", {usu_correo: correo });
+      await api.post("/usuarios/recuperar", { usu_correo: correo });
       setMensaje("Revisa tu correo para continuar con el cambio.");
-      
     } catch (err) {
       setError("No existe correo registrado");
     }
@@ -50,6 +49,12 @@ const OlvideContrasena = () => {
 
           {mensaje && <p style={{ color: "green" }}>{mensaje}</p>}
           {error && <p style={{ color: "red" }}>{error}</p>}
+
+          <div style={{ marginTop: "10px" }}>
+            <a href="login" className="enlace-login">
+              Iniciar sesión
+            </a>
+          </div>
         </form>
       </div>
     </div>

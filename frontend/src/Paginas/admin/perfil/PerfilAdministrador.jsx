@@ -210,15 +210,7 @@ const PerfilAdministrador = () => {
                   setUsuario({ ...usuario, usuario: e.target.value })
                 }
               />
-              <input
-                className="input-admin"
-                type="email"
-                placeholder="Correo electrónico"
-                value={usuario.correo}
-                onChange={(e) =>
-                  setUsuario({ ...usuario, correo: e.target.value })
-                }
-              />
+    
               <input
                 className="input-admin"
                 placeholder="Ciudad"
