@@ -1,4 +1,4 @@
-// Lector.jsx - VERSIÓN PRODUCCIÓN LIMPIA
+// Lector.jsx - VERSIÓN PRODUCCIÓN LIMPIA CON VENTANA DE BIENVENIDA
 import React, {
   useState,
   useRef,
@@ -10,6 +10,8 @@ import PanelHerramientas from "./PanelHerramientas";
 import BarraInferior from "./BarraInferior";
 import VisorPDF from "./VisorPDF";
 import TextosLayer from "./layers/TextosLayer";
+import WelcomeModal from "./components/WelcomeModal";
+import { useWelcomeModal } from "./hooks/useWelcomeModal";
 import { useParams } from "react-router-dom";
 import { getLibroById } from "../../servicios/libros";
 import { textosAPI } from "../../servicios/textosAPI.js";
@@ -23,6 +25,13 @@ import "./lector.css";
 function Lector() {
   const token = localStorage.getItem("access_token");
   const { libroId } = useParams();
+
+  // ===================== VENTANA DE BIENVENIDA =====================
+  const {
+    showWelcomeModal,
+    isInitialized: welcomeInitialized,
+    closeWelcomeModal
+  } = useWelcomeModal();
 
   // ===================== ESTADOS BÁSICOS =====================
   const [herramientaActiva, setHerramientaActiva] = useState("cursor");
@@ -41,7 +50,6 @@ function Lector() {
   const [textosError, setTextosError] = useState(null);
 
   const sesionIdRef = useRef(null);
-
 
   // Estado del visor
   const [visorInfo, setVisorInfo] = useState({
@@ -491,6 +499,14 @@ function Lector() {
           }
         }
       `}</style>
+
+      {/* ===================== VENTANA DE BIENVENIDA ===================== */}
+      {welcomeInitialized && (
+        <WelcomeModal
+          isOpen={showWelcomeModal}
+          onClose={closeWelcomeModal}
+        />
+      )}
     </div>
   );
 }
