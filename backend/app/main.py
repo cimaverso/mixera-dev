@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 
-from app.routers import usuario, autenticacion, pago, autor, categoria, editorial, libro, webhook, texto, progreso, lectura, administrador
+from app.routers import usuario, autenticacion, pago, autor, categoria, editorial, libro, webhook, texto, progreso, lectura, administrador, estadisticas
 
 
 app = FastAPI(
@@ -45,6 +45,7 @@ app.include_router(administrador.router)
 app.include_router(usuario.router)
 app.include_router(autenticacion.router)
 app.include_router(pago.router)
+app.include_router(estadisticas.router)
 app.include_router(webhook.router)
 app.include_router(autor.router)
 app.include_router(categoria.router)

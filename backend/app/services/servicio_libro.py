@@ -86,7 +86,6 @@ class LibroServicio:
             "estado": libro.lib_estado,
         }
 
-
     def listar_libro_id(self, libro_id: int, user_id: int, base_url: str = ""):
         libro = (
             self.session.query(Libro)
@@ -166,4 +165,8 @@ class LibroServicio:
             resultado.append(data)
 
         return resultado
+    
+
+
+    
 
