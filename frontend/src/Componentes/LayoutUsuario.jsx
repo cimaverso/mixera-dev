@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // AÑADIR ESTA IMPORTACIÓN
+import { useNavigate } from "react-router-dom";
 import SidebarUsuario, {
   CatalogoIcon,
   BibliotecaIcon,
   TutorialesIcon,
   EstadisticasIcon,
+  SoporteIcon,
 } from "./sidebar/SidebarUsuario.jsx";
 import "./sidebar/sidebar.css";
 import api from "../servicios/api";
@@ -26,15 +27,16 @@ const LogoutIcon = () => (
 
 const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
   const [fotoPerfil, setFotoPerfil] = useState("");
-  const navigate = useNavigate(); // AÑADIR HOOK DE NAVEGACIÓN
+  const navigate = useNavigate();
 
-  // AÑADIR MAPEO DE RUTAS
+  // Mapeo de rutas
   const rutas = {
     perfil: "/perfil",
     catalogo: "/catalogo",
     biblioteca: "/biblioteca",
     tutoriales: "/tutoriales",
     estadisticas: "/estadisticas",
+    soporte: "/soporte",
   };
 
   useEffect(() => {
@@ -62,6 +64,7 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
     { key: "biblioteca", label: "Mi Biblioteca", icon: <BibliotecaIcon /> },
     { key: "tutoriales", label: "Tutoriales", icon: <TutorialesIcon /> },
     { key: "estadisticas", label: "Estadísticas", icon: <EstadisticasIcon /> },
+    { key: "soporte", label: "Soporte", icon: <SoporteIcon /> },
   ];
 
   const handleLogout = () => {
@@ -69,12 +72,12 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
     window.location.href = "/login";
   };
 
-  // FUNCIÓN MEJORADA PARA NAVEGACIÓN
+  // Función mejorada para navegación
   const handleNav = (key) => {
     onChange?.(key); // mantiene resaltado activo
     const path = rutas[key];
     if (path) {
-      navigate(path); // NAVEGA A LA RUTA CORRESPONDIENTE
+      navigate(path); // navega a la ruta correspondiente
     }
   };
 
@@ -124,6 +127,14 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
         >
           <EstadisticasIcon />
           <span>Estadísticas</span>
+        </button>
+        <button
+          className={activeKey === "soporte" ? "activo" : ""}
+          onClick={() => handleNav("soporte")}
+          title="Soporte"
+        >
+          <SoporteIcon />
+          <span>Soporte</span>
         </button>
         <button
           onClick={handleLogout}

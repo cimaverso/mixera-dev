@@ -17,9 +17,9 @@ import BookDetail from "./Paginas/catalogo/BookDetail.jsx";
 import Biblioteca from "./Paginas/biblioteca/Biblioteca";
 import Tutoriales from "./Paginas/tutoriales/Tutoriales";
 import Estadisticas from "./Paginas/usuario/EstadisticasUsuario";
+import Soporte from "./Paginas/soporte/Soporte";
 
 import PrivateRoute from "./Componentes/PrivateRoute"; // importa el PrivateRoute
-
 
 import Lector from "./Componentes/Lector/Lector";
 import LectorPage from "./Paginas/lector/LectorPage.jsx";
@@ -29,7 +29,7 @@ import Dashboard from "./Paginas/admin/Dashboard";
 import Usuarios from "./Paginas/admin/usuarios/Usuarios";
 import Libros from "./Paginas/admin/libros/Libros";
 import Ecommerce from "./Paginas/admin/ecommerce/Ecommerce";
-import PerfilAdministrador from "./Paginas/admin/perfil/PerfilAdministrador"; // ✅ NUEVO
+import PerfilAdministrador from "./Paginas/admin/perfil/PerfilAdministrador";
 
 function App() {
   return (
@@ -97,6 +97,14 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/soporte"
+          element={
+            <PrivateRoute>
+              <Soporte />
+            </PrivateRoute>
+          }
+        />
 
         {/* RUTAS DE ADMIN PROTEGIDAS */}
         <Route
@@ -139,7 +147,6 @@ function App() {
             </PrivateRoute>
           }
         />
-        {/* ✅ NUEVA RUTA: Perfil de Administrador */}
         <Route
           path="/admin/perfil"
           element={
