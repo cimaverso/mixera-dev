@@ -13,11 +13,3 @@ export const enviarTicketSoporte = async (ticketData) => {
   }
 };
 
-export const obtenerHistorialTickets = async () => {
-  try {
-    const response = await api.get("/soporte/tickets");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};

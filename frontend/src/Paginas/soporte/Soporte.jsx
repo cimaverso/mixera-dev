@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import LayoutUsuario from "../../Componentes/LayoutUsuario";
 import api from "../../servicios/api";
+import { jwtDecode } from "jwt-decode";
+
 import "./Soporte.css";
 
 const Soporte = () => {
@@ -14,18 +16,21 @@ const Soporte = () => {
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" });
 
   useEffect(() => {
-    cargarDatosUsuario();
+    cargarDatosDesdeToken();
   }, []);
 
-  const cargarDatosUsuario = async () => {
+  const cargarDatosDesdeToken = () => {
     try {
-      const { data } = await api.get("/usuarios/perfil");
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      const decoded = jwtDecode(token);
       setUsuario({
-        nombre: `${data.usu_nombre} ${data.usu_apellido}`,
-        correo: data.usu_correo
+        nombre: decoded.name,   
+        correo: decoded.email   
       });
     } catch (error) {
-      console.error("Error al cargar datos del usuario:", error);
+      console.error("Error decodificando token:", error);
     }
   };
 
@@ -40,39 +45,22 @@ const Soporte = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setMensaje({
-          tipo: "error",
-          texto: "La imagen debe ser menor a 5MB"
-        });
+        setMensaje({ tipo: "error", texto: "La imagen debe ser menor a 5MB" });
         return;
       }
-      
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        setMensaje({
-          tipo: "error",
-          texto: "Solo se permiten archivos de imagen"
-        });
+      if (!file.type.startsWith("image/")) {
+        setMensaje({ tipo: "error", texto: "Solo se permiten archivos de imagen" });
         return;
       }
-
-      setFormData(prev => ({
-        ...prev,
-        imagen: file
-      }));
+      setFormData(prev => ({ ...prev, imagen: file }));
     }
   };
 
   const enviarTicket = async (e) => {
     e.preventDefault();
-    
     if (!formData.tipo || !formData.mensaje.trim()) {
-      setMensaje({
-        tipo: "error",
-        texto: "Por favor completa todos los campos obligatorios"
-      });
+      setMensaje({ tipo: "error", texto: "Por favor completa todos los campos obligatorios" });
       return;
     }
 
@@ -81,44 +69,24 @@ const Soporte = () => {
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('usuario', usuario.nombre);
-      formDataToSend.append('correo', usuario.correo);
-      formDataToSend.append('fecha', new Date().toLocaleString());
-      formDataToSend.append('tipo', formData.tipo);
-      formDataToSend.append('mensaje', formData.mensaje);
-      
+      formDataToSend.append("tipo", formData.tipo);
+      formDataToSend.append("mensaje", formData.mensaje);
       if (formData.imagen) {
-        formDataToSend.append('imagen', formData.imagen);
+        formDataToSend.append("imagen", formData.imagen);
       }
 
       await api.post("/soporte/ticket", formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      setMensaje({
-        tipo: "exito",
-        texto: "Ticket enviado correctamente. Te contactaremos pronto."
-      });
+      setMensaje({ tipo: "exito", texto: "Ticket enviado correctamente. Te contactaremos pronto." });
 
-      // Limpiar formulario
-      setFormData({
-        tipo: "",
-        mensaje: "",
-        imagen: null
-      });
-      
-      // Limpiar input de archivo
-      const fileInput = document.getElementById('imagen-input');
-      if (fileInput) fileInput.value = '';
-
+      setFormData({ tipo: "", mensaje: "", imagen: null });
+      const fileInput = document.getElementById("imagen-input");
+      if (fileInput) fileInput.value = "";
     } catch (error) {
       console.error("Error al enviar ticket:", error);
-      setMensaje({
-        tipo: "error",
-        texto: "Error al enviar el ticket. Intenta nuevamente."
-      });
+      setMensaje({ tipo: "error", texto: "Error al enviar el ticket. Intenta nuevamente." });
     } finally {
       setEnviando(false);
     }
@@ -135,9 +103,7 @@ const Soporte = () => {
     <LayoutUsuario activeKey="soporte">
       <div className="soporte-container">
         <div className="soporte-header">
-          <div className="header-icon">
-            <SoporteIcon />
-          </div>
+          <div className="header-icon"><SoporteIcon /></div>
           <div className="header-content">
             <h1>Centro de Soporte</h1>
             <p>¿Necesitas ayuda? Envíanos un ticket y te contactaremos pronto</p>
@@ -166,32 +132,18 @@ const Soporte = () => {
               </div>
             </div>
 
-            {/* Tipo de soporte */}
+            {/* Tipo */}
             <div className="form-group">
-              <label htmlFor="tipo">
-                Tipo de soporte <span className="required">*</span>
-              </label>
-              <select
-                id="tipo"
-                name="tipo"
-                value={formData.tipo}
-                onChange={handleInputChange}
-                required
-              >
+              <label htmlFor="tipo">Tipo de soporte <span className="required">*</span></label>
+              <select id="tipo" name="tipo" value={formData.tipo} onChange={handleInputChange} required>
                 <option value="">Selecciona un tipo...</option>
-                {tiposTicket.map(tipo => (
-                  <option key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </option>
-                ))}
+                {tiposTicket.map(tipo => <option key={tipo.value} value={tipo.value}>{tipo.label}</option>)}
               </select>
             </div>
 
             {/* Mensaje */}
             <div className="form-group">
-              <label htmlFor="mensaje">
-                Describe tu consulta <span className="required">*</span>
-              </label>
+              <label htmlFor="mensaje">Describe tu consulta <span className="required">*</span></label>
               <textarea
                 id="mensaje"
                 name="mensaje"
@@ -201,58 +153,27 @@ const Soporte = () => {
                 rows="6"
                 required
               />
-              <div className="char-counter">
-                {formData.mensaje.length}/1000 caracteres
-              </div>
+              <div className="char-counter">{formData.mensaje.length}/1000 caracteres</div>
             </div>
 
-            {/* Imagen adjunta */}
+            {/* Imagen */}
             <div className="form-group">
-              <label htmlFor="imagen-input">
-                Adjuntar imagen (opcional)
-              </label>
+              <label htmlFor="imagen-input">Adjuntar imagen (opcional)</label>
               <div className="file-input-container">
-                <input
-                  type="file"
-                  id="imagen-input"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="file-input"
-                />
+                <input type="file" id="imagen-input" accept="image/*" onChange={handleImageChange} className="file-input" />
                 <label htmlFor="imagen-input" className="file-input-label">
-                  <ImageIcon />
-                  {formData.imagen ? formData.imagen.name : "Seleccionar imagen"}
+                  <ImageIcon /> {formData.imagen ? formData.imagen.name : "Seleccionar imagen"}
                 </label>
               </div>
-              <small className="file-help">
-                Formatos permitidos: JPG, PNG, GIF. Máximo 5MB.
-              </small>
+              <small className="file-help">Formatos permitidos: JPG, PNG, GIF. Máximo 5MB.</small>
             </div>
 
             {/* Mensaje de estado */}
-            {mensaje.texto && (
-              <div className={`mensaje ${mensaje.tipo}`}>
-                {mensaje.texto}
-              </div>
-            )}
+            {mensaje.texto && <div className={`mensaje ${mensaje.tipo}`}>{mensaje.texto}</div>}
 
-            {/* Botón enviar */}
-            <button
-              type="submit"
-              className="btn-enviar"
-              disabled={enviando}
-            >
-              {enviando ? (
-                <>
-                  <LoadingIcon />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <SendIcon />
-                  Enviar Ticket
-                </>
-              )}
+            {/* Botón */}
+            <button type="submit" className="btn-enviar" disabled={enviando}>
+              {enviando ? (<><LoadingIcon /> Enviando...</>) : (<><SendIcon /> Enviar Ticket</>)}
             </button>
           </form>
         </div>
@@ -260,6 +181,7 @@ const Soporte = () => {
     </LayoutUsuario>
   );
 };
+
 
 // Iconos
 const SoporteIcon = () => (

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import LayoutUsuario from "../../Componentes/LayoutUsuario.jsx";
+import ProfileWelcomeModal from "../../Componentes/ProfileWelcomeModal.jsx";
+import { useProfileWelcome } from "../../Componentes/hooks/useProfileWelcome.js";
 import "./MiPerfil.css";
 import api from "../../servicios/api.js";
 import { data } from "react-router-dom";
@@ -12,6 +14,15 @@ const MiPerfil = () => {
     texto: "",
     tipo: "",
   });
+
+  // Hook para la ventana de bienvenida
+  const {
+    showProfileWelcome,
+    isInitialized,
+    closeProfileWelcome,
+    markAsViewed,
+    resetProfileWelcome
+  } = useProfileWelcome();
 
   const [usuario, setUsuario] = useState({
     nombre: "",
@@ -157,172 +168,204 @@ const MiPerfil = () => {
     fetchLibrosAdquiridos();
   }, []);
 
+  // Función para manejar el cierre de la ventana de bienvenida
+  const handleCloseWelcome = () => {
+    closeProfileWelcome();
+  };
+
   return (
-    <LayoutUsuario
-      activeKey={active}
-      onChange={setActive}
-      onLogout={() => alert("Cerrar sesión…")}
-      usuario={usuario}
-    >
-      <h1>Mi Perfil</h1>
-      <hr className="separador" />
+    <>
+      {/* Ventana de bienvenida */}
+      <ProfileWelcomeModal
+        isOpen={showProfileWelcome && isInitialized}
+        onClose={handleCloseWelcome}
+      />
 
-      {/* Fila 1: Datos personales + Cambiar contraseña */}
-      <section className="fila fila-1">
-        <div className="col">
-          <h2 className="seccion-titulo">Datos Personales</h2>
+      <LayoutUsuario
+        activeKey={active}
+        onChange={setActive}
+        onLogout={() => alert("Cerrar sesión…")}
+        usuario={usuario}
+      >
+        <h1>Mi Perfil</h1>
+        <hr className="separador" />
 
-          <div className="grupo-inputs">
-            <label className="input-imagen">
-              📷 Subir imagen de perfil
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    setArchivoImagen(file); // guardamos el archivo seleccionado
-                    subirImagen(file); // subimos la imagen
-                  }
-                }}
-              />
-            </label>
+        {/* Fila 1: Datos personales + Cambiar contraseña */}
+        <section className="fila fila-1">
+          <div className="col">
+            <h2 className="seccion-titulo">Datos Personales</h2>
 
-            {/* Mostrar mensaje de subida */}
-            {mensajeImagen.texto && (
-              <div className={`mensaje ${mensajeImagen.tipo}`}>
-                {mensajeImagen.texto}
-              </div>
-            )}
+            <div className="grupo-inputs">
+              <label className="input-imagen">
+                📷 Subir imagen de perfil
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setArchivoImagen(file); // guardamos el archivo seleccionado
+                      subirImagen(file); // subimos la imagen
+                    }
+                  }}
+                />
+              </label>
 
-            <input
-              placeholder="Nombre"
-              value={usuario.nombre}
-              onChange={(e) =>
-                setUsuario({ ...usuario, nombre: e.target.value })
-              }
-            />
-            <input
-              placeholder="Apellido"
-              value={usuario.apellido}
-              onChange={(e) =>
-                setUsuario({ ...usuario, apellido: e.target.value })
-              }
-            />
-            <input
-              placeholder="Usuario"
-              value={usuario.usuario}
-              onChange={(e) =>
-                setUsuario({ ...usuario, usuario: e.target.value })
-              }
-            />
-            <input
-              placeholder="Ciudad"
-              value={usuario.ciudad}
-              onChange={(e) =>
-                setUsuario({ ...usuario, ciudad: e.target.value })
-              }
-            />
-            <input
-              placeholder="País"
-              value={usuario.pais}
-              onChange={(e) => setUsuario({ ...usuario, pais: e.target.value })}
-            />
-          </div>
-
-          <button
-            className="btn-perfil"
-            style={{ marginTop: 20 }}
-            onClick={guardarPerfil}
-          >
-            Guardar Cambios
-          </button>
-          {mensajePerfil.texto && (
-            <div className={`mensaje ${mensajePerfil.tipo}`}>
-              {mensajePerfil.texto}
-            </div>
-          )}
-        </div>
-
-        <div className="col">
-          <h2 className="seccion-titulo">Cambiar Contraseña</h2>
-          <div className="grupo-inputs">
-            <input
-              type="password"
-              placeholder="Contraseña actual"
-              value={contrasena.actual}
-              onChange={(e) =>
-                setContrasena({ ...contrasena, actual: e.target.value })
-              }
-            />
-            <input
-              type="password"
-              placeholder="Nueva contraseña"
-              value={contrasena.nueva}
-              onChange={(e) =>
-                setContrasena({ ...contrasena, nueva: e.target.value })
-              }
-            />
-
-            <button className="btn-perfil" onClick={cambiarContrasena}>
-              Enviar
-            </button>
-            {mensajeContrasena.texto && (
-              <div className={`mensaje ${mensajeContrasena.tipo}`}>
-                {mensajeContrasena.texto}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Fila 2: Libros + Estadísticas */}
-      <section className="fila fila-2">
-        <div className="adquirido">
-          <h2 className="seccion-titulo">Libros Adquiridos</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Fecha</th>
-                <th>Progreso</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingLibros ? (
-                <tr>
-                  <td colSpan={3} style={{ textAlign: "center" }}>
-                    Cargando...
-                  </td>
-                </tr>
-              ) : librosAdquiridos.length === 0 ? (
-                <tr>
-                  <td colSpan={3} style={{ textAlign: "center" }}>
-                    No has adquirido libros aún.
-                  </td>
-                </tr>
-              ) : (
-                librosAdquiridos.map((libro, idx) => (
-                  <tr key={idx}>
-                    <td>{libro.titulo}</td>
-                    <td>{libro.fecha}</td>
-                    <td>{libro.progreso}</td>
-                  </tr>
-                ))
+              {/* Mostrar mensaje de subida */}
+              {mensajeImagen.texto && (
+                <div className={`mensaje ${mensajeImagen.tipo}`}>
+                  {mensajeImagen.texto}
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
 
-        <div className="estadisticas">
-          <h2 className="seccion-titulo">Estadísticas de Lectura</h2>
-          <div className="card">⏱ Tiempo leído: 2.5h</div>
-          <div className="card">📄 Notas completadas: 10 / 32</div>
-          <div className="card">📘 Libros abiertos: 3</div>
-        </div>
-      </section>
-    </LayoutUsuario>
+              <input
+                placeholder="Nombre"
+                value={usuario.nombre}
+                onChange={(e) =>
+                  setUsuario({ ...usuario, nombre: e.target.value })
+                }
+              />
+              <input
+                placeholder="Apellido"
+                value={usuario.apellido}
+                onChange={(e) =>
+                  setUsuario({ ...usuario, apellido: e.target.value })
+                }
+              />
+              <input
+                placeholder="Usuario"
+                value={usuario.usuario}
+                onChange={(e) =>
+                  setUsuario({ ...usuario, usuario: e.target.value })
+                }
+              />
+              <input
+                placeholder="Ciudad"
+                value={usuario.ciudad}
+                onChange={(e) =>
+                  setUsuario({ ...usuario, ciudad: e.target.value })
+                }
+              />
+              <input
+                placeholder="País"
+                value={usuario.pais}
+                onChange={(e) => setUsuario({ ...usuario, pais: e.target.value })}
+              />
+            </div>
+
+            <button
+              className="btn-perfil"
+              style={{ marginTop: 20 }}
+              onClick={guardarPerfil}
+            >
+              Guardar Cambios
+            </button>
+            {mensajePerfil.texto && (
+              <div className={`mensaje ${mensajePerfil.tipo}`}>
+                {mensajePerfil.texto}
+              </div>
+            )}
+          </div>
+
+          <div className="col">
+            <h2 className="seccion-titulo">Cambiar Contraseña</h2>
+            <div className="grupo-inputs">
+              <input
+                type="password"
+                placeholder="Contraseña actual"
+                value={contrasena.actual}
+                onChange={(e) =>
+                  setContrasena({ ...contrasena, actual: e.target.value })
+                }
+              />
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                value={contrasena.nueva}
+                onChange={(e) =>
+                  setContrasena({ ...contrasena, nueva: e.target.value })
+                }
+              />
+
+              <button className="btn-perfil" onClick={cambiarContrasena}>
+                Enviar
+              </button>
+              {mensajeContrasena.texto && (
+                <div className={`mensaje ${mensajeContrasena.tipo}`}>
+                  {mensajeContrasena.texto}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Fila 2: Libros + Estadísticas */}
+        <section className="fila fila-2">
+          <div className="adquirido">
+            <h2 className="seccion-titulo">Libros Adquiridos</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Fecha</th>
+                  <th>Progreso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingLibros ? (
+                  <tr>
+                    <td colSpan={3} style={{ textAlign: "center" }}>
+                      Cargando...
+                    </td>
+                  </tr>
+                ) : librosAdquiridos.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ textAlign: "center" }}>
+                      No has adquirido libros aún.
+                    </td>
+                  </tr>
+                ) : (
+                  librosAdquiridos.map((libro, idx) => (
+                    <tr key={idx}>
+                      <td>{libro.titulo}</td>
+                      <td>{libro.fecha}</td>
+                      <td>{libro.progreso}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="estadisticas">
+            <h2 className="seccion-titulo">Estadísticas de Lectura</h2>
+            <div className="card">⏱ Tiempo leído: 2.5h</div>
+            <div className="card">📄 Notas completadas: 10 / 32</div>
+            <div className="card">📘 Libros abiertos: 3</div>
+          </div>
+        </section>
+
+        {/* Botón de prueba para resetear modal (solo para desarrollo) */}
+        {/* {process.env.NODE_ENV === 'development' && (
+          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+            <button 
+              onClick={resetProfileWelcome}
+              style={{ 
+                background: '#ffc107', 
+                color: '#000', 
+                border: 'none', 
+                padding: '8px 16px', 
+                borderRadius: '4px',
+                fontSize: '12px'
+              }}
+            >
+              🔄 Resetear modal de bienvenida (dev)
+            </button>
+          </div>
+        )} */}
+      </LayoutUsuario>
+    </>
   );
 };
 
