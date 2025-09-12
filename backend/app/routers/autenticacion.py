@@ -20,7 +20,7 @@ def iniciar_sesion(
     rol = session.get(Rol, usuario.usu_idrol)
     rol_nombre = rol.rol_nombre if rol else "usuario"
 
-    return crear_tokens(usuario.usu_usuario, usuario.usu_id, rol_nombre)
+    return crear_tokens(usuario.usu_usuario, usuario.usu_id, rol_nombre, usuario.usu_correo, usuario.usu_nombre)
 
 
 @router.post("/refrescar")

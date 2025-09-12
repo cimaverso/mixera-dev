@@ -22,22 +22,26 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="autenticacion/ingresar")
 
 
-def crear_token(usu_usuario: str, usu_id: int, rol_nombre: str, expires_delta: timedelta, token_type: str = "access") -> str:
+def crear_token(usu_usuario: str, usu_id: int, rol_nombre: str, usu_correo: str, usu_nombre : str, expires_delta: timedelta, token_type: str = "access") -> str:
     data = {
         "sub": usu_usuario,
         "id": usu_id,
-        "role": rol_nombre,   # ✅ Guardamos el nombre
+        "role": rol_nombre,   # ✅ Guardamos el nombre}
+        "email": usu_correo,
+        "name": usu_nombre,
         "type": token_type,
         "exp": datetime.utcnow() + expires_delta
     }
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def crear_tokens(usu_usuario: str, usu_id: int, rol_nombre: str) -> Dict[str, str]:
+def crear_tokens(usu_usuario: str, usu_id: int, rol_nombre: str, usu_correo: str, usu_nombre : str) -> Dict[str, str]:
     access_token = crear_token(
         usu_usuario,
         usu_id,
         rol_nombre,
+        usu_correo,
+        usu_nombre,  
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         "access",
     )
@@ -45,6 +49,8 @@ def crear_tokens(usu_usuario: str, usu_id: int, rol_nombre: str) -> Dict[str, st
         usu_usuario,
         usu_id,
         rol_nombre,
+        usu_correo,
+        usu_nombre,
         timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
         "refresh",
     )
@@ -140,7 +146,10 @@ async def obtener_usuario(token: str = Depends(oauth2_bearer)) -> Dict[str, Unio
         return {
             "usu_usuario": payload["sub"],
             "usu_id": payload["id"],
-            "usu_rol": payload["role"],   
+            "usu_rol": payload["role"],
+            "usu_correo": payload.get("email"),
+            "usu_nombre": payload.get("name")  
+              
         }
     except JWTError:
         raise HTTPException(
