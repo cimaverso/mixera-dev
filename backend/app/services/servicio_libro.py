@@ -3,7 +3,7 @@ import os
 import uuid
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
-from app.models.libro.modelo_libro import Libro, LibroCreate
+from app.models.libro.modelo_libro import Libro, LibroCreate, LibroUpdate
 from app.models.compra.modelo_compra import Compra 
 from app.models.libro.modelo_autor import Autor
 from app.models.libro.modelo_categoria import Categoria
@@ -75,9 +75,13 @@ class LibroServicio:
         return {
             "id": libro.lib_id,
             "titulo": libro.lib_titulo,
+            "descripcion": libro.lib_descripcion,
             "autor": autor.aut_nombre if autor else None,
+            "idautor": libro.lib_idautor,
             "categoria": categoria.cat_nombre if categoria else None,
+            "idcategoria": libro.lib_idcategoria,
             "editorial": editorial.edi_nombre if editorial else None,
+            "ideditorial": libro.lib_ideditorial,
             "precio": libro.lib_precio,
             "portada": f"{base_url}/uploads/covers/{libro.lib_portada}" if libro.lib_portada else None,
             "url": f"{base_url}/uploads/books/{libro.lib_url}" if libro.lib_url else None,
@@ -166,6 +170,48 @@ class LibroServicio:
 
         return resultado
     
+    def actualizar_libro(self, libro_id: int, data: "LibroUpdate", file: UploadFile = None, portada: UploadFile = None) -> Libro:
+        libro = self.session.query(Libro).filter(Libro.lib_id == libro_id).first()
+        if not libro:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+
+        # Validar si se manda un autor nuevo
+        if data.lib_idautor is not None:
+            autor = self.session.query(Autor).filter(Autor.aut_id == data.lib_idautor).first()
+            if not autor:
+                raise HTTPException(status_code=400, detail="El autor no existe")
+
+        # Validar si se manda una categoría nueva
+        if data.lib_idcategoria is not None:
+            categoria = self.session.query(Categoria).filter(Categoria.cat_id == data.lib_idcategoria).first()
+            if not categoria:
+                raise HTTPException(status_code=400, detail="La categoría no existe")
+
+        # Validar si se manda una editorial nueva
+        if data.lib_ideditorial is not None:
+            editorial = self.session.query(Editorial).filter(Editorial.edi_id == data.lib_ideditorial).first()
+            if not editorial:
+                raise HTTPException(status_code=400, detail="La editorial no existe")
+
+        # Actualizar PDF si se envía
+        if file:
+            pdf_name = self._guardar_archivo(file, CARPETA_LIBROS, (".pdf",), MAX_FILE_SIZE)
+            libro.lib_url = pdf_name
+
+        # Actualizar portada si se envía
+        if portada:
+            portada_name = self._guardar_archivo(portada, CARPETA_PORTADAS, (".jpg", ".jpeg", ".png"), 5 * 1024 * 1024)
+            libro.lib_portada = portada_name
+
+        # Actualizar solo los campos enviados
+        update_data = data.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(libro, key, value)
+
+
+        self.session.commit()
+        self.session.refresh(libro)
+        return libro
 
 
     

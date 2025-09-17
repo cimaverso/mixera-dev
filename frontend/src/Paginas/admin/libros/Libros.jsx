@@ -163,6 +163,9 @@ const FormularioLibro = ({
     onSubmit(formData);
   };
 
+  const [mensaje, setMensaje] = useState(null); // puede ser string o null
+  const [tipoMensaje, setTipoMensaje] = useState("success"); // "success" o "error"
+
   if (loadingOptions) {
     return (
       <div className="form-loading">
@@ -365,7 +368,6 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
       <table className="libros-table">
         <thead>
           <tr>
-            
             <th>Portada</th>
             <th>Título</th>
             <th>Autor</th>
@@ -380,7 +382,6 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
         <tbody>
           {libros.map((libro) => (
             <tr key={libro.id} className="libro-row">
-              
               <td>
                 <div className="portada-mini">
                   {libro.portada ? (
@@ -402,10 +403,8 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
                 <div>
                   <strong>{libro.titulo}</strong>
                   <small>
-                    {(libro.descripcion || "").substring(0, 50)}
-                    {libro.descripcion && libro.lib_descripcion.length > 50
-                      ? "..."
-                      : ""}
+                    {libro.descripcion?.substring(0, 50)}
+                    {libro.descripcion?.length > 50 && "..."}
                   </small>
                 </div>
               </td>
@@ -454,19 +453,7 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
                       <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
                     </svg>
                   </button>
-                  <button
-                    className="action-btn delete"
-                    title="Eliminar libro"
-                    onClick={() => onDelete(libro)}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="currentColor"
-                      viewBox="0 0 16 16"
-                    >
-                      <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5z" />
-                    </svg>
-                  </button>
+                 
                 </div>
               </td>
             </tr>
@@ -484,6 +471,9 @@ const Libros = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [libroEditando, setLibroEditando] = useState(null);
+  const [mensaje, setMensaje] = useState(null);
+  const [tipoMensaje, setTipoMensaje] = useState("success"); // "success" o "error"
+
 
   const tabs = [
     {
@@ -555,7 +545,8 @@ const Libros = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Libro creado exitosamente");
+      setMensaje("Libro creado correctamente");
+      setTipoMensaje("success");
       setActiveTab("lista");
       setShowForm(false);
       setLibroEditando(null);
@@ -568,28 +559,66 @@ const Libros = () => {
   };
 
   const handleEditLibro = (libro) => {
-    setLibroEditando(libro);
+    const libroFormateado = {
+      lib_titulo: libro.titulo || "",
+      lib_descripcion: libro.descripcion || "",
+      lib_precio: libro.precio || 0,
+      lib_idautor: libro.idautor || "",
+      lib_idcategoria: libro.idcategoria || "",
+      lib_ideditorial: libro.ideditorial || "",
+      lib_estado: libro.estado ?? true,
+      file: null,
+      portada: null,
+      lib_id: libro.id || null, // importante para PUT
+    };
+
+    setLibroEditando(libroFormateado);
     setActiveTab("nuevo");
   };
 
-  const handleDeleteLibro = async (libro) => {
-    if (!confirm(`¿Estás seguro de eliminar "${libro.lib_titulo}"?`)) return;
-
+  const handleUpdateLibro = async (formData) => {
     try {
-      // TODO: Conectar con endpoint DELETE /admin/libros/:id
-      console.log("Eliminar libro:", libro.lib_id);
-      alert("Libro eliminado exitosamente");
+      setLoading(true);
+      const form = new FormData();
+
+      form.append("lib_titulo", formData.lib_titulo);
+      form.append("lib_descripcion", formData.lib_descripcion);
+      form.append("lib_precio", formData.lib_precio);
+      form.append("lib_idautor", formData.lib_idautor || "");
+      form.append("lib_idcategoria", formData.lib_idcategoria || "");
+      form.append("lib_ideditorial", formData.lib_ideditorial || "");
+      form.append("lib_estado", formData.lib_estado ? "1" : "0");
+
+      if (formData.file) form.append("file", formData.file);
+      if (formData.portada) form.append("portada", formData.portada);
+
+      await api.put(`/libros/${libroEditando.lib_id}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setMensaje("Libro actualizado correctamente");
+      setTipoMensaje("success");
+
+
+      setActiveTab("lista");
+      setLibroEditando(null);
       cargarLibros();
     } catch (error) {
-      console.error("Error eliminando libro:", error);
-      alert("Error al eliminar el libro");
+      setMensaje("Error al actualizar el libro");
+      setTipoMensaje("error");
+
+      setLoading(false);
     }
   };
 
+  
   const handleViewLibro = (libro) => {
     console.log("Ver detalles:", libro);
     // TODO: Abrir modal con detalles o navegar a página de detalle
   };
+
+
+
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -615,7 +644,6 @@ const Libros = () => {
             <TablaLibros
               libros={libros}
               onEdit={handleEditLibro}
-              onDelete={handleDeleteLibro}
               onView={handleViewLibro}
               loading={loading}
             />
@@ -634,7 +662,7 @@ const Libros = () => {
             </div>
             <FormularioLibro
               libro={libroEditando}
-              onSubmit={handleSubmitLibro}
+              onSubmit={libroEditando ? handleUpdateLibro : handleSubmitLibro}
               onCancel={() => {
                 setActiveTab("lista");
                 setLibroEditando(null);
@@ -673,6 +701,12 @@ const Libros = () => {
             }
           }}
         />
+
+        {mensaje && (
+          <div className={`mensaje-flotante ${tipoMensaje}`}>
+            <p>{mensaje}</p>
+          </div>
+        )}
 
         {renderTabContent()}
       </div>
