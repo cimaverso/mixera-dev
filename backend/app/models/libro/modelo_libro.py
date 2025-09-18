@@ -19,6 +19,7 @@ class Libro(SQLModel, table=True):
     lib_portada: Optional[str] = Field(default=None, max_length=100)
     lib_idautor: Optional[int] = Field(default=None, foreign_key="autor.aut_id")
     lib_idcategoria: Optional[int] = Field(default=None, foreign_key="categoria.cat_id")
+    lib_descuento: Optional[int] = Field(default=0)
 
     # editorial: Optional["Editorial"] = Relationship(back_populates="libro") # type: ignore
     # categoria: Optional["Categoria"] = Relationship(back_populates="libro") # type: ignore
@@ -41,6 +42,7 @@ class LibroCreate(SQLModel):
     lib_idcategoria: Optional[int] = None
     lib_estado: bool
     lib_portada: Optional[str] = None
+    lib_descuento: Optional[int] = 0
 
     model_config = {"from_attributes": True}
 
@@ -56,6 +58,7 @@ class LibroUpdate(SQLModel):
     lib_idcategoria: Optional[int] = None
     lib_estado: Optional[bool] = None
     lib_portada: Optional[str] = None
+    lib_descuento: Optional[int] = 0
 
     model_config = {"from_attributes": True}
 
@@ -73,6 +76,7 @@ class LibroResponse(SQLModel):
     lib_idcategoria: Optional[int] = None
     lib_estado: bool
     lib_portada: Optional[str] = None
+    lib_descuento: Optional[int] = 0
 
     model_config = {"from_attributes": True}
 

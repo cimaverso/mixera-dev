@@ -83,6 +83,7 @@ class LibroServicio:
             "editorial": editorial.edi_nombre if editorial else None,
             "ideditorial": libro.lib_ideditorial,
             "precio": libro.lib_precio,
+             "descuento": libro.lib_descuento,
             "portada": f"{base_url}/uploads/covers/{libro.lib_portada}" if libro.lib_portada else None,
             "url": f"{base_url}/uploads/books/{libro.lib_url}" if libro.lib_url else None,
             "progreso_pagina_actual": progreso.pro_pagina_actual if progreso else 0,
@@ -125,14 +126,14 @@ class LibroServicio:
             )
 
 
-            
-        
+    
         return {
             "id": libro.lib_id,
             "titulo": libro.lib_titulo,
             "descripcion": libro.lib_descripcion,
             "fecha": str(libro.lib_fecha),
             "precio": libro.lib_precio,
+            "descuento": libro.lib_descuento,
             "estado": libro.lib_estado,
             "portada": f"{base_url}/uploads/covers/{libro.lib_portada}" if libro.lib_portada else None,
             "url": f"{base_url}/uploads/books/{libro.lib_url}" if libro.lib_url else None,

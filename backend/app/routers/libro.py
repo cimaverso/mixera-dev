@@ -17,6 +17,7 @@ class LibroCreateForm:
         lib_titulo: str = Form(...),
         lib_descripcion: str = Form(...),
         lib_precio: float = Form(...),
+        lib_descuento: Optional[int] = Form(0),
         lib_ideditorial: int = Form(...),
         lib_idautor: int = Form(...),         
         lib_idcategoria: int = Form(...),  
@@ -27,6 +28,7 @@ class LibroCreateForm:
         self.lib_descripcion = lib_descripcion
         self.lib_fecha = date.today()
         self.lib_precio = lib_precio
+        self.lib_descuento = lib_descuento
         self.lib_ideditorial = lib_ideditorial
         self.lib_idautor = lib_idautor        
         self.lib_idcategoria = lib_idcategoria
@@ -38,6 +40,7 @@ class LibroUpdateForm:
         lib_titulo: Optional[str] = Form(None),
         lib_descripcion: Optional[str] = Form(None),
         lib_precio: Optional[int] = Form(None),
+        lib_descuento: Optional[int] = Form(None),
         lib_ideditorial: Optional[int] = Form(None),
         lib_idautor: Optional[int] = Form(None),
         lib_idcategoria: Optional[int] = Form(None),
@@ -46,6 +49,7 @@ class LibroUpdateForm:
         self.lib_titulo = lib_titulo
         self.lib_descripcion = lib_descripcion
         self.lib_precio = lib_precio
+        self.lib_descuento = lib_descuento
         self.lib_ideditorial = lib_ideditorial
         self.lib_idautor = lib_idautor
         self.lib_idcategoria = lib_idcategoria

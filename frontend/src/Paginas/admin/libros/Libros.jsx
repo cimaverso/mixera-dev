@@ -78,6 +78,7 @@ const FormularioLibro = ({
     lib_titulo: "",
     lib_descripcion: "",
     lib_precio: 0,
+    lib_descuento: 0,
     lib_idautor: "",
     lib_idcategoria: "",
     lib_ideditorial: "",
@@ -163,9 +164,6 @@ const FormularioLibro = ({
     onSubmit(formData);
   };
 
-  const [mensaje, setMensaje] = useState(null); // puede ser string o null
-  const [tipoMensaje, setTipoMensaje] = useState("success"); // "success" o "error"
-
   if (loadingOptions) {
     return (
       <div className="form-loading">
@@ -242,6 +240,25 @@ const FormularioLibro = ({
               required
             />
           </div>
+
+          <div className="form-group">
+            <label className="form-label">Descuento (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value={formData.lib_descuento}
+              onChange={(e) =>
+                handleInputChange(
+                  "lib_descuento",
+                  parseInt(e.target.value) || 0
+                )
+              }
+              className="form-input"
+              placeholder="0"
+            />
+          </div>
         </div>
 
         {/* Selects de relaciones */}
@@ -264,6 +281,7 @@ const FormularioLibro = ({
                   {autor.aut_nombre}
                 </option>
               ))}
+              <option value="-1">+ Crear nuevo autor</option>
             </select>
           </div>
 
@@ -373,6 +391,8 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
             <th>Autor</th>
             <th>Categoría</th>
             <th>Precio</th>
+            <th>Descuento</th>
+            <th>Precio Final</th>
             <th>Compras</th>
             <th>Estado</th>
             <th>Fecha</th>
@@ -411,6 +431,14 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
               <td>{libro.autor}</td>
               <td>{libro.categoria}</td>
               <td>${libro.precio}</td>
+              <td>{libro.descuento ? `${libro.descuento}%` : "0%"}</td>
+              <td>
+                $
+                {Math.max(
+                  libro.precio - (libro.precio * (libro.descuento || 0)) / 100,
+                  5000
+                )}
+              </td>
               <td>{libro.descargas || 0}</td>
               <td>
                 <span
@@ -453,7 +481,6 @@ const TablaLibros = ({ libros, onEdit, onDelete, onView, loading }) => {
                       <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
                     </svg>
                   </button>
-                 
                 </div>
               </td>
             </tr>
@@ -473,7 +500,6 @@ const Libros = () => {
   const [libroEditando, setLibroEditando] = useState(null);
   const [mensaje, setMensaje] = useState(null);
   const [tipoMensaje, setTipoMensaje] = useState("success"); // "success" o "error"
-
 
   const tabs = [
     {
@@ -532,6 +558,7 @@ const Libros = () => {
       form.append("lib_titulo", formData.lib_titulo);
       form.append("lib_descripcion", formData.lib_descripcion);
       form.append("lib_precio", formData.lib_precio);
+      form.append("lib_descuento", formData.lib_descuento);
       form.append("lib_idautor", formData.lib_idautor);
       form.append("lib_idcategoria", formData.lib_idcategoria);
       form.append("lib_ideditorial", formData.lib_ideditorial);
@@ -563,6 +590,7 @@ const Libros = () => {
       lib_titulo: libro.titulo || "",
       lib_descripcion: libro.descripcion || "",
       lib_precio: libro.precio || 0,
+      lib_descuento: libro.descuento || 0,
       lib_idautor: libro.idautor || "",
       lib_idcategoria: libro.idcategoria || "",
       lib_ideditorial: libro.ideditorial || "",
@@ -584,6 +612,7 @@ const Libros = () => {
       form.append("lib_titulo", formData.lib_titulo);
       form.append("lib_descripcion", formData.lib_descripcion);
       form.append("lib_precio", formData.lib_precio);
+      form.append("lib_descuento", formData.lib_descuento);
       form.append("lib_idautor", formData.lib_idautor || "");
       form.append("lib_idcategoria", formData.lib_idcategoria || "");
       form.append("lib_ideditorial", formData.lib_ideditorial || "");
@@ -599,7 +628,6 @@ const Libros = () => {
       setMensaje("Libro actualizado correctamente");
       setTipoMensaje("success");
 
-
       setActiveTab("lista");
       setLibroEditando(null);
       cargarLibros();
@@ -611,14 +639,10 @@ const Libros = () => {
     }
   };
 
-  
   const handleViewLibro = (libro) => {
     console.log("Ver detalles:", libro);
     // TODO: Abrir modal con detalles o navegar a página de detalle
   };
-
-
-
 
   const renderTabContent = () => {
     switch (activeTab) {

@@ -9,8 +9,14 @@ load_dotenv()
 ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN_PROD")
 sdk = mercadopago.SDK(ACCESS_TOKEN)
 
-def crear_preferencia_pago(nombre_producto: str, precio: float, usuario_id: int, libro_id: int, cantidad: int = 1) -> str:
+def crear_preferencia_pago(nombre_producto: str, precio: float, descuento: float, usuario_id: int, libro_id: int, cantidad: int = 1) -> str:
 
+    if descuento and descuento > 0:
+        precio_final = max(precio - (precio * descuento / 100), 5000)
+    else:
+        precio_final = precio
+
+    
     reference = f"{usuario_id}:{libro_id}"
     preference_data = {
         "items": [
@@ -18,7 +24,7 @@ def crear_preferencia_pago(nombre_producto: str, precio: float, usuario_id: int,
                 "title": nombre_producto,
                 "quantity": cantidad,
                 "currency_id": "COP",
-                "unit_price": precio
+                "unit_price": precio_final
             }
         ],
         "back_urls": {
@@ -34,6 +40,6 @@ def crear_preferencia_pago(nombre_producto: str, precio: float, usuario_id: int,
     try:
         response = sdk.preference().create(preference_data)
         link = response["response"]["init_point"]
-        return link, reference   
+        return link, reference, precio_final
     except Exception as e:
         raise Exception(f"Error creando preferencia: {e}")
