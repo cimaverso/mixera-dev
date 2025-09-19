@@ -1,4 +1,4 @@
-// PanelHerramientas.jsx - VERSIÓN PRODUCCIÓN LIMPIA
+// PanelHerramientas.jsx - VERSIÃ“N PRODUCCIÃ“N LIMPIA
 import React from "react";
 import "./lector.css";
 

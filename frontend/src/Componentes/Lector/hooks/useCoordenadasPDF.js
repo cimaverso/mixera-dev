@@ -1,134 +1,246 @@
-// useCoordenadasPDF.js - CORREGIDO para evitar re-renders excesivos
+// useCoordenadasPDF.js - HOOK ROBUSTO CORREGIDO
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-export function useCoordenadasPDF(visorInfo, isActive = true) {
-  const [currentPDFScale, setCurrentPDFScale] = useState(1.0);
-  const lastScaleRef = useRef(1.0);
-  const scaleCheckTimeoutRef = useRef(null);
-  const observersRef = useRef({ mutation: null, resize: null });
+export function useCoordenadasPDF(visorInfo = {}, isActive = true) {
+  // ===================== ESTADO CENTRALIZADO =====================
+  const [escalaEstable, setEscalaEstable] = useState(1.0);
+  
+  // Referencias para control interno
+  const escalaAnterior = useRef(1.0);
+  const timeoutDebounce = useRef(null);
+  const observersRef = useRef({
+    mutation: null,
+    resize: null
+  });
+  const ultimaDeteccion = useRef(0);
+  const cacheInfoPDF = useRef({
+    escala: 1.0,
+    timestamp: 0,
+    valida: false
+  });
 
-  // CORREGIDO: Debounce más agresivo para evitar updates excesivos
-  const updateScale = useCallback((newScale) => {
-    const roundedScale = Math.round(newScale * 100) / 100; // Redondear a 2 decimales
-    
-    if (Math.abs(roundedScale - lastScaleRef.current) > 0.1) { // Threshold más alto
-      console.log(`Escala del PDF actualizada: ${lastScaleRef.current.toFixed(2)} → ${roundedScale.toFixed(2)}`);
-      setCurrentPDFScale(roundedScale);
-      lastScaleRef.current = roundedScale;
-      return true;
+  // ===================== CONFIGURACIÓN =====================
+  const CONFIG = {
+    DEBOUNCE_TIME: 200,
+    CACHE_DURATION: 500,
+    MIN_SCALE: 0.1,
+    MAX_SCALE: 5.0,
+    THRESHOLD_CAMBIO: 0.05
+  };
+
+  // ===================== VALIDACIÓN DE ESCALA =====================
+  const validarEscala = useCallback((escala) => {
+    if (!escala || typeof escala !== 'number' || isNaN(escala)) {
+      return 1.0;
     }
-    return false;
-  }, []);
+    return Math.max(CONFIG.MIN_SCALE, Math.min(CONFIG.MAX_SCALE, escala));
+  }, [CONFIG]);
 
-  // Detectar información real del PDF con escala - OPTIMIZADO
-  const getPDFInfo = useCallback(() => {
+  // ===================== DETECCIÓN ROBUSTA DE ESCALA =====================
+  const detectarEscalaReal = useCallback(() => {
+    const ahora = Date.now();
+    
+    // Usar cache si es reciente
+    if (cacheInfoPDF.current.valida && 
+        (ahora - cacheInfoPDF.current.timestamp) < CONFIG.CACHE_DURATION) {
+      return cacheInfoPDF.current.escala;
+    }
+
     try {
-      const page = document.querySelector('.rpv-core__inner-page');
+      // Estrategia 1: Desde visorInfo (más confiable)
+      if (visorInfo?.scale && typeof visorInfo.scale === 'number') {
+        const escalaValidada = validarEscala(visorInfo.scale);
+        
+        cacheInfoPDF.current = {
+          escala: escalaValidada,
+          timestamp: ahora,
+          valida: true
+        };
+        
+        return escalaValidada;
+      }
+
+      // Estrategia 2: Calcular desde DOM
+      const pagina = document.querySelector('.rpv-core__inner-page');
       const canvas = document.querySelector('.rpv-core__canvas-layer canvas');
       
-      if (!page || !canvas) {
-        return { 
-          pageWidth: 800, 
-          pageHeight: 600, 
-          scale: visorInfo?.scale || 1,
-          found: false 
-        };
+      if (pagina && canvas) {
+        const paginaRect = pagina.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        if (canvas.width > 0 && canvasRect.width > 0) {
+          const escalaCalculada = canvasRect.width / canvas.width;
+          const escalaValidada = validarEscala(escalaCalculada);
+          
+          cacheInfoPDF.current = {
+            escala: escalaValidada,
+            timestamp: ahora,
+            valida: true
+          };
+          
+          console.log('📏 Escala calculada desde DOM:', {
+            canvasWidth: canvas.width,
+            canvasDisplayWidth: canvasRect.width,
+            escalaCalculada: escalaCalculada.toFixed(3),
+            escalaValidada: escalaValidada.toFixed(3)
+          });
+          
+          return escalaValidada;
+        }
       }
-      
-      const pageRect = page.getBoundingClientRect();
-      const canvasRect = canvas.getBoundingClientRect();
-      
-      // Verificar que tenemos dimensiones válidas
-      if (canvasRect.width === 0 || canvas.width === 0) {
-        return {
-          pageWidth: pageRect.width || 800,
-          pageHeight: pageRect.height || 600,
-          scale: lastScaleRef.current,
-          found: false
-        };
-      }
-      
-      // El scale real es la diferencia entre el tamaño mostrado y el tamaño del canvas
-      const actualScale = canvasRect.width / canvas.width;
-      
-      return {
-        pageWidth: pageRect.width,
-        pageHeight: pageRect.height,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
-        scale: actualScale,
-        found: true
-      };
-    } catch (error) {
-      console.warn('Error obteniendo info del PDF:', error);
-      return { 
-        pageWidth: 800, 
-        pageHeight: 600, 
-        scale: lastScaleRef.current,
-        found: false 
-      };
-    }
-  }, [visorInfo?.scale]);
 
-  // Convertir coordenadas de click a relativas (0-1)
-  const convertToRelative = useCallback((event, overlayElement) => {
-    if (!overlayElement) return null;
+      // Fallback: usar escala anterior o 1.0
+      const escalaFallback = escalaAnterior.current || 1.0;
+      
+      cacheInfoPDF.current = {
+        escala: escalaFallback,
+        timestamp: ahora,
+        valida: false // Marcar como no confiable
+      };
+      
+      return escalaFallback;
+      
+    } catch (error) {
+      console.warn('⚠️ Error detectando escala, usando fallback:', error);
+      return escalaAnterior.current || 1.0;
+    }
+  }, [visorInfo, validarEscala, CONFIG]);
+
+  // ===================== ACTUALIZACIÓN DE ESCALA CON DEBOUNCING =====================
+  const actualizarEscala = useCallback(() => {
+    if (!isActive) return;
+    
+    if (timeoutDebounce.current) {
+      clearTimeout(timeoutDebounce.current);
+    }
+    
+    timeoutDebounce.current = setTimeout(() => {
+      const nuevaEscala = detectarEscalaReal();
+      
+      // Solo actualizar si hay un cambio significativo
+      if (Math.abs(nuevaEscala - escalaAnterior.current) > CONFIG.THRESHOLD_CAMBIO) {
+        const escalaPreviaLog = escalaAnterior.current.toFixed(3);
+        const escalaNuevaLog = nuevaEscala.toFixed(3);
+        
+        console.log(`📐 Escala actualizada: ${escalaPreviaLog} → ${escalaNuevaLog}`);
+        
+        setEscalaEstable(nuevaEscala);
+        escalaAnterior.current = nuevaEscala;
+        ultimaDeteccion.current = Date.now();
+      }
+    }, CONFIG.DEBOUNCE_TIME);
+  }, [isActive, detectarEscalaReal, CONFIG]);
+
+  // ===================== FUNCIONES DE COORDENADAS =====================
+  
+  // Convertir coordenadas de evento a relativas (0-1)
+  const convertirARelativas = useCallback((evento, elemento) => {
+    if (!evento || !elemento) {
+      console.warn('⚠️ Evento o elemento no válido para conversión de coordenadas');
+      return null;
+    }
     
     try {
-      const rect = overlayElement.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width;
-      const y = (event.clientY - rect.top) / rect.height;
+      const rect = elemento.getBoundingClientRect();
+      
+      if (rect.width === 0 || rect.height === 0) {
+        console.warn('⚠️ Elemento con dimensiones cero');
+        return null;
+      }
+      
+      const x = (evento.clientX - rect.left) / rect.width;
+      const y = (evento.clientY - rect.top) / rect.height;
+      
+      // Validar que las coordenadas están en rango válido
+      if (x < 0 || x > 1 || y < 0 || y > 1) {
+        console.warn('⚠️ Coordenadas fuera del rango válido:', { x, y });
+        return null;
+      }
       
       return {
         x: Math.max(0, Math.min(1, x)),
         y: Math.max(0, Math.min(1, y))
       };
     } catch (error) {
-      console.warn('Error convirtiendo coordenadas:', error);
+      console.error('❌ Error convirtiendo coordenadas:', error);
       return null;
     }
   }, []);
 
   // Convertir coordenadas relativas a píxeles escalados
-  const convertToScaled = useCallback((relativeCoords, baseWidth, baseHeight) => {
-    return {
-      width: Math.round(baseWidth * currentPDFScale),
-      height: Math.round(baseHeight * currentPDFScale)
-    };
-  }, [currentPDFScale]);
-
-  // Escalar fontSize según el zoom actual
-  const scaleFont = useCallback((baseFontSize) => {
-    return Math.max(10, Math.round(baseFontSize * currentPDFScale));
-  }, [currentPDFScale]);
-
-  // Escalar padding y otros valores de estilo
-  const scaleValue = useCallback((baseValue) => {
-    return Math.max(1, Math.round(baseValue * currentPDFScale));
-  }, [currentPDFScale]);
-
-  // CORREGIDO: Función de verificación de escala con debounce
-  const checkScaleChange = useCallback(() => {
-    // Limpiar timeout anterior
-    if (scaleCheckTimeoutRef.current) {
-      clearTimeout(scaleCheckTimeoutRef.current);
+  const convertirAEscaladas = useCallback((coordenadasRelativas, baseWidth, baseHeight) => {
+    if (!coordenadasRelativas || typeof baseWidth !== 'number' || typeof baseHeight !== 'number') {
+      console.warn('⚠️ Parámetros no válidos para conversión escalada');
+      return { width: 200, height: 60 };
     }
     
-    scaleCheckTimeoutRef.current = setTimeout(() => {
-      const pdfInfo = getPDFInfo();
-      
-      if (pdfInfo.found) {
-        updateScale(pdfInfo.scale);
-      }
-    }, 150); // Debounce de 150ms
-  }, [getPDFInfo, updateScale]);
+    const escalaActual = escalaEstable;
+    
+    return {
+      width: Math.round(baseWidth * escalaActual),
+      height: Math.round(baseHeight * escalaActual),
+      x: coordenadasRelativas.x,
+      y: coordenadasRelativas.y,
+      escala: escalaActual
+    };
+  }, [escalaEstable]);
 
-  // CORREGIDO: Observer para cambios de zoom - más eficiente
-  useEffect(() => {
-    if (!isActive || visorInfo?.mode !== 'single') {
-      return;
+  // Escalar valor individual
+  const escalarValor = useCallback((valorBase) => {
+    if (typeof valorBase !== 'number' || isNaN(valorBase)) {
+      return 1;
     }
+    return Math.max(1, Math.round(valorBase * escalaEstable));
+  }, [escalaEstable]);
 
+  // Obtener información completa del PDF
+  const obtenerInfoPDF = useCallback(() => {
+    try {
+      const pagina = document.querySelector('.rpv-core__inner-page');
+      const canvas = document.querySelector('.rpv-core__canvas-layer canvas');
+      
+      if (!pagina || !canvas) {
+        return {
+          encontrado: false,
+          escala: escalaEstable,
+          paginaWidth: 800,
+          paginaHeight: 600,
+          canvasWidth: 800,
+          canvasHeight: 600
+        };
+      }
+      
+      const paginaRect = pagina.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      
+      return {
+        encontrado: true,
+        escala: escalaEstable,
+        paginaWidth: paginaRect.width,
+        paginaHeight: paginaRect.height,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        canvasDisplayWidth: canvasRect.width,
+        canvasDisplayHeight: canvasRect.height,
+        elemento: {
+          pagina,
+          canvas
+        }
+      };
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo info del PDF:', error);
+      return {
+        encontrado: false,
+        escala: escalaEstable,
+        error: error.message
+      };
+    }
+  }, [escalaEstable]);
+
+  // ===================== CONFIGURACIÓN DE OBSERVERS =====================
+  const configurarObservers = useCallback(() => {
+    if (!isActive) return;
+    
     // Limpiar observers anteriores
     if (observersRef.current.mutation) {
       observersRef.current.mutation.disconnect();
@@ -136,120 +248,166 @@ export function useCoordenadasPDF(visorInfo, isActive = true) {
     if (observersRef.current.resize) {
       observersRef.current.resize.disconnect();
     }
-
-    let isSetup = false;
     
-    const setupObservers = () => {
-      if (isSetup) return;
-      
-      try {
-        // Buscar elementos una sola vez
-        const targetElements = [
-          document.querySelector('.rpv-core__viewer'),
-          document.querySelector('.rpv-core__inner-page'),
-          document.querySelector('.rpv-core__canvas-layer canvas')
-        ].filter(Boolean);
+    try {
+      const setupObservers = () => {
+        const viewer = document.querySelector('.rpv-core__viewer');
+        const canvas = document.querySelector('.rpv-core__canvas-layer canvas');
         
-        if (targetElements.length === 0) {
-          // Reintentar setup después de un delay
-          setTimeout(setupObservers, 500);
+        if (!viewer || !canvas) {
+          // Reintentar después de un tiempo
+          setTimeout(setupObservers, 1000);
           return;
         }
-
-        // MutationObserver - solo para cambios de estilo críticos
+        
+        // MutationObserver para cambios en el DOM
         observersRef.current.mutation = new MutationObserver((mutations) => {
-          let shouldCheck = false;
+          let debeActualizar = false;
           
-          for (const mutation of mutations) {
-            if (mutation.type === 'attributes' && 
-                mutation.attributeName === 'style' &&
-                mutation.target.style.transform) {
-              shouldCheck = true;
-              break;
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+              const target = mutation.target;
+              if (target.style.transform || target.style.width || target.style.height) {
+                debeActualizar = true;
+              }
             }
-          }
+          });
           
-          if (shouldCheck) {
-            checkScaleChange();
+          if (debeActualizar) {
+            actualizarEscala();
           }
         });
         
-        // Observar solo el viewer principal
-        const viewer = targetElements[0];
-        if (viewer) {
-          observersRef.current.mutation.observe(viewer, {
-            attributes: true,
-            attributeFilter: ['style'],
-            subtree: false
-          });
-        }
-
-        // ResizeObserver - solo para el canvas
-        const canvas = targetElements[2];
-        if (canvas && window.ResizeObserver) {
+        // Observar cambios en el viewer y páginas
+        observersRef.current.mutation.observe(viewer, {
+          attributes: true,
+          attributeFilter: ['style'],
+          subtree: true
+        });
+        
+        // ResizeObserver para cambios de tamaño
+        if (window.ResizeObserver) {
           observersRef.current.resize = new ResizeObserver((entries) => {
-            if (entries.length > 0) {
-              checkScaleChange();
+            let hayResize = false;
+            
+            entries.forEach((entry) => {
+              if (entry.target === canvas || entry.target.closest('.rpv-core__inner-page')) {
+                hayResize = true;
+              }
+            });
+            
+            if (hayResize) {
+              actualizarEscala();
             }
           });
           
           observersRef.current.resize.observe(canvas);
+          
+          // Observar también las páginas
+          document.querySelectorAll('.rpv-core__inner-page').forEach((pagina) => {
+            observersRef.current.resize.observe(pagina);
+          });
         }
         
-        isSetup = true;
-        console.log('Observers configurados para detección de escala');
+        console.log('👀 Observers de escala configurados correctamente');
         
-        // Verificación inicial
+        // Actualización inicial
         setTimeout(() => {
-          checkScaleChange();
-        }, 200);
-        
-      } catch (error) {
-        console.warn('Error configurando observers:', error);
-        setTimeout(setupObservers, 1000);
-      }
-    };
-
-    setupObservers();
-
-    // Cleanup
-    return () => {
-      if (scaleCheckTimeoutRef.current) {
-        clearTimeout(scaleCheckTimeoutRef.current);
-      }
+          actualizarEscala();
+        }, 100);
+      };
       
+      setupObservers();
+      
+    } catch (error) {
+      console.error('❌ Error configurando observers:', error);
+    }
+  }, [isActive, actualizarEscala]);
+
+  // ===================== EFECTOS =====================
+  
+  // Efecto para configurar observers cuando se activa
+  useEffect(() => {
+    if (isActive) {
+      configurarObservers();
+    }
+    
+    return () => {
       if (observersRef.current.mutation) {
         observersRef.current.mutation.disconnect();
       }
       if (observersRef.current.resize) {
         observersRef.current.resize.disconnect();
       }
-      
-      isSetup = false;
     };
-  }, [isActive, visorInfo?.mode, checkScaleChange]);
+  }, [isActive, configurarObservers]);
 
-  // CORREGIDO: Efecto inicial más simple
+  // Efecto para actualizar desde visorInfo
   useEffect(() => {
-    if (isActive && visorInfo?.mode === 'single') {
-      // Solo una verificación inicial después de montaje
+    if (visorInfo?.scale && typeof visorInfo.scale === 'number') {
+      const nuevaEscala = validarEscala(visorInfo.scale);
+      if (Math.abs(nuevaEscala - escalaAnterior.current) > CONFIG.THRESHOLD_CAMBIO) {
+        setEscalaEstable(nuevaEscala);
+        escalaAnterior.current = nuevaEscala;
+        
+        // Invalidar cache para forzar nueva detección
+        cacheInfoPDF.current.valida = false;
+      }
+    }
+  }, [visorInfo?.scale, validarEscala, CONFIG]);
+
+  // Efecto para actualización inicial
+  useEffect(() => {
+    if (isActive) {
       const timer = setTimeout(() => {
-        const pdfInfo = getPDFInfo();
-        if (pdfInfo.found) {
-          updateScale(pdfInfo.scale);
-        }
-      }, 500);
+        actualizarEscala();
+      }, 300);
       
       return () => clearTimeout(timer);
     }
-  }, [isActive, visorInfo?.mode, getPDFInfo, updateScale]);
+  }, [isActive, actualizarEscala]);
 
+  // ===================== LIMPIEZA =====================
+  useEffect(() => {
+    return () => {
+      if (timeoutDebounce.current) {
+        clearTimeout(timeoutDebounce.current);
+      }
+      if (observersRef.current.mutation) {
+        observersRef.current.mutation.disconnect();
+      }
+      if (observersRef.current.resize) {
+        observersRef.current.resize.disconnect();
+      }
+    };
+  }, []);
+
+  // ===================== API PÚBLICA =====================
   return {
-    currentPDFScale,
-    getPDFInfo,
-    convertToRelative,
-    convertToScaled,
-    scaleFont,
-    scaleValue
+    // Escala principal
+    currentPDFScale: escalaEstable,
+    escalaValidada: escalaEstable,
+    
+    // Funciones de conversión
+    convertirARelativas,
+    convertirAEscaladas,
+    escalarValor,
+    
+    // Información del PDF
+    obtenerInfoPDF,
+    
+    // Control manual
+    actualizarEscala,
+    
+    // Estado de debugging
+    estadoDebug: {
+      escalaAnterior: escalaAnterior.current,
+      cacheValido: cacheInfoPDF.current.valida,
+      ultimaDeteccion: ultimaDeteccion.current,
+      observersActivos: {
+        mutation: !!observersRef.current.mutation,
+        resize: !!observersRef.current.resize
+      }
+    }
   };
 }

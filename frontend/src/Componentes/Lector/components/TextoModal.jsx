@@ -1,14 +1,6 @@
-// TextoModal.jsx - OPTIMIZADO PARA UX Y ESCALADO v2
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// TextoModal.jsx - VERSIÓN ROBUSTA CORREGIDA
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
-/**
- * TextoModal optimizado con:
- * - Mejor integración con sistema de escalado
- * - UX mejorada para redimensionamiento
- * - Preview en tiempo real con escalado correcto
- * - Controles más intuitivos
- * - Mejor feedback de backend
- */
 const TextoModal = ({
   isOpen,
   titulo = 'Configurar Texto',
@@ -22,54 +14,75 @@ const TextoModal = ({
   onEliminar = null,
   showBackendStatus = false
 }) => {
-  console.log('TextoModal optimizado v2:', {
-    isOpen,
-    currentPDFScale: currentPDFScale.toFixed(2),
-    dimensionesIniciales: `${width}x${height}`,
-    fontSize
-  });
-
   // ===================== ESTADO LOCAL =====================
   const [texto, setTexto] = useState(valor);
   const [tamanoFuente, setTamanoFuente] = useState(fontSize);
   const [dimensiones, setDimensiones] = useState({ width, height });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
-  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
-
-  // Referencias para elementos
+  
+  // Referencias
   const modalRef = useRef(null);
-  const previewRef = useRef(null);
   const textareaRef = useRef(null);
+  const mountedRef = useRef(true);
 
-  // ===================== CONFIGURACIÓN MODAL =====================
-  const MODAL_CONFIG = {
-    minWidth: 400,
-    maxWidth: Math.min(800, window.innerWidth - 40),
-    minHeight: 500,
-    maxHeight: Math.min(700, window.innerHeight - 40),
-    defaultWidth: 500,
-    defaultHeight: 600
-  };
+  // ===================== CONFIGURACIÓN =====================
+  const CONFIG = useMemo(() => ({
+    MODAL: {
+      MIN_WIDTH: 400,
+      MAX_WIDTH: 600,
+      MIN_HEIGHT: 500,
+      MAX_HEIGHT: 700,
+      DEFAULT_WIDTH: 520,
+      DEFAULT_HEIGHT: 600
+    },
+    TEXTO: {
+      MIN_WIDTH: 100,
+      MAX_WIDTH: 600,
+      MIN_HEIGHT: 40,
+      MAX_HEIGHT: 300,
+      MIN_FONT_SIZE: 10,
+      MAX_FONT_SIZE: 32
+    }
+  }), []);
 
-  // Configuración de dimensiones del texto
-  const TEXTO_CONFIG = {
-    minWidth: 80,
-    maxWidth: 600,
-    minHeight: 30,
-    maxHeight: 400,
-    minFontSize: 10,
-    maxFontSize: 24
-  };
+  // ===================== VALIDACIONES =====================
+  const validarEscala = useCallback((scale) => {
+    return Math.max(0.5, Math.min(3.0, scale || 1));
+  }, []);
+
+  const escalaSegura = useMemo(() => {
+    return validarEscala(currentPDFScale);
+  }, [currentPDFScale, validarEscala]);
+
+  const validarDimensiones = useCallback((w, h, fs) => {
+    const validWidth = Math.max(CONFIG.TEXTO.MIN_WIDTH, Math.min(CONFIG.TEXTO.MAX_WIDTH, w || 200));
+    const validHeight = Math.max(CONFIG.TEXTO.MIN_HEIGHT, Math.min(CONFIG.TEXTO.MAX_HEIGHT, h || 60));
+    const validFontSize = Math.max(CONFIG.TEXTO.MIN_FONT_SIZE, Math.min(CONFIG.TEXTO.MAX_FONT_SIZE, fs || 14));
+    
+    return { width: validWidth, height: validHeight, fontSize: validFontSize };
+  }, [CONFIG.TEXTO]);
+
+  // ===================== DIMENSIONES ESCALADAS PARA PREVIEW =====================
+  const dimensionesPreview = useMemo(() => {
+    const valid = validarDimensiones(dimensiones.width, dimensiones.height, tamanoFuente);
+    
+    return {
+      base: valid,
+      scaled: {
+        width: Math.round(valid.width * escalaSegura),
+        height: Math.round(valid.height * escalaSegura),
+        fontSize: Math.round(valid.fontSize * escalaSegura),
+        padding: Math.round(8 * escalaSegura)
+      },
+      factor: escalaSegura
+    };
+  }, [dimensiones, tamanoFuente, escalaSegura, validarDimensiones]);
 
   // ===================== INICIALIZACIÓN =====================
-  
-  // Estado inicial del modal
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (isOpen) {
       setTexto(valor);
       setTamanoFuente(fontSize);
@@ -77,191 +90,25 @@ const TextoModal = ({
       setError(null);
       setGuardando(false);
       
-      // Centrar modal
-      if (modalRef.current) {
-        const rect = modalRef.current.getBoundingClientRect();
-        const centerX = (window.innerWidth - rect.width) / 2;
-        const centerY = (window.innerHeight - rect.height) / 2;
-        
-        setModalPosition({
-          x: Math.max(10, centerX),
-          y: Math.max(10, centerY)
-        });
-      }
-      
-      console.log('Modal inicializado:', {
-        texto: valor.substring(0, 30) + '...',
-        dimensiones: `${width}x${height}`,
-        fontSize
-      });
+      // Auto-focus con delay
+      setTimeout(() => {
+        if (textareaRef.current && mountedRef.current) {
+          textareaRef.current.focus();
+          if (valor) {
+            textareaRef.current.select();
+          }
+        }
+      }, 150);
     }
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, [isOpen, valor, fontSize, width, height]);
 
-  // Auto-focus en textarea cuando se abre
-  useEffect(() => {
-    if (isOpen && textareaRef.current && !guardando) {
-      const timer = setTimeout(() => {
-        textareaRef.current.focus();
-        if (valor) {
-          textareaRef.current.select();
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, guardando, valor]);
-
-  // ===================== CÁLCULOS DE ESCALADO =====================
-  
-  // Dimensiones escaladas para preview
-  const dimensionesEscaladas = React.useMemo(() => {
-    const scaledWidth = Math.round(dimensiones.width * currentPDFScale);
-    const scaledHeight = Math.round(dimensiones.height * currentPDFScale);
-    const scaledFontSize = Math.round(tamanoFuente * currentPDFScale);
-    
-    return {
-      width: Math.max(Math.round(TEXTO_CONFIG.minWidth * currentPDFScale), scaledWidth),
-      height: Math.max(Math.round(TEXTO_CONFIG.minHeight * currentPDFScale), scaledHeight),
-      fontSize: Math.max(Math.round(TEXTO_CONFIG.minFontSize * currentPDFScale), scaledFontSize)
-    };
-  }, [dimensiones, tamanoFuente, currentPDFScale, TEXTO_CONFIG]);
-
-  // ===================== FUNCIONES DE DRAG =====================
-  
-  const handleMouseDown = useCallback((e) => {
-    if (e.target.closest('.modal-header') && 
-        !e.target.closest('.modal-close-btn') && 
-        !e.target.closest('.modal-resize-handle')) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - modalPosition.x,
-        y: e.clientY - modalPosition.y
-      });
-      e.preventDefault();
-    }
-  }, [modalPosition]);
-
-  const handleMouseMove = useCallback((e) => {
-    if (isDragging) {
-      const newX = Math.max(0, Math.min(
-        window.innerWidth - MODAL_CONFIG.defaultWidth, 
-        e.clientX - dragStart.x
-      ));
-      const newY = Math.max(0, Math.min(
-        window.innerHeight - MODAL_CONFIG.defaultHeight, 
-        e.clientY - dragStart.y
-      ));
-      
-      setModalPosition({ x: newX, y: newY });
-    }
-  }, [isDragging, dragStart, MODAL_CONFIG]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  // ===================== FUNCIONES DE RESIZE DEL MODAL =====================
-  
-  const handleResizeStart = useCallback((e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    setIsResizing(true);
-    const rect = modalRef.current.getBoundingClientRect();
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: rect.width,
-      height: rect.height
-    });
-    
-    document.body.style.cursor = 'se-resize';
-  }, []);
-
-  const handleResizeMove = useCallback((e) => {
-    if (!isResizing) return;
-    
-    const deltaX = e.clientX - resizeStart.x;
-    const deltaY = e.clientY - resizeStart.y;
-    
-    const newWidth = Math.max(
-      MODAL_CONFIG.minWidth,
-      Math.min(MODAL_CONFIG.maxWidth, resizeStart.width + deltaX)
-    );
-    
-    const newHeight = Math.max(
-      MODAL_CONFIG.minHeight,
-      Math.min(MODAL_CONFIG.maxHeight, resizeStart.height + deltaY)
-    );
-    
-    if (modalRef.current) {
-      modalRef.current.style.width = `${newWidth}px`;
-      modalRef.current.style.height = `${newHeight}px`;
-    }
-  }, [isResizing, resizeStart, MODAL_CONFIG]);
-
-  const handleResizeEnd = useCallback(() => {
-    setIsResizing(false);
-    document.body.style.cursor = '';
-  }, []);
-
-  // Event listeners para drag y resize
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'grabbing';
-      
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.userSelect = '';
-        document.body.style.cursor = '';
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
-
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleResizeMove);
-      document.addEventListener('mouseup', handleResizeEnd);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleResizeMove);
-        document.removeEventListener('mouseup', handleResizeEnd);
-      };
-    }
-  }, [isResizing, handleResizeMove, handleResizeEnd]);
-
-  // ===================== FUNCIONES DE CONTROL =====================
-  
-  const handleTamanoFuenteChange = useCallback((nuevoTamano) => {
-    const tamanoValido = Math.max(
-      TEXTO_CONFIG.minFontSize,
-      Math.min(TEXTO_CONFIG.maxFontSize, nuevoTamano)
-    );
-    setTamanoFuente(tamanoValido);
-  }, [TEXTO_CONFIG]);
-
-  const handleDimensionesChange = useCallback((nuevasDimensiones) => {
-    const dimensionesValidas = {
-      width: Math.max(
-        TEXTO_CONFIG.minWidth,
-        Math.min(TEXTO_CONFIG.maxWidth, nuevasDimensiones.width)
-      ),
-      height: Math.max(
-        TEXTO_CONFIG.minHeight,
-        Math.min(TEXTO_CONFIG.maxHeight, nuevasDimensiones.height)
-      )
-    };
-    
-    setDimensiones(dimensionesValidas);
-  }, [TEXTO_CONFIG]);
-
-  // ===================== FUNCIONES DE ACCIÓN =====================
-  
+  // ===================== HANDLERS PRINCIPALES =====================
   const handleGuardar = useCallback(async () => {
-    if (guardando) return;
+    if (guardando || !mountedRef.current) return;
     
     const textoTrimmed = texto.trim();
     if (!textoTrimmed) {
@@ -269,33 +116,41 @@ const TextoModal = ({
       return;
     }
 
+    // Validar dimensiones antes de guardar
+    const dimensionesValidas = validarDimensiones(
+      dimensiones.width, 
+      dimensiones.height, 
+      tamanoFuente
+    );
+
     try {
       setGuardando(true);
       setError(null);
       
-      console.log('Modal guardando con dimensiones optimizadas:', {
+      console.log('💾 Modal guardando:', {
         texto: textoTrimmed.substring(0, 30) + '...',
-        tamanoFuente,
-        dimensiones,
-        dimensionesEscaladas
+        dimensiones: dimensionesValidas,
+        escala: escalaSegura
       });
 
-      await onGuardar(textoTrimmed, tamanoFuente, dimensiones.width, dimensiones.height);
+      await onGuardar(
+        textoTrimmed, 
+        dimensionesValidas.fontSize, 
+        dimensionesValidas.width, 
+        dimensionesValidas.height
+      );
       
-      console.log('Modal: guardado exitoso');
+      console.log('✅ Modal: guardado exitoso');
       
     } catch (backendError) {
-      console.error('Modal: error del backend:', backendError);
+      console.error('❌ Modal: error del backend:', backendError);
       setError(backendError.message || 'Error guardando en el servidor');
       setGuardando(false);
     }
-  }, [texto, tamanoFuente, dimensiones, onGuardar, guardando, dimensionesEscaladas]);
+  }, [texto, dimensiones, tamanoFuente, onGuardar, guardando, validarDimensiones, escalaSegura]);
 
   const handleEliminar = useCallback(async () => {
-    if (guardando) {
-      setError('Espera a que termine de guardarse antes de eliminar');
-      return;
-    }
+    if (guardando || !onEliminar) return;
 
     const confirmar = confirm('¿Estás seguro de que quieres eliminar este texto?');
     if (!confirmar) return;
@@ -304,12 +159,12 @@ const TextoModal = ({
       setGuardando(true);
       setError(null);
       
-      console.log('Modal eliminando');
+      console.log('🗑️ Modal eliminando');
       await onEliminar();
-      console.log('Modal: eliminado exitoso');
+      console.log('✅ Modal: eliminado exitoso');
       
     } catch (backendError) {
-      console.error('Modal: error eliminando:', backendError);
+      console.error('❌ Modal: error eliminando:', backendError);
       setError(backendError.message || 'Error eliminando del servidor');
       setGuardando(false);
     }
@@ -321,12 +176,28 @@ const TextoModal = ({
       if (!confirmar) return;
     }
     
-    console.log('Modal: cancelando operación');
+    console.log('❌ Modal: cancelando operación');
     onCancelar();
   }, [onCancelar, guardando]);
 
+  // ===================== CONTROLES DE DIMENSIONES =====================
+  const handleFontSizeChange = useCallback((nuevoTamano) => {
+    const tamanoValido = Math.max(
+      CONFIG.TEXTO.MIN_FONT_SIZE,
+      Math.min(CONFIG.TEXTO.MAX_FONT_SIZE, nuevoTamano)
+    );
+    setTamanoFuente(tamanoValido);
+  }, [CONFIG.TEXTO]);
+
+  const handleDimensionesChange = useCallback((campo, valor) => {
+    setDimensiones(prev => {
+      const nuevasDimensiones = { ...prev, [campo]: valor };
+      const validadas = validarDimensiones(nuevasDimensiones.width, nuevasDimensiones.height, tamanoFuente);
+      return { width: validadas.width, height: validadas.height };
+    });
+  }, [validarDimensiones, tamanoFuente]);
+
   // ===================== KEYBOARD SHORTCUTS =====================
-  
   const handleKeyDown = useCallback((e) => {
     if (guardando && e.key !== 'Escape') return;
     
@@ -341,42 +212,11 @@ const TextoModal = ({
     }
   }, [handleCancelar, handleGuardar, texto, guardando]);
 
-  // No renderizar si no está abierto
+  // ===================== RENDER =====================
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* CSS para animaciones */}
-      <style>
-        {`
-          @keyframes modal-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          @keyframes modal-pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.02); }
-            100% { opacity: 1; transform: scale(1); }
-          }
-          
-          .modal-resize-handle {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(-45deg, transparent 0%, transparent 40%, #ccc 50%, transparent 60%, transparent 100%);
-            cursor: se-resize;
-            border-radius: 0 0 12px 0;
-          }
-          
-          .modal-resize-handle:hover {
-            background: linear-gradient(-45deg, transparent 0%, transparent 40%, #2196f3 50%, transparent 60%, transparent 100%);
-          }
-        `}
-      </style>
-
+    <React.Fragment>
       {/* Backdrop */}
       <div 
         style={{
@@ -385,9 +225,14 @@ const TextoModal = ({
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.6)',
           zIndex: 9999,
-          backdropFilter: 'blur(2px)'
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          boxSizing: 'border-box'
         }}
         onClick={handleCancelar}
       />
@@ -395,62 +240,51 @@ const TextoModal = ({
       {/* Modal */}
       <div
         ref={modalRef}
-        className="modal-texto-optimizado"
+        className="texto-modal-robusto"
         style={{
           position: 'fixed',
-          left: `${modalPosition.x}px`,
-          top: `${modalPosition.y}px`,
-          width: `${MODAL_CONFIG.defaultWidth}px`,
-          height: `${MODAL_CONFIG.defaultHeight}px`,
-          minWidth: `${MODAL_CONFIG.minWidth}px`,
-          minHeight: `${MODAL_CONFIG.minHeight}px`,
-          maxWidth: `${MODAL_CONFIG.maxWidth}px`,
-          maxHeight: `${MODAL_CONFIG.maxHeight}px`,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: `${Math.min(CONFIG.MODAL.MAX_WIDTH, window.innerWidth - 40)}px`,
+          height: `${Math.min(CONFIG.MODAL.MAX_HEIGHT, window.innerHeight - 40)}px`,
+          minWidth: `${CONFIG.MODAL.MIN_WIDTH}px`,
+          minHeight: `${CONFIG.MODAL.MIN_HEIGHT}px`,
           background: 'white',
           borderRadius: '12px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
           zIndex: 10000,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          fontFamily: 'inherit',
-          border: '1px solid #e0e0e0',
-          resize: 'both'
+          fontFamily: 'inherit'
         }}
         onKeyDown={handleKeyDown}
-        onMouseDown={handleMouseDown}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header movible */}
-        <div 
-          className="modal-header"
-          style={{
-            background: 'linear-gradient(135deg, #2196f3, #1976d2)',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '12px 12px 0 0',
-            fontWeight: 600,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            cursor: isDragging ? 'grabbing' : 'grab',
-            userSelect: 'none',
-            flexShrink: 0,
-            position: 'relative'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #de007e, #c2185b)',
+          color: 'white',
+          padding: '16px 20px',
+          fontWeight: 600,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span>{titulo}</span>
-            {currentPDFScale !== 1 && (
+            {escalaSegura !== 1 && (
               <span style={{ 
                 fontSize: '11px', 
-                opacity: 0.8,
+                opacity: 0.9,
                 background: 'rgba(255, 255, 255, 0.2)',
                 padding: '2px 6px',
                 borderRadius: '3px'
               }}>
-                Zoom: {Math.round(currentPDFScale * 100)}%
+                Zoom: {Math.round(escalaSegura * 100)}%
               </span>
             )}
           </div>
@@ -458,7 +292,7 @@ const TextoModal = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {showBackendStatus && (
               <span style={{ 
-                fontSize: '12px', 
+                fontSize: '11px', 
                 opacity: 0.9,
                 background: 'rgba(255, 255, 255, 0.2)',
                 padding: '2px 8px',
@@ -468,54 +302,43 @@ const TextoModal = ({
               </span>
             )}
             <button
-              className="modal-close-btn"
               onClick={handleCancelar}
               style={{
                 background: 'rgba(255, 255, 255, 0.2)',
                 border: 'none',
                 color: 'white',
-                width: '24px',
-                height: '24px',
+                width: '28px',
+                height: '28px',
                 borderRadius: '50%',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '14px',
-                lineHeight: 1,
-                transition: 'background 0.2s ease'
+                fontSize: '16px'
               }}
-              onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
-              onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
             >
               ×
             </button>
           </div>
-          
-          {/* Handle de resize en header */}
-          <div 
-            className="modal-resize-handle"
-            onMouseDown={handleResizeStart}
-          />
         </div>
 
         {/* Body */}
         <div style={{
           flex: 1,
-          padding: '16px',
+          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
           overflow: 'auto'
         }}>
-          {/* Controles de fuente y dimensiones */}
+          {/* Controles de configuración */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '12px',
             flexShrink: 0
           }}>
-            {/* Control de tamaño de fuente */}
+            {/* Tamaño de fuente */}
             <div style={{
               padding: '12px',
               background: '#f8f9fa',
@@ -523,7 +346,7 @@ const TextoModal = ({
               border: '1px solid #e9ecef'
             }}>
               <label style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 color: '#495057',
                 display: 'block',
@@ -534,12 +357,12 @@ const TextoModal = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input 
                   type="range" 
-                  min={TEXTO_CONFIG.minFontSize} 
-                  max={TEXTO_CONFIG.maxFontSize} 
+                  min={CONFIG.TEXTO.MIN_FONT_SIZE} 
+                  max={CONFIG.TEXTO.MAX_FONT_SIZE} 
                   step="1" 
                   value={tamanoFuente}
                   disabled={guardando}
-                  onChange={(e) => handleTamanoFuenteChange(parseInt(e.target.value))}
+                  onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
                   style={{
                     flex: 1,
                     height: '6px',
@@ -550,22 +373,22 @@ const TextoModal = ({
                   }}
                 />
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 600,
-                  color: '#2196f3',
-                  minWidth: '35px',
+                  color: '#de007e',
+                  minWidth: '30px',
                   textAlign: 'center',
                   background: 'white',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid #2196f3'
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  border: '1px solid #de007e'
                 }}>
                   {tamanoFuente}px
                 </span>
               </div>
             </div>
 
-            {/* Control de dimensiones */}
+            {/* Dimensiones */}
             <div style={{
               padding: '12px',
               background: '#f8f9fa',
@@ -573,7 +396,7 @@ const TextoModal = ({
               border: '1px solid #e9ecef'
             }}>
               <label style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 color: '#495057',
                 display: 'block',
@@ -581,52 +404,46 @@ const TextoModal = ({
               }}>
                 Dimensiones (Base)
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <div style={{ flex: 1 }}>
                   <input
                     type="number"
-                    min={TEXTO_CONFIG.minWidth}
-                    max={TEXTO_CONFIG.maxWidth}
+                    min={CONFIG.TEXTO.MIN_WIDTH}
+                    max={CONFIG.TEXTO.MAX_WIDTH}
                     value={dimensiones.width}
                     disabled={guardando}
-                    onChange={(e) => handleDimensionesChange({
-                      ...dimensiones,
-                      width: parseInt(e.target.value) || TEXTO_CONFIG.minWidth
-                    })}
+                    onChange={(e) => handleDimensionesChange('width', parseInt(e.target.value) || CONFIG.TEXTO.MIN_WIDTH)}
                     style={{
                       width: '100%',
                       padding: '4px 6px',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       textAlign: 'center'
                     }}
                   />
-                  <div style={{ fontSize: '10px', color: '#666', textAlign: 'center', marginTop: '2px' }}>
+                  <div style={{ fontSize: '9px', color: '#666', textAlign: 'center', marginTop: '2px' }}>
                     Ancho
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <input
                     type="number"
-                    min={TEXTO_CONFIG.minHeight}
-                    max={TEXTO_CONFIG.maxHeight}
+                    min={CONFIG.TEXTO.MIN_HEIGHT}
+                    max={CONFIG.TEXTO.MAX_HEIGHT}
                     value={dimensiones.height}
                     disabled={guardando}
-                    onChange={(e) => handleDimensionesChange({
-                      ...dimensiones,
-                      height: parseInt(e.target.value) || TEXTO_CONFIG.minHeight
-                    })}
+                    onChange={(e) => handleDimensionesChange('height', parseInt(e.target.value) || CONFIG.TEXTO.MIN_HEIGHT)}
                     style={{
                       width: '100%',
                       padding: '4px 6px',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       textAlign: 'center'
                     }}
                   />
-                  <div style={{ fontSize: '10px', color: '#666', textAlign: 'center', marginTop: '2px' }}>
+                  <div style={{ fontSize: '9px', color: '#666', textAlign: 'center', marginTop: '2px' }}>
                     Alto
                   </div>
                 </div>
@@ -634,7 +451,7 @@ const TextoModal = ({
             </div>
           </div>
 
-          {/* Vista previa escalada */}
+          {/* Vista previa */}
           <div style={{
             flexShrink: 0,
             border: '2px dashed #e0e0e0',
@@ -646,7 +463,7 @@ const TextoModal = ({
             gap: '8px'
           }}>
             <div style={{
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 600,
               color: '#495057',
               display: 'flex',
@@ -655,62 +472,57 @@ const TextoModal = ({
             }}>
               <span>Vista Previa (Como se verá en el PDF)</span>
               <span style={{
-                fontSize: '11px',
-                color: '#2196f3',
+                fontSize: '10px',
+                color: '#de007e',
                 background: 'white',
                 padding: '2px 6px',
                 borderRadius: '3px',
-                border: '1px solid #2196f3'
+                border: '1px solid #de007e'
               }}>
-                {dimensionesEscaladas.width}×{dimensionesEscaladas.height}px
+                {dimensionesPreview.scaled.width}×{dimensionesPreview.scaled.height}px
               </span>
             </div>
             
-            <div
-              ref={previewRef}
-              style={{
-                width: `${Math.min(400, dimensionesEscaladas.width)}px`,
-                height: `${Math.min(200, dimensionesEscaladas.height)}px`,
-                maxWidth: '100%',
-                border: '2px solid rgba(33, 150, 243, 0.3)',
-                borderStyle: 'dashed',
-                borderRadius: '6px',
-                background: 'rgba(33, 150, 243, 0.05)',
-                boxShadow: '0 2px 8px rgba(33, 150, 243, 0.15)',
-                padding: `${Math.round(8 * currentPDFScale)}px ${Math.round(12 * currentPDFScale)}px`,
-                fontSize: `${dimensionesEscaladas.fontSize}px`,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                fontWeight: 500,
-                color: texto.trim() ? '#1a1a1a' : '#999',
-                fontStyle: texto.trim() ? 'normal' : 'italic',
-                lineHeight: 1.4,
-                wordWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                textShadow: '0 0 3px rgba(255,255,255,0.8)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                overflow: 'hidden',
-                position: 'relative',
-                boxSizing: 'border-box'
-              }}
-            >
+            <div style={{
+              width: `${Math.min(350, dimensionesPreview.scaled.width)}px`,
+              height: `${Math.min(150, dimensionesPreview.scaled.height)}px`,
+              maxWidth: '100%',
+              border: '2px solid rgba(222, 0, 126, 0.3)',
+              borderStyle: 'dashed',
+              borderRadius: '6px',
+              background: 'rgba(222, 0, 126, 0.05)',
+              padding: `${dimensionesPreview.scaled.padding}px`,
+              fontSize: `${Math.min(dimensionesPreview.scaled.fontSize, 20)}px`,
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontWeight: 500,
+              color: texto.trim() ? '#1a1a1a' : '#999',
+              fontStyle: texto.trim() ? 'normal' : 'italic',
+              lineHeight: 1.4,
+              wordWrap: 'break-word',
+              whiteSpace: 'pre-wrap',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              overflow: 'hidden',
+              position: 'relative',
+              boxSizing: 'border-box'
+            }}>
               {texto.trim() || 'Escribe tu texto para ver la vista previa...'}
               
               {/* Indicador de escala */}
-              {currentPDFScale !== 1 && (
+              {escalaSegura !== 1 && (
                 <div style={{
                   position: 'absolute',
                   top: '2px',
                   right: '2px',
-                  background: 'rgba(33, 150, 243, 0.8)',
+                  background: 'rgba(222, 0, 126, 0.8)',
                   color: 'white',
-                  fontSize: '10px',
-                  padding: '2px 4px',
+                  fontSize: '8px',
+                  padding: '1px 3px',
                   borderRadius: '2px',
                   fontFamily: 'monospace'
                 }}>
-                  {Math.round(currentPDFScale * 100)}%
+                  {Math.round(escalaSegura * 100)}%
                 </div>
               )}
             </div>
@@ -723,11 +535,9 @@ const TextoModal = ({
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Escribe tu texto aquí..."
             disabled={guardando}
-            autoFocus={!guardando}
             style={{
               flex: 1,
               minHeight: '120px',
-              maxHeight: '200px',
               border: error ? '2px solid #f44336' : '2px solid #e0e0e0',
               borderRadius: '8px',
               padding: '12px',
@@ -741,44 +551,36 @@ const TextoModal = ({
               transition: 'border-color 0.2s ease, opacity 0.2s ease'
             }}
             onFocus={(e) => {
-              if (!error) e.target.style.borderColor = '#2196f3';
+              if (!error) e.target.style.borderColor = '#de007e';
             }}
             onBlur={(e) => {
               if (!error) e.target.style.borderColor = '#e0e0e0';
             }}
           />
 
-          {/* Estados de backend */}
+          {/* Estados y mensajes */}
           {guardando && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
               padding: '12px 16px',
-              background: 'rgba(33, 150, 243, 0.1)',
-              border: '1px solid rgba(33, 150, 243, 0.3)',
+              background: 'rgba(222, 0, 126, 0.1)',
+              border: '1px solid rgba(222, 0, 126, 0.3)',
               borderRadius: '8px',
               fontSize: '13px',
-              color: '#1976d2',
-              flexShrink: 0,
-              animation: 'modal-pulse 2s infinite'
+              color: '#c2185b',
+              flexShrink: 0
             }}>
               <div style={{
                 width: '16px',
                 height: '16px',
-                border: '2px solid #1976d2',
+                border: '2px solid #c2185b',
                 borderTopColor: 'transparent',
                 borderRadius: '50%',
-                animation: 'modal-spin 1s linear infinite'
+                animation: 'spin 1s linear infinite'
               }} />
               <span>Procesando en servidor...</span>
-              <div style={{
-                marginLeft: 'auto',
-                fontSize: '11px',
-                opacity: 0.8
-              }}>
-                Dimensiones: {dimensiones.width}×{dimensiones.height}px
-              </div>
             </div>
           )}
 
@@ -795,7 +597,7 @@ const TextoModal = ({
               color: '#d32f2f',
               flexShrink: 0
             }}>
-              <span>⚠</span>
+              <span>⚠️</span>
               <span>{error}</span>
             </div>
           )}
@@ -803,10 +605,10 @@ const TextoModal = ({
           {/* Botones */}
           <div style={{
             display: 'flex',
-            gap: '8px',
+            gap: '10px',
             justifyContent: 'flex-end',
             borderTop: '1px solid #e0e0e0',
-            paddingTop: '12px',
+            paddingTop: '16px',
             flexShrink: 0
           }}>
             {onEliminar && (
@@ -821,15 +623,8 @@ const TextoModal = ({
                   borderRadius: '6px',
                   cursor: guardando ? 'not-allowed' : 'pointer',
                   fontWeight: 500,
-                  opacity: guardando ? 0.6 : 1,
-                  transition: 'all 0.2s ease',
-                  fontSize: '14px'
-                }}
-                onMouseEnter={(e) => {
-                  if (!guardando) e.target.style.background = '#d32f2f';
-                }}
-                onMouseLeave={(e) => {
-                  if (!guardando) e.target.style.background = '#f44336';
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 Eliminar
@@ -846,15 +641,8 @@ const TextoModal = ({
                 borderRadius: '6px',
                 cursor: guardando ? 'not-allowed' : 'pointer',
                 fontWeight: 500,
-                opacity: guardando ? 0.6 : 1,
-                transition: 'all 0.2s ease',
-                fontSize: '14px'
-              }}
-              onMouseEnter={(e) => {
-                if (!guardando) e.target.style.background = '#757575';
-              }}
-              onMouseLeave={(e) => {
-                if (!guardando) e.target.style.background = '#9e9e9e';
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
               }}
             >
               Cancelar
@@ -870,15 +658,8 @@ const TextoModal = ({
                 borderRadius: '6px',
                 cursor: (guardando || !texto.trim()) ? 'not-allowed' : 'pointer',
                 fontWeight: 500,
-                opacity: (guardando || !texto.trim()) ? 0.6 : 1,
-                transition: 'all 0.2s ease',
-                fontSize: '14px'
-              }}
-              onMouseEnter={(e) => {
-                if (!guardando && texto.trim()) e.target.style.background = '#45a049';
-              }}
-              onMouseLeave={(e) => {
-                if (!guardando && texto.trim()) e.target.style.background = '#4caf50';
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
               }}
             >
               {guardando ? 'Guardando...' : 'Guardar'}
@@ -886,7 +667,30 @@ const TextoModal = ({
           </div>
         </div>
       </div>
-    </>
+
+      {/* CSS para animaciones */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .texto-modal-robusto {
+          animation: fadeInScale 0.25s ease-out;
+        }
+        
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+      `}</style>
+    </React.Fragment>
   );
 };
 
