@@ -1,1048 +1,491 @@
-/* lector.css - VERSIÃ“N CON OPTIMIZACIONES MÃ“VILES COMPLETAS */
+/* src/Componentes/Lector/lector.css - VERSIÓN COMPLETA */
 
-/* ===== VARIABLES CSS OPTIMIZADAS PARA MÃ“VIL ===== */
+/* ========== VARIABLES CSS ========== */
 :root {
-  --z-index-textos: 210;
-  --z-index-modales: 999;
-  --z-index-panel: 10;
-  --z-index-temporales: 250;
+  --color-primary: #de007e;
+  --color-primary-light: #f0b7d1;
+  --color-primary-dark: #b8005a;
+  --color-secondary: #23201d;
+  --color-background: #f7f7f7;
+  --color-white: #ffffff;
+  --color-text: #333333;
+  --color-text-light: #666666;
+  --color-border: #e0e0e0;
+  --color-error: #dc3545;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
   
-  --color-primary: #2196f3;
-  --color-secondary: #4caf50;
-  --color-warning: #ff9800;
-  --color-danger: #f44336;
-  --color-texto: #2196f3;
+  --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-strong: 0 4px 20px rgba(0, 0, 0, 0.25);
   
   --border-radius: 8px;
   --border-radius-small: 4px;
-  --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
-  --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
-  --shadow-heavy: 0 8px 20px rgba(0,0,0,0.2);
-  
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.2s ease;
-  --transition-slow: 0.3s ease;
-  
-  /* Variables para barra inferior adaptativa */
-  --barra-height-desktop: 50px;
-  --barra-height-mobile: 45px;
-  --barra-height-compact: 40px;
-  --barra-bottom-desktop: 0px;
-  --barra-bottom-mobile: 0px;
-  
-  /* Variables mÃ³viles nuevas */
-  --mobile-touch-target: 44px;
-  --mobile-padding: 16px;
-  --mobile-padding-small: 8px;
-  --mobile-font-scale: 0.9;
-  --mobile-transition: 0.2s ease;
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.3s ease;
 }
 
-/* ===== DETECCIÃ“N DE CARACTERÃSTICAS MÃ“VILES ===== */
-@media (hover: none) and (pointer: coarse) {
-  :root {
-    --mobile-specific: true;
-  }
+/* ========== LAYOUT PRINCIPAL DEL LECTOR ========== */
+.lector-pdf {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--color-background);
+  position: relative;
+  overflow: hidden;
 }
 
-/* ===== CONTENEDOR PRINCIPAL OPTIMIZADO ===== */
-.lector-container {
-    position: relative;
-    height: 100vh;
-    background-color: #f4f4f4;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    display: flex;
-    flex-direction: column;
-    
-    /* Optimizaciones para mÃ³vil */
-    -webkit-overflow-scrolling: touch;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
+/* ========== ÁREA DEL VISOR ========== */
+.visor-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+  padding-bottom: 80px; /* Espacio para barra inferior */
+  overflow: auto;
+  background-color: #f0f0f0;
+  background-image: 
+    radial-gradient(circle, #ccc 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* ===== PANEL DE HERRAMIENTAS ADAPTATIVO ===== */
-.panel-herramientas {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    background: linear-gradient(135deg, #de007e, #de007e);
-    padding: 8px;
-    border-radius: var(--border-radius);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: var(--z-index-panel);
-    box-shadow: var(--shadow-medium);
-    backdrop-filter: blur(10px);
-    
-    /* Adaptaciones mÃ³viles */
-    transition: transform var(--mobile-transition), opacity var(--mobile-transition);
+/* Wrapper del visor PDF con posición relativa para anotaciones */
+.visor-pdf-wrapper {
+  position: relative;
+  display: inline-block;
 }
 
-.panel-herramientas button {
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 18px;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-normal);
-    border-radius: var(--border-radius-small);
-    position: relative;
-    min-width: 36px;
-    min-height: 36px;
-    
-    /* Optimizaciones tÃ¡ctiles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.panel-herramientas button.activo {
-    color: black;
-    background: rgba(255, 255, 255, 0.9);
-    transform: scale(1.1);
-    box-shadow: var(--shadow-light);
-}
-
-.panel-herramientas button:hover:not(.activo) {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}
-
-.panel-herramientas button:active {
-    transform: scale(0.95);
-}
-
-/* ===== VISOR PDF CON SOPORTE TÃCTIL ===== */
 .visor-pdf {
-    height: calc(100vh - var(--barra-height-desktop));
-    width: 100%;
-    position: relative;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: #f4f4f4 !important;
-    
-    /* ConfiguraciÃ³n tÃ¡ctil adaptativa */
-    touch-action: auto; /* Se configura dinÃ¡micamente desde JS */
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+  position: relative;
+  z-index: 1;
+  display: inline-block;
 }
 
-/* ===== BARRA INFERIOR INTELIGENTE MÃ“VIL ===== */
-.barra-inferior {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: var(--barra-height-desktop);
-    transform: none;
-    
-    /* Fondo adaptativo */
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    
-    padding: 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    z-index: calc(var(--z-index-panel) + 5);
-    
-    border: none;
-    border-radius: 0;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
-    
-    min-height: var(--barra-height-desktop);
-    max-width: none;
-    
-    /* Transiciones para auto-ocultar */
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+/* ========== CAPA DE ANOTACIONES ========== */
+.capa-anotaciones {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  cursor: default;
+  pointer-events: auto;
+  /* Asegurar que coincida exactamente con el PDF */
+  transform-origin: top left;
 }
 
-/* Clase especÃ­fica para mÃ³vil */
-.barra-inferior-mobile {
-    /* Override por JavaScript segÃºn detecciÃ³n mÃ³vil */
+.capa-anotaciones.texto {
+  cursor: crosshair;
 }
 
-.barra-inferior.hidden {
-    transform: translateY(100%);
-    opacity: 0;
-    pointer-events: none;
-}
-
-.barra-inferior.visible {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.barra-inferior button {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    cursor: pointer;
-    font-size: 16px;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-normal);
-    padding: 8px;
-    border-radius: 6px;
-    min-width: 40px;
-    min-height: 34px;
-    flex-shrink: 0;
-    
-    /* Optimizaciones tÃ¡ctiles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.barra-inferior button:hover {
-    background: rgba(33, 150, 243, 0.8) !important;
-    border-color: rgba(33, 150, 243, 1);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-}
-
-.barra-inferior button:active {
-    transform: scale(0.98);
-    background: rgba(33, 150, 243, 0.9) !important;
-}
-
-.barra-inferior span {
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    min-width: 60px;
-    text-align: center;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-/* ===== VISTA DOBLE - MANTENIDA PARA DESKTOP ===== */
-.dual-view-wrap {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    justify-content: center;
-    min-height: 100%;
-    width: 100%;
-    padding: 16px 16px 80px 16px;
-    background: #f7f7f7;
-    overflow: visible;
-}
-
-.dual-page {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: var(--border-radius);
-    padding: 8px;
-    box-shadow: var(--shadow-light);
-    transition: box-shadow var(--transition-normal);
-    position: relative;
-    flex-shrink: 0;
-}
-
-.dual-page:hover {
-    box-shadow: var(--shadow-medium);
-}
-
-.dual-canvas {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--border-radius-small);
-}
-
-/* ===== OVERLAYS PARA TEXTOS CON MEJORAS TÃCTILES ===== */
-.texto-overlay-zoom-fixed {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: auto;
-    z-index: 150;
-    overflow: visible;
-    transform-origin: 0 0;
-    
-    /* Soporte tÃ¡ctil */
-    touch-action: manipulation;
-}
-
-.texto-overlay-dual-fixed {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    pointer-events: auto;
-    z-index: 150;
-    overflow: visible;
-    transform-origin: 0 0;
-    
-    /* Soporte tÃ¡ctil */
-    touch-action: manipulation;
-}
-
-/* ===== ELEMENTOS DE TEXTO CON MEJORAS MÃ“VILES ===== */
-.texto-zoom-fixed,
-.texto-dual-fixed {
-    position: absolute;
-    z-index: var(--z-index-textos);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    transform-origin: center center;
-    will-change: transform;
-    contain: layout style paint;
-    
-    /* Optimizaciones mÃ³viles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.texto-zoom-fixed .texto-contenido,
-.texto-dual-fixed .texto-contenido {
-    width: 100%;
-    height: 100%;
-    background: transparent !important;
-    color: #000000 !important;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: 500 !important;
-    border: 2px solid transparent !important;
-    border-radius: 6px;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-    overflow: hidden;
-    line-height: 1.4;
-    text-shadow: none !important;
-    cursor: inherit;
-    transition: all var(--transition-normal);
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    position: relative;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
-    
-    /* Mejoras mÃ³viles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* ===== ESTADOS HOVER ADAPTADOS ===== */
-@media (hover: hover) and (pointer: fine) {
-    /* Solo aplicar hover en dispositivos con mouse */
-    .texto-zoom-fixed:hover .texto-contenido,
-    .texto-dual-fixed:hover .texto-contenido {
-        background: rgba(33, 150, 243, 0.05) !important;
-        border-color: rgba(33, 150, 243, 0.3) !important;
-        border-style: dashed !important;
-        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15) !important;
-        color: #000000 !important;
-        text-shadow: none !important;
-    }
-
-    .texto-zoom-fixed:hover,
-    .texto-dual-fixed:hover {
-        z-index: calc(var(--z-index-textos) + 10) !important;
-    }
-}
-
-/* Estados tÃ¡ctiles para mÃ³vil */
-@media (hover: none) and (pointer: coarse) {
-    .texto-zoom-fixed:active .texto-contenido,
-    .texto-dual-fixed:active .texto-contenido {
-        background: rgba(33, 150, 243, 0.1) !important;
-        border-color: rgba(33, 150, 243, 0.4) !important;
-        border-style: solid !important;
-        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2) !important;
-        transform: scale(1.02);
-    }
-}
-
-/* ===== ESTADOS DE INTERACCIÃ“N ACTIVA ===== */
-.texto-zoom-fixed[data-dragging="true"],
-.texto-dual-fixed[data-dragging="true"] {
-    z-index: calc(var(--z-index-textos) + 50) !important;
-    cursor: grabbing !important;
-    transform: translate(-50%, -50%) scale(1.02);
-    transition: none !important;
-}
-
-.texto-zoom-fixed[data-dragging="true"] .texto-contenido,
-.texto-dual-fixed[data-dragging="true"] .texto-contenido {
-    background: rgba(33, 150, 243, 0.1) !important;
-    border-color: var(--color-primary) !important;
-    border-style: solid !important;
-    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.3) !important;
-    color: #000000 !important;
-    text-shadow: none !important;
-}
-
-.texto-zoom-fixed[data-resizing="true"],
-.texto-dual-fixed[data-resizing="true"] {
-    z-index: calc(var(--z-index-textos) + 40) !important;
-}
-
-.texto-zoom-fixed[data-resizing="true"] .texto-contenido,
-.texto-dual-fixed[data-resizing="true"] .texto-contenido {
-    color: #000000 !important;
-    text-shadow: none !important;
-}
-
-/* ===== RESIZE HANDLES ADAPTADOS ===== */
-.texto-zoom-fixed .resize-handles,
-.texto-dual-fixed .resize-handles {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-.texto-zoom-fixed .resize-handle,
-.texto-dual-fixed .resize-handle {
-    position: absolute;
-    pointer-events: auto;
-    background: var(--color-primary);
-    border: 2px solid white;
-    border-radius: 50%;
-    box-shadow: var(--shadow-medium);
-    transition: all var(--transition-fast);
-    width: 12px;
-    height: 12px;
-    
-    /* Optimizaciones mÃ³viles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.texto-zoom-fixed .resize-se,
-.texto-dual-fixed .resize-se {
-    bottom: -4px;
-    right: -4px;
-    cursor: se-resize;
-}
-
-.texto-zoom-fixed .resize-handle:hover,
-.texto-dual-fixed .resize-handle:hover {
-    background: #1976d2;
-    transform: scale(1.2);
-    box-shadow: var(--shadow-heavy);
-}
-
-/* ===== MODALES CON OPTIMIZACIONES MÃ“VILES ===== */
-.modal-texto-con-fuente {
-    position: fixed !important;
-    font-family: inherit;
-    z-index: 10000;
-    backdrop-filter: blur(8px);
-    will-change: transform;
-    contain: layout style paint;
-    
-    /* Optimizaciones mÃ³viles */
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-}
-
-.modal-texto-con-fuente .modal-header {
-    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
-    color: rgb(0, 0, 0) !important;
-    cursor: move !important;
-    user-select: none !important;
-    transition: background 0.2s ease !important;
-    flex-shrink: 0 !important;
-    font-weight: 600 !important;
-    
-    /* Optimizaciones tÃ¡ctiles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.modal-texto-con-fuente .modal-header:hover {
-    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
-}
-
-.modal-texto-con-fuente .modal-textarea {
-    transition: border-color 0.2s ease !important;
-    color: #000000 !important;
-    
-    /* Optimizaciones mÃ³viles */
-    touch-action: manipulation;
-    -webkit-appearance: none;
-    resize: vertical;
-}
-
-.modal-texto-con-fuente .modal-textarea:focus {
-    border-color: var(--color-primary) !important;
-    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1) !important;
-    color: #000000 !important;
-}
-
-.modal-texto-con-fuente button {
-    transition: all var(--transition-normal) !important;
-    
-    /* Optimizaciones tÃ¡ctiles */
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.modal-texto-con-fuente button:hover {
-    opacity: 0.9 !important;
-    transform: translateY(-1px) !important;
-}
-
-.modal-texto-con-fuente button:active {
-    transform: translateY(0) !important;
-}
-
-/* ===== RESPONSIVE DESIGN MEJORADO PARA MÃ“VIL ===== */
-
-/* Tablets y dispositivos medianos */
-@media (max-width: 1024px) and (min-width: 769px) {
-    .panel-herramientas {
-        right: 8px;
-        padding: 7px;
-        gap: 8px;
-    }
-    
-    .barra-inferior {
-        padding: 0 16px;
-        gap: 10px;
-    }
-}
-
-/* MÃ³viles y tablets pequeÃ±os */
-@media (max-width: 768px) {
-    :root {
-        --barra-height-desktop: var(--barra-height-mobile);
-        --mobile-active: true;
-    }
-    
-    .lector-container {
-        font-size: calc(1rem * var(--mobile-font-scale));
-    }
-    
-    .visor-pdf {
-        height: calc(100vh - var(--barra-height-mobile));
-        /* Permitir zoom tÃ¡ctil nativo */
-        touch-action: pinch-zoom pan-x pan-y;
-        overscroll-behavior: contain;
-    }
-    
-    .panel-herramientas {
-        right: 5px;
-        padding: 6px;
-        gap: 6px;
-        transform: translateY(-50%) scale(0.9);
-    }
-    
-    .panel-herramientas button {
-        padding: 6px;
-        font-size: 16px;
-        min-width: var(--mobile-touch-target);
-        min-height: var(--mobile-touch-target);
-        touch-action: manipulation;
-    }
-    
-    .barra-inferior {
-        height: var(--barra-height-mobile);
-        min-height: var(--barra-height-mobile);
-        padding: 0 var(--mobile-padding);
-        gap: var(--mobile-padding-small);
-    }
-    
-    .barra-inferior button {
-        min-width: var(--mobile-touch-target);
-        min-height: calc(var(--mobile-touch-target) - 6px);
-        font-size: 14px;
-        padding: 6px;
-        touch-action: manipulation;
-    }
-    
-    .barra-inferior span {
-        font-size: 12px;
-        padding: 6px 10px;
-        height: calc(var(--mobile-touch-target) - 6px);
-        min-width: 50px;
-    }
-    
-    .texto-zoom-fixed .texto-contenido,
-    .texto-dual-fixed .texto-contenido {
-        font-size: 13px !important;
-        padding: 6px 9px !important;
-        color: #000000 !important;
-        text-shadow: none !important;
-        touch-action: manipulation;
-    }
-    
-    .texto-zoom-fixed .resize-handle,
-    .texto-dual-fixed .resize-handle {
-        width: 16px;
-        height: 16px;
-        /* Hacer mÃ¡s fÃ¡cil tocar en mÃ³vil */
-        border-width: 3px;
-    }
-    
-    .modal-texto-con-fuente {
-        width: calc(100vw - 20px) !important;
-        max-width: 500px !important;
-        margin: 0 10px;
-        max-height: calc(100vh - 40px);
-    }
-    
-    .modal-texto-con-fuente .font-controls {
-        flex-wrap: wrap !important;
-        gap: var(--mobile-padding-small) !important;
-    }
-    
-    .modal-texto-con-fuente .font-size-slider {
-        min-width: 120px !important;
-        height: 8px !important;
-    }
-    
-    .dual-view-wrap {
-        flex-direction: column;
-        gap: 12px;
-        padding: var(--mobile-padding-small) var(--mobile-padding-small) 60px var(--mobile-padding-small);
-    }
-    
-    .dual-page {
-        width: 100%;
-        max-width: none;
-    }
-}
-
-/* MÃ³viles pequeÃ±os */
-@media (max-width: 480px) {
-    :root {
-        --barra-height-mobile: var(--barra-height-compact);
-        --mobile-padding: 12px;
-        --mobile-padding-small: 6px;
-        --mobile-font-scale: 0.85;
-    }
-    
-    .lector-container {
-        font-size: 14px;
-    }
-    
-    .visor-pdf {
-        height: calc(100vh - var(--barra-height-compact));
-    }
-    
-    .panel-herramientas {
-        right: 4px;
-        padding: 4px;
-        gap: 4px;
-        transform: translateY(-50%) scale(0.8);
-    }
-    
-    .panel-herramientas button {
-        min-width: 36px;
-        min-height: 36px;
-        padding: 4px;
-        font-size: 14px;
-    }
-    
-    .barra-inferior {
-        height: var(--barra-height-compact);
-        min-height: var(--barra-height-compact);
-        padding: 0 var(--mobile-padding-small);
-        gap: 4px;
-    }
-    
-    .barra-inferior button {
-        min-width: 36px;
-        min-height: 32px;
-        font-size: 12px;
-        padding: 4px;
-    }
-    
-    .barra-inferior span {
-        font-size: 11px;
-        padding: 4px 6px;
-        height: 32px;
-        min-width: 40px;
-    }
-    
-    .dual-view-wrap {
-        padding: var(--mobile-padding-small) var(--mobile-padding-small) 50px var(--mobile-padding-small);
-    }
-    
-    .texto-zoom-fixed .texto-contenido,
-    .texto-dual-fixed .texto-contenido {
-        font-size: 12px !important;
-        padding: 4px 6px !important;
-        color: #000000 !important;
-        text-shadow: none !important;
-    }
-    
-    .modal-texto-con-fuente {
-        width: calc(100vw - 16px) !important;
-        margin: 0 8px;
-        border-radius: 8px;
-    }
-    
-    .modal-texto-con-fuente .font-controls {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: var(--mobile-padding-small) !important;
-    }
-    
-    .modal-texto-con-fuente .font-size-slider {
-        width: 100% !important;
-    }
-}
-
-/* ===== LANDSCAPE MOBILE OPTIMIZATION ===== */
-@media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
-    :root {
-        --barra-height-landscape: 35px;
-    }
-    
-    .visor-pdf {
-        height: calc(100vh - var(--barra-height-landscape));
-    }
-    
-    .barra-inferior {
-        height: var(--barra-height-landscape);
-        min-height: var(--barra-height-landscape);
-        padding: 0 8px;
-        gap: 6px;
-    }
-    
-    .barra-inferior button {
-        min-width: 32px;
-        min-height: 28px;
-        font-size: 12px;
-        padding: 3px;
-    }
-    
-    .barra-inferior span {
-        font-size: 10px;
-        height: 28px;
-        min-width: 35px;
-        padding: 3px 6px;
-    }
-    
-    .panel-herramientas {
-        transform: translateY(-50%) scale(0.75);
-        right: 2px;
-    }
-    
-    /* Ocultar panel en landscape muy compacto */
-    .panel-herramientas {
-        opacity: 0.7;
-        transition: opacity var(--mobile-transition);
-    }
-    
-    .panel-herramientas:active,
-    .panel-herramientas:focus-within {
-        opacity: 1;
-    }
-}
-
-/* ===== MEJORAS PARA PANTALLAS TÃCTILES ===== */
-@media (hover: none) and (pointer: coarse) {
-    /* Aumentar Ã¡reas tÃ¡ctiles */
-    .texto-zoom-fixed,
-    .texto-dual-fixed {
-        min-width: var(--mobile-touch-target);
-        min-height: var(--mobile-touch-target);
-    }
-    
-    /* Mejorar feedback tÃ¡ctil */
-    .texto-zoom-fixed:active,
-    .texto-dual-fixed:active {
-        transform: translate(-50%, -50%) scale(1.05);
-        transition: transform 0.1s ease;
-    }
-    
-    /* Eliminar delays de tap en iOS */
-    .panel-herramientas button,
-    .barra-inferior button,
-    .texto-zoom-fixed,
-    .texto-dual-fixed {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        touch-action: manipulation;
-    }
-}
-
-/* ===== MODO OSCURO ADAPTADO ===== */
-@media (prefers-color-scheme: dark) {
-    .lector-container {
-        background-color: #1a1a1a;
-    }
-    
-    .texto-zoom-fixed .texto-contenido,
-    .texto-dual-fixed .texto-contenido {
-        color: #000000 !important;
-        text-shadow: none !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-    }
-    
-    .modal-texto-con-fuente {
-        background: #2a2a2a !important;
-        color: #e0e0e0 !important;
-        border-color: #555 !important;
-    }
-    
-    .modal-texto-con-fuente .modal-textarea {
-        background: #333 !important;
-        color: #000000 !important;
-        border-color: #555 !important;
-    }
-    
-    .modal-texto-con-fuente .font-controls {
-        background: #333 !important;
-        border-color: #555 !important;
-    }
-    
-    .modal-texto-con-fuente .text-preview {
-        background: #333 !important;
-        border-color: #555 !important;
-    }
-    
-    .modal-texto-con-fuente .text-preview:hover {
-        background: #3a3a3a !important;
-    }
-    
-    .modal-texto-con-fuente .preview-content {
-        color: #000000 !important;
-        text-shadow: none !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        padding: 8px !important;
-        border-radius: 4px !important;
-    }
-    
-    .dual-page {
-        background: #2a2a2a;
-        border-color: #444;
-    }
-    
-    /* Barra mÃ¡s visible en modo oscuro para mÃ³vil */
-    @media (max-width: 768px) {
-        .barra-inferior {
-            background: rgba(0, 0, 0, 0.95);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    }
-}
-
-/* ===== ACCESIBILIDAD MEJORADA ===== */
-.texto-zoom-fixed:focus-visible,
-.texto-dual-fixed:focus-visible,
-.panel-herramientas button:focus-visible,
-.barra-inferior button:focus-visible {
-    outline: 3px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-.modal-texto-con-fuente:focus-within {
-    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
-}
-
-/* ===== REDUCIR ANIMACIONES PARA USUARIOS SENSIBLES ===== */
-@media (prefers-reduced-motion: reduce) {
-    .texto-zoom-fixed,
-    .texto-dual-fixed,
-    .panel-herramientas button,
-    .barra-inferior button,
-    .modal-texto-con-fuente,
-    .texto-zoom-fixed .texto-contenido,
-    .texto-dual-fixed .texto-contenido,
-    .texto-zoom-fixed .resize-handle,
-    .texto-dual-fixed .resize-handle,
-    .barra-inferior {
-        transition: none !important;
-        animation: none !important;
-    }
-    
-    .texto-zoom-fixed:hover,
-    .texto-dual-fixed:hover,
-    .texto-zoom-fixed[data-dragging="true"],
-    .texto-dual-fixed[data-dragging="true"] {
-        transform: translate(-50%, -50%) !important;
-    }
-}
-
-/* ===== OPTIMIZACIONES DE RENDIMIENTO ===== */
-.texto-overlay-zoom-fixed,
-.texto-overlay-dual-fixed,
-.texto-zoom-fixed,
-.texto-dual-fixed {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000px;
-}
-
-.texto-zoom-fixed,
-.texto-dual-fixed {
-    will-change: transform, opacity;
-    contain: layout style paint;
-}
-
-.modal-texto-con-fuente {
-    will-change: transform;
-    contain: layout style paint;
-}
-
-/* ===== MEJORAS ESPECÃFICAS PARA iOS ===== */
-@supports (-webkit-touch-callout: none) {
-    .visor-pdf {
-        -webkit-overflow-scrolling: touch;
-        overflow-scrolling: touch;
-    }
-    
-    .barra-inferior {
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-    
-    .modal-texto-con-fuente {
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-}
-
-/* ===== MEJORAS ESPECÃFICAS PARA ANDROID ===== */
-@media (max-width: 768px) {
-    .visor-pdf {
-        /* Mejor scroll en Android */
-        overscroll-behavior-y: contain;
-        scroll-snap-type: none;
-    }
-}
-
-/* ===== UTILIDADES MÃ“VILES ===== */
-.mobile-only {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .mobile-only {
-        display: block;
-    }
-    
-    .desktop-only {
-        display: none !important;
-    }
-}
-
-.touch-friendly {
-    min-width: var(--mobile-touch-target);
-    min-height: var(--mobile-touch-target);
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* ===== SCROLLBARS PERSONALIZADOS ADAPTADOS ===== */
-.visor-pdf::-webkit-scrollbar {
-    width: 8px;
-}
-
-@media (max-width: 768px) {
-    .visor-pdf::-webkit-scrollbar {
-        width: 4px;
-    }
-}
-
-.visor-pdf::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.05);
-    border-radius: 4px;
-}
-
-.visor-pdf::-webkit-scrollbar-thumb {
-    background: rgba(33, 150, 243, 0.3);
-    border-radius: 4px;
-    transition: background 0.2s ease;
-}
-
-.visor-pdf::-webkit-scrollbar-thumb:hover {
-    background: rgba(33, 150, 243, 0.5);
-}
-
-/* ===== ESTILOS PARA INDICADORES MÃ“VILES ===== */
-.mobile-gesture-hint {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(222, 0, 126, 0.9);
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    z-index: 2000;
-    animation: fadeInOut 3s ease-in-out;
-    pointer-events: none;
+.cursor-texto-indicador {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-medium);
+  z-index: 1001;
+  pointer-events: none;
+  animation: fadeInOut 2s ease-in-out infinite;
 }
 
 @keyframes fadeInOut {
-    0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-    20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
-/* ===== CORRECCIÃ“N PARA ZOOM TÃCTIL ===== */
-.visor-pdf[data-native-gestures="true"] {
-    touch-action: pinch-zoom pan-x pan-y !important;
+.overlay-arrastrando {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  pointer-events: none;
 }
 
-.visor-pdf[data-native-gestures="false"] {
-    touch-action: manipulation !important;
+.indicador-posicion {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: var(--color-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px var(--color-primary);
 }
 
-/* ===== PRINT STYLES MANTENIDOS ===== */
-@media print {
-    .panel-herramientas,
-    .barra-inferior,
-    .save-feedback,
-    .modal-texto-con-fuente,
-    .resize-handles {
-        display: none !important;
-    }
-    
-    .lector-container {
-        height: auto !important;
-        background: white !important;
-    }
-    
-    .visor-pdf {
-        height: auto !important;
-        overflow: visible !important;
-    }
-    
-    .texto-zoom-fixed .texto-contenido,
-    .texto-dual-fixed .texto-contenido {
-        break-inside: avoid;
-        background: white !important;
-        color: #000000 !important;
-        border: 1px solid #ccc !important;
-        text-shadow: none !important;
-    }
+/* ========== ANOTACIONES ========== */
+.anotacion-wrapper {
+  transition: var(--transition-fast);
+  /* Asegurar que los wrappers mantengan su posición */
+  pointer-events: auto;
+}
+
+.anotacion-wrapper.seleccionada {
+  z-index: 1000 !important;
+}
+
+.anotacion-texto {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: var(--transition-fast);
+  pointer-events: auto;
+}
+
+.anotacion-texto.seleccionada {
+  z-index: 1001;
+}
+
+.anotacion-texto.editando {
+  z-index: 1002;
+}
+
+/* ========== EDITOR INLINE ========== */
+.editor-inline {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.controles-inline {
+  position: absolute;
+  top: -35px;
+  right: 0;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(222, 0, 126, 0.2);
+  z-index: 1005;
+  backdrop-filter: blur(5px);
+}
+
+.btn-guardar-inline,
+.btn-cancelar-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.btn-guardar-inline {
+  background: #28a745;
+  color: white;
+}
+
+.btn-guardar-inline:hover:not(:disabled) {
+  background: #218838;
+  transform: scale(1.05);
+}
+
+.btn-guardar-inline:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-cancelar-inline {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-cancelar-inline:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+/* ========== CONTROLES DE SELECCIÓN MEJORADOS ========== */
+.controles-seleccion {
+  position: absolute;
+  top: -35px;
+  right: 0;
+  display: flex;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #de007e;
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(222, 0, 126, 0.15);
+  z-index: 1004;
+  backdrop-filter: blur(5px);
+}
+
+.btn-editar,
+.btn-eliminar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-editar {
+  background-color: #de007e;
+  color: white;
+}
+
+.btn-editar:hover {
+  background-color: #b8005a;
+  transform: scale(1.05);
+}
+
+.btn-eliminar {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-eliminar:hover {
+  background-color: #c82333;
+  transform: scale(1.05);
+}
+
+/* ========== INDICADORES ========== */
+.indicador-doble-click {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #666;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 1005;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.anotacion-texto.seleccionada .indicador-doble-click {
+  opacity: 1;
+}
+
+/* ========== ESTADOS DE ANOTACIÓN MEJORADOS ========== */
+.anotacion-texto:hover:not(.editando) {
+  transform: scale(1.02);
+  box-shadow: 0 2px 12px rgba(222, 0, 126, 0.2) !important;
+}
+
+.anotacion-texto.editando {
+  background-color: rgba(222, 0, 126, 0.1) !important;
+  border-color: #de007e !important;
+  box-shadow: 0 0 0 2px rgba(222, 0, 126, 0.2) !important;
+}
+
+.anotacion-texto.seleccionada:not(.editando) {
+  border-color: #de007e !important;
+  box-shadow: 0 2px 12px rgba(222, 0, 126, 0.3) !important;
+}
+
+/* ========== ESTADOS DE CARGA Y ERROR ========== */
+.lector-cargando,
+.lector-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.lector-cargando .spinner,
+.spinner-pdf,
+.spinner-pagina {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.spinner-mini {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.lector-error h3 {
+  color: var(--color-error);
+  margin-bottom: 0.5rem;
+}
+
+.lector-error button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.lector-error button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* ========== CONTENEDOR DE PÁGINAS ========== */
+.contenedor-paginas {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+}
+
+.vista-una {
+  display: flex;
+  justify-content: center;
+}
+
+.vista-doble {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.vista-continua {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.pagina-izquierda,
+.pagina-derecha,
+.pagina-continua {
+  box-shadow: var(--shadow-medium);
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+  background-color: var(--color-white);
+  position: relative;
+}
+
+.cargando-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background-color: var(--color-white);
+  color: var(--color-text-light);
+}
+
+.overlay-carga {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cargando-documento {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 2rem;
+}
+
+.error-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  border: 2px dashed var(--color-error);
+}
+
+.error-contenido {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .visor-container {
+    padding: 0.75rem;
+    padding-bottom: 100px;
+  }
+
+  /* En lector móvil: ajustar padding superior para header */
+  .en-lector-pdf .visor-container {
+    padding-top: 80px; /* Espacio para header móvil */
+    padding-bottom: 100px; /* Espacio para barra inferior del lector */
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .visor-container {
+    padding: 0.5rem;
+    padding-bottom: 120px;
+  }
+
+  .en-lector-pdf .visor-container {
+    padding-top: 70px;
+    padding-bottom: 120px;
+  }
+}
+
+/* ========== ESTADOS DE HOVER SOLO EN DISPOSITIVOS CON HOVER ========== */
+@media (hover: hover) and (pointer: fine) {
+  .anotacion-texto:hover {
+    box-shadow: 0 2px 8px rgba(222, 0, 126, 0.2);
+  }
+}
+
+/* ========== MODO OSCURO ========== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #1a1a1a;
+    --color-white: #2d2d2d;
+    --color-text: #e0e0e0;
+    --color-text-light: #b0b0b0;
+    --color-border: #404040;
+  }
+  
+  .visor-container {
+    background-color: #202020;
+    background-image: 
+      radial-gradient(circle, #404040 1px, transparent 1px);
+  }
 }

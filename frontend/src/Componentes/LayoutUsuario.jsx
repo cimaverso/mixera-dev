@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SidebarUsuario, {
   CatalogoIcon,
   BibliotecaIcon,
@@ -9,6 +9,20 @@ import SidebarUsuario, {
 } from "./sidebar/SidebarUsuario.jsx";
 import "./sidebar/sidebar.css";
 import api from "../servicios/api";
+
+// Íconos para el header móvil del lector
+const MenuHamburguesaIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 16 16">
+    <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+  </svg>
+);
+
+const PerfilIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 16 16">
+    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+    <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
+  </svg>
+);
 
 // Ícono para cerrar sesión en bottom nav
 const LogoutIcon = () => (
@@ -27,7 +41,13 @@ const LogoutIcon = () => (
 
 const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
   const [fotoPerfil, setFotoPerfil] = useState("");
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const [usuarioInfo, setUsuarioInfo] = useState({ nombre: "", email: "" });
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detectar si estamos en el lector
+  const esLector = location.pathname.includes('/lector/');
 
   // Mapeo de rutas
   const rutas = {
@@ -40,24 +60,52 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
   };
 
   useEffect(() => {
-    const cargarFoto = async () => {
+    const cargarDatosUsuario = async () => {
       try {
         const { data } = await api.get("/usuarios/perfil");
         const url = data.usu_imagen
           ? `${api.defaults.baseURL}${data.usu_imagen}`
           : "";
         setFotoPerfil(url);
+        setUsuarioInfo({
+          nombre: data.usu_nombre || "Usuario",
+          email: data.usu_email || ""
+        });
       } catch (e) {
         setFotoPerfil("");
+        setUsuarioInfo({ nombre: "Usuario", email: "" });
       }
     };
-    cargarFoto();
+    cargarDatosUsuario();
 
     const onFotoActualizada = (e) => setFotoPerfil(e.detail?.urlAbs || "");
     window.addEventListener("perfil:foto-actualizada", onFotoActualizada);
     return () =>
       window.removeEventListener("perfil:foto-actualizada", onFotoActualizada);
   }, []);
+
+  // Cerrar menú móvil al hacer clic fuera (solo si NO es lector)
+  useEffect(() => {
+    if (esLector) return; // No aplicar en lector
+
+    const handleClickOutside = (event) => {
+      if (menuMovilAbierto && !event.target.closest('.sidebar-movil') && !event.target.closest('.btn-menu-hamburguesa')) {
+        setMenuMovilAbierto(false);
+      }
+    };
+
+    if (menuMovilAbierto) {
+      document.addEventListener('click', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.body.style.overflow = '';
+    };
+  }, [menuMovilAbierto, esLector]);
 
   const items = [
     { key: "catalogo", label: "Catálogo", icon: <CatalogoIcon /> },
@@ -72,17 +120,101 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
     window.location.href = "/login";
   };
 
-  // Función mejorada para navegación
+  // Función para navegación
   const handleNav = (key) => {
-    onChange?.(key); // mantiene resaltado activo
+    onChange?.(key);
     const path = rutas[key];
     if (path) {
-      navigate(path); // navega a la ruta correspondiente
+      navigate(path);
     }
+    // Cerrar menú móvil después de navegar
+    setMenuMovilAbierto(false);
+  };
+
+  const toggleMenuMovil = () => {
+    setMenuMovilAbierto(!menuMovilAbierto);
   };
 
   return (
-    <div className="layout-usuario">
+    <div className={`layout-usuario ${esLector ? 'en-lector-pdf' : ''}`}>
+      {/* HEADER MÓVIL - SOLO PARA LECTOR */}
+      {esLector && (
+        <header className="header-movil">
+          <button 
+            className="btn-menu-hamburguesa"
+            onClick={() => navigate('/biblioteca')}
+            aria-label="Volver a biblioteca"
+            title="Volver a biblioteca"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            </svg>
+          </button>
+          
+          <h1 className="titulo-app-movil">
+            Lector PDF
+          </h1>
+          
+          <div 
+            className="perfil-movil"
+            onClick={() => handleNav("perfil")}
+          >
+            {fotoPerfil ? (
+              <img src={fotoPerfil} alt="Perfil" />
+            ) : (
+              <PerfilIcon />
+            )}
+          </div>
+        </header>
+      )}
+
+      {/* SIDEBAR MÓVIL OVERLAY - SOLO PARA SECCIONES NORMALES */}
+      {!esLector && (
+        <div className={`sidebar-movil-overlay ${menuMovilAbierto ? 'abierto' : ''}`}>
+          <aside className={`sidebar-movil ${menuMovilAbierto ? 'abierto' : ''}`}>
+            {/* Perfil en el drawer */}
+            <div className="perfil-movil-drawer">
+              <div className="imagen-perfil">
+                {fotoPerfil ? (
+                  <img src={fotoPerfil} alt="Foto de perfil" />
+                ) : (
+                  <PerfilIcon />
+                )}
+              </div>
+              <div className="info-usuario">
+                <h4>{usuarioInfo.nombre}</h4>
+                <p>{usuarioInfo.email}</p>
+              </div>
+            </div>
+
+            {/* Menú de navegación */}
+            <nav className="sidebar-menu">
+              {items.map((item) => (
+                <button
+                  key={item.key}
+                  className={activeKey === item.key ? "activo" : ""}
+                  onClick={() => handleNav(item.key)}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+
+              <button onClick={handleLogout}>
+                <LogoutIcon />
+                <span>Cerrar sesión</span>
+              </button>
+            </nav>
+
+            {/* Logo en el drawer */}
+            <div className="logo-footer">
+              <img src="/assets/LogoLogin.webp" alt="Logo" className="logo-imagen" />
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* SIDEBAR DESKTOP - OCULTO EN LECTOR MÓVIL */}
       <SidebarUsuario
         items={items}
         activeKey={activeKey}
@@ -94,56 +226,43 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
 
       <main className="contenido-usuario">{children}</main>
 
-      {/* === BOTTOM NAV SOLO PARA MOBILE === */}
-      <nav className="bottom-nav-usuario">
-        <button
-          className={activeKey === "catalogo" ? "activo" : ""}
-          onClick={() => handleNav("catalogo")}
-          title="Catálogo"
-        >
-          <CatalogoIcon />
-          <span>Catálogo</span>
-        </button>
-        <button
-          className={activeKey === "biblioteca" ? "activo" : ""}
-          onClick={() => handleNav("biblioteca")}
-          title="Mi Biblioteca"
-        >
-          <BibliotecaIcon />
-          <span>Biblioteca</span>
-        </button>
-        <button
-          className={activeKey === "tutoriales" ? "activo" : ""}
-          onClick={() => handleNav("tutoriales")}
-          title="Tutoriales"
-        >
-          <TutorialesIcon />
-          <span>Tutoriales</span>
-        </button>
-        <button
-          className={activeKey === "estadisticas" ? "activo" : ""}
-          onClick={() => handleNav("estadisticas")}
-          title="Estadísticas"
-        >
-          <EstadisticasIcon />
-          <span>Estadísticas</span>
-        </button>
-        <button
-          className={activeKey === "soporte" ? "activo" : ""}
-          onClick={() => handleNav("soporte")}
-          title="Soporte"
-        >
-          <SoporteIcon />
-          <span>Soporte</span>
-        </button>
-        <button
-          onClick={handleLogout}
-          title="Cerrar sesión"
-        >
-          <LogoutIcon />
-          <span>Salir</span>
-        </button>
-      </nav>
+      {/* BOTTOM NAV SOLO PARA MOBILE Y SECCIONES NORMALES */}
+      {!esLector && (
+        <nav className="bottom-nav-usuario">
+          <button
+            className={activeKey === "catalogo" ? "activo" : ""}
+            onClick={() => handleNav("catalogo")}
+            title="Catálogo"
+          >
+            <CatalogoIcon />
+            <span>Catálogo</span>
+          </button>
+          <button
+            className={activeKey === "biblioteca" ? "activo" : ""}
+            onClick={() => handleNav("biblioteca")}
+            title="Mi Biblioteca"
+          >
+            <BibliotecaIcon />
+            <span>Biblioteca</span>
+          </button>
+          <button
+            className={activeKey === "tutoriales" ? "activo" : ""}
+            onClick={() => handleNav("tutoriales")}
+            title="Tutoriales"
+          >
+            <TutorialesIcon />
+            <span>Tutoriales</span>
+          </button>
+          <button
+            className={activeKey === "soporte" ? "activo" : ""}
+            onClick={() => handleNav("soporte")}
+            title="Soporte"
+          >
+            <SoporteIcon />
+            <span>Soporte</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 };

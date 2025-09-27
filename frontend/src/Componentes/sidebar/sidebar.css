@@ -6,6 +6,83 @@
   transition: all 0.3s ease;
 }
 
+/* ========== HEADER MÓVIL (SOLO PARA LECTOR) ========== */
+.header-movil {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #23201d;
+  z-index: 1200;
+  align-items: center;
+  padding: 0 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* MOSTRAR HEADER MÓVIL SOLO EN LECTOR Y MÓVIL */
+@media (max-width: 768px) {
+  .en-lector-pdf .header-movil {
+    display: flex;
+  }
+}
+
+.btn-menu-hamburguesa {
+  background: none;
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-menu-hamburguesa:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-menu-hamburguesa svg {
+  width: 24px;
+  height: 24px;
+}
+
+.titulo-app-movil {
+  flex: 1;
+  text-align: center;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.perfil-movil {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #edb1a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.perfil-movil img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.perfil-movil svg {
+  width: 18px;
+  height: 18px;
+  fill: white;
+}
+
 /* ========== SIDEBAR DESKTOP ========== */
 .sidebar-usuario {
   background-color: #23201d;
@@ -22,15 +99,100 @@
   top: 0;
   bottom: 0;
   overflow-y: auto;
-  transition: width 0.3s ease;
+  transition: all 0.3s ease;
   z-index: 1000;
   gap: 50px;
-
 }
 
 /* Sidebar colapsado */
 .sidebar-usuario.colapsado {
   width: 70px;
+}
+
+/* ========== SIDEBAR MÓVIL TIPO DRAWER (SOLO SECCIONES NORMALES) ========== */
+.sidebar-movil-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 950;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-movil-overlay.abierto {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-movil {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: #23201d;
+  color: white;
+  padding: 20px;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 975;
+  overflow-y: auto;
+}
+
+.sidebar-movil.abierto {
+  transform: translateX(0);
+}
+
+.sidebar-movil .perfil-movil-drawer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 30px;
+}
+
+.sidebar-movil .perfil-movil-drawer .imagen-perfil {
+  width: 60px;
+  height: 60px;
+  background-color: #edb1a6;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar-movil .perfil-movil-drawer .imagen-perfil img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-movil .perfil-movil-drawer .imagen-perfil svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+}
+
+.sidebar-movil .info-usuario {
+  color: white;
+}
+
+.sidebar-movil .info-usuario h4 {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+}
+
+.sidebar-movil .info-usuario p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 .imagen-perfil {
@@ -137,6 +299,23 @@
   display: none;
 }
 
+/* Menú móvil dentro del drawer */
+.sidebar-movil .sidebar-menu {
+  align-items: stretch;
+  gap: 8px;
+}
+
+.sidebar-movil .sidebar-menu button {
+  justify-content: flex-start;
+  padding: 15px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+}
+
+.sidebar-movil .sidebar-menu button:hover {
+  transform: none;
+}
+
 /* ========== TOGGLE BUTTON ========== */
 .toggle-btn {
   background-color: #e73180;
@@ -199,10 +378,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 70px;
+  height: 65px;
   background: #23201d;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 1100;
+  z-index: 1000;
   justify-content: space-around;
   align-items: center;
   padding: 0 10px;
@@ -217,10 +396,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  gap: 4px;
-  width: 60px;
-  height: 60px;
+  font-size: 9px;
+  gap: 3px;
+  width: 55px;
+  height: 55px;
   border-radius: 12px;
   transition: all 0.2s ease;
   position: relative;
@@ -245,8 +424,8 @@
 }
 
 .bottom-nav-usuario button svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   position: relative;
   z-index: 1;
   transition: transform 0.2s ease;
@@ -257,6 +436,7 @@
   z-index: 1;
   font-weight: 500;
   opacity: 0.8;
+  font-size: 8px;
 }
 
 .bottom-nav-usuario button.activo span {
@@ -368,26 +548,42 @@
 
 /* ========== MOBILE (768px y menor) ========== */
 @media (max-width: 768px) {
-  /* 🔴 OCULTAR COMPLETAMENTE EL SIDEBAR EN MÓVIL */
+  /* OCULTAR SIDEBAR DESKTOP */
   .sidebar-usuario {
     display: none !important;
   }
 
-  /* Contenido ocupa todo el ancho sin margen izquierdo */
+  /* MOSTRAR SIDEBAR MÓVIL SOLO EN SECCIONES NORMALES */
+  .layout-usuario:not(.en-lector-pdf) .sidebar-movil-overlay {
+    display: block;
+  }
+
+  /* OCULTAR SIDEBAR MÓVIL EN LECTOR */
+  .en-lector-pdf .sidebar-movil-overlay {
+    display: none !important;
+  }
+
+  /* Contenido ajustado para móvil */
   .contenido-usuario {
     margin-left: 0 !important;
     padding: 20px;
-    padding-bottom: 85px; /* Espacio para el bottom nav */
+    padding-bottom: 80px; /* Espacio para bottom nav */
   }
 
-  /* No aplicar márgenes del sidebar colapsado */
-  .sidebar-usuario.colapsado ~ .contenido-usuario {
-    margin-left: 0 !important;
+  /* En lector: espacio adicional arriba para header */
+  .en-lector-pdf .contenido-usuario {
+    padding-top: 80px;
+    padding-bottom: 20px; /* Sin bottom nav en lector */
   }
-  
-  /* 🟢 MOSTRAR EL BOTTOM NAV EN MÓVIL */
-  .bottom-nav-usuario {
+
+  /* MOSTRAR BOTTOM NAV SOLO EN SECCIONES NORMALES */
+  .layout-usuario:not(.en-lector-pdf) .bottom-nav-usuario {
     display: flex;
+  }
+
+  /* OCULTAR BOTTOM NAV EN LECTOR */
+  .en-lector-pdf .bottom-nav-usuario {
+    display: none !important;
   }
 }
 
@@ -395,23 +591,36 @@
 @media (max-width: 480px) {
   .contenido-usuario {
     padding: 12px;
-    padding-bottom: 80px; /* Espacio para bottom nav más pequeño */
+    padding-bottom: 75px;
+  }
+  
+  .en-lector-pdf .contenido-usuario {
+    padding-top: 75px;
+    padding-bottom: 12px;
   }
   
   .bottom-nav-usuario {
-    height: 65px;
+    height: 60px;
     padding: 0 5px;
   }
   
   .bottom-nav-usuario button {
-    width: 55px;
-    height: 55px;
-    font-size: 9px;
-    gap: 3px;
+    width: 50px;
+    height: 50px;
+    font-size: 8px;
+    gap: 2px;
   }
   
   .bottom-nav-usuario button svg {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .bottom-nav-usuario button span {
+    font-size: 7px;
+  }
+  
+  .sidebar-movil {
+    width: 260px;
   }
 }

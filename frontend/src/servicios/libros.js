@@ -1,6 +1,4 @@
 // src/servicios/libros.js
-
-
 import api from "./api";
 
 const MOCK_LIBROS = [
@@ -21,7 +19,7 @@ const MOCK_LIBROS = [
   { id: 8, titulo: "Libro 8", autor: "Autora T", precio: 12000, portada: "", destacado: false },
 ];
 
-// Ids mock de libros que el usuario “compró”
+// Ids mock de libros que el usuario "compró"
 const MIS_LIBROS_IDS = [1, 3, 5];
 
 // Utilidad de latencia artificial
@@ -33,10 +31,8 @@ export const getLibros = ({ q = "" } = {}) => {
     : api.get("/libros/").then(res => ({ data: res.data }));
 };
 
-
 export const getLibroById = (id) =>
   api.get(`/libros/${id}`).then(res => ({ data: res.data }));
-
 
 export const getLibrosAdquiridos = () => api.get("/usuarios/libros").then(res => res.data);
 
@@ -61,3 +57,54 @@ export const getMisLibros = async ({ q = "" } = {}) => {
   return filtrados;
 };
 
+// =====================================
+// Funciones para PDFs
+// =====================================
+
+/**
+ * Obtiene la URL del PDF de un libro específico
+ */
+export const getLibroPDFUrl = (libroId) => {
+  return `${api.defaults.baseURL}/libros/${libroId}/pdf`;
+};
+
+/**
+ * Obtiene información completa del libro incluyendo la ruta del PDF
+ */
+export const getLibroConPDF = async (libroId) => {
+  try {
+    const { data } = await api.get(`/libros/${libroId}`);
+    return {
+      ...data,
+      pdfUrl: `${api.defaults.baseURL}/libros/${libroId}/pdf`
+    };
+  } catch (error) {
+    console.error('Error obteniendo libro:', error);
+    throw error;
+  }
+};
+
+/**
+ * Verifica si un libro tiene PDF disponible
+ */
+export const verificarPDFDisponible = async (libroId) => {
+  try {
+    const response = await api.head(`/libros/${libroId}/pdf`);
+    return response.status === 200;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Obtiene metadatos del PDF (tamaño, páginas, etc.)
+ */
+export const getMetadatosPDF = async (libroId) => {
+  try {
+    const { data } = await api.get(`/libros/${libroId}/pdf/info`);
+    return data;
+  } catch (error) {
+    console.error('Error obteniendo metadatos PDF:', error);
+    return null;
+  }
+};

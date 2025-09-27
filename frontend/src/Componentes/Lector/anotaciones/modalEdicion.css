@@ -1,0 +1,606 @@
+/* src/Componentes/Lector/anotaciones/modalEdicion.css */
+/* Estilos para el Modal de Edición Mejorado */
+
+/* ========== OVERLAY DEL MODAL ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Asegurar que el modal siempre esté encima de todo */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important;
+  padding: 1rem;
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+/* ========== CONTENEDOR DEL MODAL ========== */
+.modal-edicion {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(222, 0, 126, 0.1);
+  z-index: 10000 !important;
+  position: relative;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ========== HEADER DEL MODAL ========== */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  color: white;
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3), 
+    transparent
+  );
+}
+
+.modal-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-titulo svg {
+  opacity: 0.9;
+}
+
+.modal-cerrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-cerrar:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.modal-cerrar:active {
+  transform: scale(0.95);
+}
+
+/* ========== CONTENIDO DEL MODAL ========== */
+.modal-contenido {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ========== ÁREA DE TEXTO ========== */
+.textarea-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.textarea-container label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.textarea-modal {
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  font-family: inherit;
+}
+
+.textarea-modal:focus {
+  outline: none;
+  border-color: #de007e;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(222, 0, 126, 0.1);
+}
+
+.textarea-modal::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* ========== CONTROLES DE FORMATO ========== */
+.controles-formato {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control-item label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Input Range Personalizado */
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.range-input {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.range-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 
+    0 2px 8px rgba(222, 0, 126, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 4px 12px rgba(222, 0, 126, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.range-input::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 
+    0 2px 8px rgba(222, 0, 126, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.unit-display {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #de007e;
+  min-width: 40px;
+  text-align: center;
+  background: rgba(222, 0, 126, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* Color Picker */
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.color-input-modal {
+  width: 50px;
+  height: 40px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: none;
+}
+
+.color-input-modal:hover {
+  border-color: #de007e;
+  transform: scale(1.05);
+}
+
+.color-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+/* ========== VISTA PREVIA ========== */
+.vista-previa {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vista-previa label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.preview-text {
+  padding: 1rem;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+}
+
+.preview-text:empty::before {
+  content: 'Vista previa del texto...';
+  color: #999;
+  font-style: italic;
+}
+
+/* ========== MENSAJE DE ERROR ========== */
+.mensaje-error-modal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  font-size: 0.875rem;
+  animation: errorShake 0.5s ease;
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.mensaje-error-modal svg {
+  flex-shrink: 0;
+}
+
+/* ========== FOOTER DEL MODAL ========== */
+.modal-footer {
+  padding: 1.5rem 2rem;
+  background: #fafafa;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.atajos-hint {
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+}
+
+.botones-modal {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ========== BOTONES DEL MODAL ========== */
+.btn-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-modal::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.btn-modal:active::before {
+  width: 200%;
+  height: 200%;
+}
+
+.btn-cancelar-modal {
+  background: #6c757d;
+  color: white;
+  border: 2px solid transparent;
+}
+
+.btn-cancelar-modal:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.btn-guardar-modal {
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  color: white;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(222, 0, 126, 0.2);
+}
+
+.btn-guardar-modal:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 6px 20px rgba(222, 0, 126, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-guardar-modal:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Spinner para el botón de guardar */
+.spinner-btn {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .modal-edicion {
+    max-width: 90vw;
+    margin: 1rem;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .modal-contenido {
+    padding: 1.5rem;
+    gap: 1.25rem;
+  }
+
+  .controles-formato {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .atajos-hint {
+    text-align: center;
+  }
+
+  .botones-modal {
+    justify-content: center;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .modal-edicion {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .modal-titulo {
+    font-size: 1rem;
+  }
+
+  .modal-contenido {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .textarea-modal {
+    min-height: 80px;
+    padding: 0.75rem;
+  }
+
+  .modal-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .btn-modal {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+    min-width: 80px;
+  }
+
+  .botones-modal {
+    gap: 0.5rem;
+  }
+
+  /* Ocultar hints en móvil para ahorrar espacio */
+  .atajos-hint {
+    display: none;
+  }
+}
+
+/* ========== MODO OSCURO ========== */
+@media (prefers-color-scheme: dark) {
+  .modal-edicion {
+    background: #2d2d2d;
+    border-color: rgba(222, 0, 126, 0.2);
+  }
+
+  .modal-contenido {
+    color: #e0e0e0;
+  }
+
+  .textarea-container label,
+  .control-item label,
+  .vista-previa label {
+    color: #e0e0e0;
+  }
+
+  .textarea-modal {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  .textarea-modal:focus {
+    background: #444;
+    border-color: #de007e;
+  }
+
+  .preview-text {
+    background: #3a3a3a;
+    border-color: #555;
+  }
+
+  .modal-footer {
+    background: #3a3a3a;
+    border-top-color: #555;
+  }
+
+  .atajos-hint {
+    color: #bbb;
+  }
+
+  .color-value {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+
+  .unit-display {
+    background: rgba(222, 0, 126, 0.2);
+    color: #f0b7d1;
+  }
+}

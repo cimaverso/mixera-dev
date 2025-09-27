@@ -1,4 +1,4 @@
-// textosAPI.js - CORREGIDO con autenticación
+// textosAPI.js - CORREGIDO para manejar IDs temporales
 import api from "./api";
 
 class TextosAPIService {
@@ -73,6 +73,9 @@ class TextosAPIService {
         throw new Error('No autorizado. Inicia sesión nuevamente.');
       } else if (error.response?.status === 400) {
         throw new Error(error.response.data?.detail || 'Datos inválidos');
+      } else if (error.response?.status === 422) {
+        console.error('Datos enviados:', error.config?.data);
+        throw new Error('Error de validación en el servidor: ' + (error.response.data?.detail || 'Datos inválidos'));
       } else if (error.response?.status === 500) {
         throw new Error('Error del servidor. Intenta más tarde.');
       }
@@ -81,17 +84,22 @@ class TextosAPIService {
     }
   }
 
-  // Actualizar texto existente - CORREGIDO
+  // Actualizar texto existente - CORREGIDO para validar ID
   async updateTexto(id, textoData, token = null) {
     try {
       const headers = this.getAuthHeaders(token);
 
-      if (!id || !textoData.texto?.trim()) {
-        throw new Error('Faltan datos requeridos (id, texto)');
+      // VALIDACIÓN CRÍTICA: No intentar actualizar IDs temporales
+      if (!id || typeof id === 'string' && id.startsWith('temp_')) {
+        throw new Error('No se puede actualizar una anotación temporal. Debe crearse primero.');
+      }
+
+      if (!textoData.texto?.trim()) {
+        throw new Error('Faltan datos requeridos (texto)');
       }
 
       const payload = {
-        txt_idlibro: parseInt(textoData.libroId || textoData.pagina), // Fallback
+        txt_idlibro: parseInt(textoData.libroId),
         txt_pagina: parseInt(textoData.pagina),
         txt_x: parseFloat(textoData.x),
         txt_y: parseFloat(textoData.y),
@@ -123,13 +131,26 @@ class TextosAPIService {
       };
     } catch (error) {
       console.error('❌ Error actualizando texto:', error);
+      
+      // Mejorar mensaje de error para 422
+      if (error.response?.status === 422) {
+        console.error('Datos enviados para actualización:', error.config?.data);
+        throw new Error('Error de validación: ' + (error.response.data?.detail || 'Datos inválidos para actualización'));
+      }
+      
       throw new Error(error.response?.data?.detail || 'Error actualizando texto');
     }
   }
 
-  // Eliminar texto - CORREGIDO
+  // Eliminar texto - CORREGIDO para IDs temporales
   async deleteTexto(id, token = null) {
     try {
+      // No intentar eliminar IDs temporales del backend
+      if (typeof id === 'string' && id.startsWith('temp_')) {
+        console.log('🗑️ Eliminando anotación temporal localmente:', id);
+        return true;
+      }
+
       const headers = this.getAuthHeaders(token);
       
       console.log('📤 Eliminando texto del backend:', id);

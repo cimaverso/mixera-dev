@@ -19,9 +19,10 @@ import Tutoriales from "./Paginas/tutoriales/Tutoriales";
 import Estadisticas from "./Paginas/usuario/EstadisticasUsuario";
 import Soporte from "./Paginas/soporte/Soporte";
 
-import PrivateRoute from "./Componentes/PrivateRoute"; // importa el PrivateRoute
+import PrivateRoute from "./Componentes/PrivateRoute";
 
-import Lector from "./Componentes/Lector/Lector";
+// Importar LectorPDF correctamente
+import LectorPDF from "./Componentes/Lector/LectorPDF.jsx";
 import LectorPage from "./Paginas/lector/LectorPage.jsx";
 
 // Componentes de administrador
@@ -42,11 +43,34 @@ function App() {
         <Route path="/recuperar" element={<OlvideContrasena />} />
         <Route path="/restablecer" element={<NuevaContrasena />} />
         <Route path="/verificacion" element={<Verificacion />} />
-        <Route path="/lector" element={<Lector />} />
 
-        {/* Lector */}
-        <Route path="/biblioteca/:libroId" element={<LectorPage />} />
-        <Route path="/lector/:libroId" element={<LectorPage />} />
+        {/* Lector directo (para pruebas) */}
+        <Route 
+          path="/lector" 
+          element={
+            <PrivateRoute>
+              <LectorPDF />
+            </PrivateRoute>
+          } 
+        />
+
+        {/* Lector con parámetros de libro */}
+        <Route 
+          path="/biblioteca/:libroId" 
+          element={
+            <PrivateRoute>
+              <LectorPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/lector/:libroId" 
+          element={
+            <PrivateRoute>
+              <LectorPage />
+            </PrivateRoute>
+          } 
+        />
 
         {/* Rutas protegidas envueltas con PrivateRoute */}
         <Route

@@ -1,0 +1,414 @@
+/* src/Componentes/Lector/panelHerramientas.css */
+/* Estilos dedicados para el Panel de Herramientas Flotante - OPTIMIZADO MÓVIL */
+
+/* ========== PANEL DE HERRAMIENTAS FLOTANTE ========== */
+
+/* Contenedor principal del panel flotante */
+.panel-herramientas-flotante {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 800; /* Menor que bottom nav (1000) y header móvil (1200) */
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+/* Indicador de herramienta activa */
+.herramienta-activa-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(222, 0, 126, 0.1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333333;
+  min-width: 140px;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  background: #de007e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(222, 0, 126, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.indicator-text {
+  color: #333333;
+  font-weight: 600;
+}
+
+/* Contenedor de herramientas */
+.herramientas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.herramientas-container:hover {
+  transform: translateX(-2px);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones de herramientas flotantes */
+.herramienta-btn-flotante {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333333;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efecto hover para botones */
+.herramienta-btn-flotante:hover {
+  background: #f0b7d1;
+  border-color: #de007e;
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(222, 0, 126, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.herramienta-btn-flotante:hover svg {
+  transform: scale(1.1);
+  color: #b8005a;
+}
+
+.herramienta-btn-flotante:hover .herramienta-label {
+  color: #b8005a;
+  font-weight: 600;
+}
+
+/* Estado activo */
+.herramienta-btn-flotante.activo {
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  border-color: #b8005a;
+  color: white;
+  box-shadow: 
+    0 6px 20px rgba(222, 0, 126, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.herramienta-btn-flotante.activo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  pointer-events: none;
+}
+
+.herramienta-btn-flotante.activo .herramienta-label,
+.herramienta-btn-flotante.activo .herramienta-shortcut {
+  color: white;
+  font-weight: 600;
+}
+
+.herramienta-btn-flotante.activo svg {
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Efectos de presión */
+.herramienta-btn-flotante:active {
+  transform: translateY(0);
+  transition: transform 0.1s ease;
+}
+
+/* Etiquetas y atajos */
+.herramienta-label {
+  flex: 1;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.herramienta-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666666;
+  transition: all 0.2s ease;
+}
+
+.herramienta-btn-flotante:hover .herramienta-shortcut {
+  background: rgba(222, 0, 126, 0.1);
+  color: #b8005a;
+}
+
+.herramienta-btn-flotante.activo .herramienta-shortcut {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Información de atajos (solo visible en hover del panel) */
+.atajos-info-flotante {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-herramientas-flotante:hover .atajos-info-flotante {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.atajos-titulo {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #f0b7d1;
+}
+
+.atajo-item {
+  font-family: 'Courier New', monospace;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+/* ========== RESPONSIVE DESIGN PARA PANEL FLOTANTE ========== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .panel-herramientas-flotante {
+    position: fixed;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    flex-direction: column;
+    gap: 8px;
+    z-index: 800; /* Menor que bottom nav y header */
+  }
+
+  /* Ocultar indicador de herramienta activa en tablet */
+  .herramienta-activa-indicator {
+    display: none;
+  }
+
+  .herramientas-container {
+    padding: 10px;
+    border-radius: 20px;
+    gap: 6px;
+  }
+
+  .herramienta-btn-flotante {
+    min-width: 140px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+  }
+
+  .herramienta-shortcut {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .atajos-info-flotante {
+    display: none;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .panel-herramientas-flotante {
+    position: fixed;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    z-index: 800; /* Asegurar que esté debajo del header (1200) y bottom nav (1000) */
+  }
+
+  /* Ocultar completamente el indicador */
+  .herramienta-activa-indicator {
+    display: none;
+  }
+
+  .herramientas-container {
+    padding: 8px;
+    gap: 6px;
+    border-radius: 16px;
+  }
+
+  /* SOLO ICONOS en móvil */
+  .herramienta-btn-flotante {
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 14px;
+  }
+
+  /* Ocultar etiquetas de texto en móvil */
+  .herramienta-label {
+    display: none;
+  }
+
+  /* Ocultar atajos en móvil */
+  .herramienta-shortcut {
+    display: none;
+  }
+
+  /* Info de atajos oculta en móvil */
+  .atajos-info-flotante {
+    display: none;
+  }
+
+  /* Ajustar iconos para móvil */
+  .herramienta-btn-flotante svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Mobile muy pequeño */
+@media (max-width: 360px) {
+  .panel-herramientas-flotante {
+    right: 8px;
+  }
+
+  .herramienta-btn-flotante {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+  }
+
+  .herramienta-btn-flotante svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ========== ANIMACIONES ADICIONALES ========== */
+
+/* Efecto de entrada del panel */
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.panel-herramientas-flotante {
+  animation: panelFadeIn 0.5s ease-out;
+}
+
+/* Efecto de ondas al hacer clic */
+.herramienta-btn-flotante::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+
+.herramienta-btn-flotante:active::after {
+  width: 120%;
+  height: 120%;
+}
+
+/* ========== MODO OSCURO ========== */
+@media (prefers-color-scheme: dark) {
+  .herramienta-activa-indicator {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(222, 0, 126, 0.2);
+    color: #e0e0e0;
+  }
+
+  .herramientas-container {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .herramienta-btn-flotante {
+    background: rgba(40, 40, 40, 0.8);
+    color: #e0e0e0;
+  }
+
+  .herramienta-btn-flotante:hover {
+    background: rgba(222, 0, 126, 0.2);
+  }
+
+  .indicator-text {
+    color: #e0e0e0;
+  }
+
+  .herramienta-shortcut {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+  }
+}

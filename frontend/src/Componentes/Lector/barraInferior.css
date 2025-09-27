@@ -1,0 +1,519 @@
+/* src/Componentes/Lector/barraInferior.css */
+/* Estilos dedicados para la Barra Inferior del Lector PDF */
+
+/* ========== BARRA INFERIOR MODERNA ========== */
+
+.barra-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 8px 1.5rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 -4px 20px rgba(0, 0, 0, 0.3),
+    0 -1px 4px rgba(0, 0, 0, 0.2);
+  z-index: 900;
+  transition: all 0.3s ease;
+  flex-wrap: wrap;
+  min-height: 50px;
+}
+
+/* Efecto hover en toda la barra */
+.barra-inferior:hover {
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow: 
+    0 -6px 25px rgba(0, 0, 0, 0.4),
+    0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== GRUPOS DE CONTROLES ========== */
+
+.grupo-controles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  position: relative;
+}
+
+.grupo-controles::after {
+  content: '';
+  position: absolute;
+  right: -0.5rem;
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+.grupo-controles:last-child::after {
+  display: none;
+}
+
+/* ========== BOTONES GENERALES ========== */
+
+.barra-inferior button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.barra-inferior button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.barra-inferior button:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.barra-inferior button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.barra-inferior button.activo {
+  background: linear-gradient(135deg, #de007e, #b8005a);
+  border-color: #de007e;
+  box-shadow: 
+    0 0 20px rgba(222, 0, 126, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Efecto de ondas al hacer clic */
+.barra-inferior button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.barra-inferior button:active::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* ========== CONTROLES DE NAVEGACIÓN ========== */
+
+.navegacion {
+  gap: 0.5rem;
+}
+
+.navegacion button {
+  width: 44px;
+  height: 44px;
+}
+
+/* Botones de primera y última página */
+.navegacion button:first-child,
+.navegacion button:last-child {
+  width: 36px;
+  height: 36px;
+  opacity: 0.8;
+}
+
+.navegacion button:first-child:hover,
+.navegacion button:last-child:hover {
+  opacity: 1;
+}
+
+/* ========== INFORMACIÓN DE PÁGINA ========== */
+
+.pagina-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  min-width: auto;
+}
+
+.pagina-info:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.input-pagina {
+  width: 32px;
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.input-pagina:focus {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.input-pagina::-webkit-outer-spin-button,
+.input-pagina::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-pagina[type=number] {
+  -moz-appearance: textfield;
+}
+
+.separador-pagina {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.total-paginas {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* ========== CONTROLES DE ZOOM ========== */
+
+.zoom {
+  gap: 0.5rem;
+}
+
+.zoom-info {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.zoom-info:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.porcentaje-zoom {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  min-width: 40px;
+  text-align: center;
+  display: inline-block;
+}
+
+.select-zoom {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.select-zoom option {
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+}
+
+/* ========== CONTROLES DE VISTA ========== */
+
+.vista button {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+
+/* ========== CONTROLES ADICIONALES ========== */
+
+.adicionales button {
+  width: 36px;
+  height: 36px;
+  opacity: 0.8;
+  border-radius: 6px;
+}
+
+.adicionales button:hover {
+  opacity: 1;
+}
+
+.adicionales button:disabled {
+  opacity: 0.3;
+}
+
+/* ========== SEPARADORES ========== */
+
+.separador-vertical {
+  width: 1px;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  margin: 0 0.25rem;
+}
+
+/* ========== RESPONSIVE DESIGN OPTIMIZADO PARA MÓVIL ========== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .barra-inferior {
+    padding: 8px 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .grupo-controles {
+    gap: 0.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .barra-inferior button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .navegacion button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .navegacion button:first-child,
+  .navegacion button:last-child {
+    width: 30px;
+    height: 30px;
+  }
+
+  .separador-vertical {
+    height: 18px;
+    margin: 0 0.15rem;
+  }
+
+  .info-adicional {
+    display: none;
+  }
+}
+
+/* Mobile - OPTIMIZADO */
+@media (max-width: 480px) {
+  .barra-inferior {
+    padding: 6px 0.5rem;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    min-height: 45px;
+  }
+
+  .grupo-controles {
+    gap: 0.15rem;
+    padding: 0 0.15rem;
+  }
+
+  .grupo-controles::after {
+    display: none;
+  }
+
+  .barra-inferior button {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+  }
+
+  .navegacion {
+    gap: 0.15rem;
+  }
+
+  .navegacion button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .navegacion button:first-child,
+  .navegacion button:last-child {
+    width: 26px;
+    height: 26px;
+  }
+
+  .pagina-info {
+    padding: 0 0.4rem;
+  }
+
+  .input-pagina {
+    width: 28px;
+    font-size: 0.75rem;
+    padding: 0.15rem;
+  }
+
+  .zoom {
+    gap: 0.15rem;
+  }
+
+  .zoom-info {
+    padding: 0.2rem 0.4rem;
+  }
+
+  .porcentaje-zoom {
+    font-size: 0.75rem;
+    min-width: 28px;
+  }
+
+  .separador-vertical {
+    display: none;
+  }
+
+  .vista,
+  .adicionales {
+    gap: 0.15rem;
+  }
+
+  /* Mobile muy pequeño - ULTRA COMPACTO */
+  @media (max-width: 360px) {
+    .barra-inferior {
+      padding: 5px 0.4rem;
+      gap: 0.2rem;
+      min-height: 40px;
+    }
+
+    .grupo-controles {
+      gap: 0.1rem;
+      padding: 0 0.1rem;
+    }
+
+    .barra-inferior button {
+      width: 28px;
+      height: 28px;
+    }
+
+    .navegacion button {
+      width: 32px;
+      height: 32px;
+    }
+
+    .navegacion button:first-child,
+    .navegacion button:last-child {
+      width: 24px;
+      height: 24px;
+    }
+
+    .input-pagina {
+      width: 24px;
+      font-size: 0.7rem;
+    }
+
+    .porcentaje-zoom {
+      font-size: 0.7rem;
+      min-width: 24px;
+    }
+
+    .adicionales button:nth-child(n+3) {
+      display: none;
+    }
+    
+    .vista button:nth-child(3) {
+      display: none;
+    }
+  }
+}
+
+/* ========== ANIMACIONES ESPECIALES ========== */
+
+/* Efecto de aparición suave */
+@keyframes barraSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.barra-inferior {
+  animation: barraSlideUp 0.4s ease-out;
+}
+
+/* Indicador de carga para operaciones */
+.barra-inferior.cargando::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent,
+    #de007e,
+    transparent
+  );
+  animation: loadingBar 2s ease-in-out infinite;
+}
+
+@keyframes loadingBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ========== MODO OSCURO MEJORADO ========== */
+@media (prefers-color-scheme: dark) {
+  .barra-inferior {
+    background: rgba(0, 0, 0, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .barra-inferior:hover {
+    background: rgba(0, 0, 0, 0.98);
+  }
+
+  .barra-inferior button {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .barra-inferior button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
