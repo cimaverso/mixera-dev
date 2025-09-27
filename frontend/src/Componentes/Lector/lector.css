@@ -1,4 +1,4 @@
-/* src/Componentes/Lector/lector.css - VERSIÓN COMPLETA CON CAVEAT */
+/* src/Componentes/Lector/lector.css - VERSIÃ“N COMPLETA CON CAVEAT */
 
 /* ========== VARIABLES CSS ========== */
 :root {
@@ -51,7 +51,7 @@
   overflow: hidden;
 }
 
-/* ========== ÁREA DEL VISOR ========== */
+/* ========== ÃREA DEL VISOR ========== */
 .visor-container {
   flex: 1;
   position: relative;
@@ -67,7 +67,7 @@
   background-size: 20px 20px;
 }
 
-/* Wrapper del visor PDF con posición relativa para anotaciones */
+/* Wrapper del visor PDF con posiciÃ³n relativa para anotaciones */
 .visor-pdf-wrapper {
   position: relative;
   display: inline-block;
@@ -139,7 +139,7 @@
 /* ========== ANOTACIONES CON FUENTE CAVEAT ========== */
 .anotacion-wrapper {
   transition: var(--transition-fast);
-  /* Asegurar que los wrappers mantengan su posición */
+  /* Asegurar que los wrappers mantengan su posiciÃ³n */
   pointer-events: auto;
 }
 
@@ -165,7 +165,7 @@
   z-index: 1002;
 }
 
-/* NUEVO: Estilos específicos para contenido de texto con Caveat */
+/* NUEVO: Estilos especÃ­ficos para contenido de texto con Caveat */
 .contenido-texto-caveat {
   font-family: var(--font-caveat);
   font-optical-sizing: auto;
@@ -238,7 +238,7 @@
   transform: scale(1.05);
 }
 
-/* ========== CONTROLES DE SELECCIÓN MEJORADOS ========== */
+/* ========== CONTROLES DE SELECCIÃ“N MEJORADOS ========== */
 .controles-seleccion {
   position: absolute;
   top: -35px;
@@ -309,7 +309,7 @@
   opacity: 1;
 }
 
-/* ========== ESTADOS DE ANOTACIÓN CON TRANSPARENCIA ========== */
+/* ========== ESTADOS DE ANOTACIÃ“N CON TRANSPARENCIA ========== */
 .anotacion-texto:hover:not(.editando) {
   transform: scale(1.02);
   box-shadow: 0 2px 12px rgba(222, 0, 126, 0.2) !important;
@@ -326,7 +326,7 @@
   box-shadow: 0 2px 12px rgba(222, 0, 126, 0.3) !important;
 }
 
-/* NUEVO: Estados de transparencia para integración */
+/* NUEVO: Estados de transparencia para integraciÃ³n */
 .anotacion-texto.guardada {
   background-color: transparent !important;
   border: 1px solid transparent !important;
@@ -403,7 +403,7 @@
   background-color: var(--color-primary-dark);
 }
 
-/* ========== CONTENEDOR DE PÁGINAS ========== */
+/* ========== CONTENEDOR DE PÃGINAS ========== */
 .contenedor-paginas {
   display: flex;
   align-items: flex-start;
@@ -494,9 +494,9 @@
     padding-bottom: 100px;
   }
 
-  /* En lector móvil: ajustar padding superior para header */
+  /* En lector mÃ³vil: ajustar padding superior para header */
   .en-lector-pdf .visor-container {
-    padding-top: 80px; /* Espacio para header móvil */
+    padding-top: 80px; /* Espacio para header mÃ³vil */
     padding-bottom: 100px; /* Espacio para barra inferior del lector */
   }
 }
@@ -538,7 +538,7 @@
   }
 }
 
-/* AGREGAR ESTAS LÍNEAS AL FINAL DE TU lector.css EXISTENTE */
+/* AGREGAR ESTAS LÃNEAS AL FINAL DE TU lector.css EXISTENTE */
 
 /* ========== FUENTE CAVEAT PARA ANOTACIONES ========== */
 .contenido-texto-caveat,

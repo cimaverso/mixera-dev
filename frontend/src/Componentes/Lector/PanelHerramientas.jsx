@@ -1,4 +1,4 @@
-// src/Componentes/Lector/PanelHerramientas.jsx - VERSIÓN FLOTANTE MEJORADA
+// src/Componentes/Lector/PanelHerramientas.jsx - VERSIÃ“N FLOTANTE MEJORADA
 import React from "react";
 import "./panelHerramientas.css";
 
@@ -14,7 +14,7 @@ export default function PanelHerramientas({
 }) {
 
   /**
-   * Definición de herramientas principales
+   * DefiniciÃ³n de herramientas principales
    */
   const herramientas = [
     {
@@ -70,7 +70,7 @@ export default function PanelHerramientas({
    */
   React.useEffect(() => {
     const manejarTeclas = (event) => {
-      // Solo activar si no se está editando texto
+      // Solo activar si no se estÃ¡ editando texto
       if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT') {
         return;
       }
@@ -126,7 +126,7 @@ export default function PanelHerramientas({
   };
 
   return (
-    <div className="panel-herramientas-flotante" role="toolbar" aria-label="Herramientas de anotación">
+    <div className="panel-herramientas-flotante" role="toolbar" aria-label="Herramientas de anotaciÃ³n">
       
       {/* Indicador de herramienta activa */}
       <div className="herramienta-activa-indicator">
@@ -141,7 +141,7 @@ export default function PanelHerramientas({
         {herramientas.map(renderizarHerramienta)}
       </div>
 
-      {/* Información de atajos (solo visible en hover del panel) */}
+      {/* InformaciÃ³n de atajos (solo visible en hover del panel) */}
       <div className="atajos-info-flotante">
         <div className="atajos-titulo">Atajos:</div>
         <div className="atajo-item">C - Cursor</div>

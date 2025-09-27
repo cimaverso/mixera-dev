@@ -1,10 +1,10 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN CORREGIDA SIN ROMPER TOUCH
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN CORREGIDA CON SEPARACIÓN DE FUNCIONES MÓVIL
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
 /**
  * Componente individual para anotaciones de texto con fuente Caveat y transparencia
- * SIN ROMPER EL SOPORTE TÁCTIL DEL SISTEMA
+ * SEPARACIÓN CLARA: Doble toque para editar, mantener presionado para arrastrar
  */
 const TextoAnotacion = ({
   anotacion,
@@ -33,10 +33,15 @@ const TextoAnotacion = ({
   const [dimensionesIniciales, setDimensionesIniciales] = useState(null);
   const [posicionInicialMouse, setPosicionInicialMouse] = useState(null);
   
+  // NUEVOS ESTADOS PARA SEPARAR FUNCIONES MÓVIL (solo afecta móvil)
+  const [toqueEstado, setToqueEstado] = useState({
+    ultimoToque: 0,
+    timerDobleToque: null
+  });
+  
   const modalTextareaRef = useRef(null);
   const contenedorRef = useRef(null);
   const [ultimoClic, setUltimoClic] = useState(0);
-  const [timerToque, setTimerToque] = useState(null);
 
   /**
    * Determinar el peso de fuente según el tamaño
@@ -56,48 +61,81 @@ const TextoAnotacion = ({
   }, [anotacion.metadatos?.esNueva, modoEdicion, mostrarModal]);
 
   /**
-   * CORREGIDO: Maneja eventos de toque SOLO en la anotación, no interfiere con el scroll del visor
+   * Limpiar timers de toque
+   */
+  const limpiarTimersToques = useCallback(() => {
+    if (toqueEstado.timerDobleToque) {
+      clearTimeout(toqueEstado.timerDobleToque);
+    }
+    setToqueEstado(prev => ({
+      ...prev,
+      timerDobleToque: null
+    }));
+  }, [toqueEstado.timerDobleToque]);
+
+  /**
+   * CORREGIDO: Maneja eventos de toque SOLO en móvil con separación clara
    */
   const manejarTouchStart = useCallback((event) => {
     if (!esDispositiveMovil) return;
 
-    // IMPORTANTE: Solo prevenir comportamiento por defecto si es específicamente en redimensión
+    // Si está en redimensionamiento o modal, no procesar
     if (redimensionando || mostrarModal) {
       event.stopPropagation();
       return;
     }
 
+    // Si es nueva anotación en modo edición, no interferir
     if (modoEdicion && anotacion.metadatos?.esNueva) {
       return;
     }
 
-    // NO PREVENIR event.preventDefault() aquí para mantener scroll/zoom del sistema
-    if (timerToque) {
-      clearTimeout(timerToque);
-    }
+    // Limpiar timers previos
+    limpiarTimersToques();
 
-    const nuevoTimer = setTimeout(() => {
+    const ahora = Date.now();
+    const tiempoEntreToque = ahora - toqueEstado.ultimoToque;
+
+    // DETECTAR DOBLE TOQUE (para editar)
+    if (tiempoEntreToque < 300 && tiempoEntreToque > 50) {
+      // Es un doble toque - abrir modal
+      event.preventDefault();
+      event.stopPropagation();
+      
       setMostrarModal(true);
       onIniciarEdicion?.();
-    }, 800);
+      
+      setToqueEstado(prev => ({
+        ...prev,
+        ultimoToque: ahora,
+        contadorToques: 0
+      }));
+      
+      return;
+    }
 
-    setTimerToque(nuevoTimer);
-  }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, timerToque, onIniciarEdicion]);
+    // PRIMER TOQUE: Solo registrar tiempo para detectar doble toque
+    setToqueEstado(prev => ({
+      ...prev,
+      ultimoToque: ahora,
+      contadorToques: 1
+    }));
+
+    // Para arrastre: usar la funcionalidad original del sistema (onTouchStart del padre)
+    // NO prevenir el comportamiento por defecto aquí
+
+  }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, toqueEstado.ultimoToque, limpiarTimersToques, onIniciarEdicion]);
 
   /**
-   * Maneja cuando termina el toque
+   * Manejo del fin de toque - solo limpiar estados
    */
   const manejarTouchEnd = useCallback((event) => {
     if (!esDispositiveMovil) return;
-
-    if (timerToque) {
-      clearTimeout(timerToque);
-      setTimerToque(null);
-    }
-  }, [esDispositiveMovil, timerToque]);
+    limpiarTimersToques();
+  }, [esDispositiveMovil, limpiarTimersToques]);
 
   /**
-   * Maneja clics en dispositivos no móviles
+   * Maneja clics en dispositivos no móviles (sin cambios)
    */
   const manejarClick = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -122,7 +160,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, ultimoClic, modoEdicion, anotacion.metadatos?.esNueva, onIniciarEdicion, redimensionando]);
 
   /**
-   * Controla cuando se puede arrastrar
+   * Controla cuando se puede arrastrar (sin cambios)
    */
   const manejarMouseDown = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -149,10 +187,9 @@ const TextoAnotacion = ({
   }, []);
 
   /**
-   * CORREGIDO: Inicia el redimensionamiento SOLO cuando es necesario
+   * Inicia el redimensionamiento (sin cambios)
    */
   const iniciarRedimension = useCallback((event, tipo) => {
-    // IMPORTANTE: Solo aquí prevenir el comportamiento por defecto
     event.stopPropagation();
     event.preventDefault();
     
@@ -172,7 +209,7 @@ const TextoAnotacion = ({
   }, [obtenerCoordenadas]);
 
   /**
-   * Maneja el movimiento durante redimensionamiento
+   * Maneja el movimiento durante redimensionamiento (sin cambios)
    */
   const manejarMovimientoRedimension = useCallback((event) => {
     if (!redimensionando || !tipoRedimension || !dimensionesIniciales || !posicionInicialMouse) {
@@ -208,7 +245,7 @@ const TextoAnotacion = ({
   }, [redimensionando, tipoRedimension, dimensionesIniciales, posicionInicialMouse, obtenerCoordenadas]);
 
   /**
-   * Finaliza el redimensionamiento
+   * Finaliza el redimensionamiento (sin cambios)
    */
   const finalizarRedimension = useCallback(async () => {
     if (!redimensionando || !contenedorRef.current) return;
@@ -246,7 +283,7 @@ const TextoAnotacion = ({
   }, [redimensionando, anotacion, onGuardar]);
 
   /**
-   * Event listeners para redimensionamiento global
+   * Event listeners para redimensionamiento global (sin cambios)
    */
   useEffect(() => {
     if (redimensionando) {
@@ -289,18 +326,16 @@ const TextoAnotacion = ({
   }, [redimensionando, manejarMovimientoRedimension, finalizarRedimension, esDispositiveMovil]);
 
   /**
-   * Limpiar timer al desmontar
+   * NUEVO: Limpiar timers al desmontar
    */
   useEffect(() => {
     return () => {
-      if (timerToque) {
-        clearTimeout(timerToque);
-      }
+      limpiarTimersToques();
     };
-  }, [timerToque]);
+  }, [limpiarTimersToques]);
 
   /**
-   * Guarda la anotación
+   * Guarda la anotación (sin cambios)
    */
   const guardarCambios = useCallback(async () => {
     if (!textoLocal.trim()) {
@@ -341,7 +376,7 @@ const TextoAnotacion = ({
   }, [textoLocal, fontSizeLocal, colorLocal, anotacion, onGuardar]);
 
   /**
-   * Cancela la edición
+   * Cancela la edición (sin cambios)
    */
   const cancelarEdicion = useCallback(() => {
     if (anotacion.metadatos?.esNueva) {
@@ -357,7 +392,7 @@ const TextoAnotacion = ({
   }, [anotacion, onEliminar]);
 
   /**
-   * Elimina la anotación
+   * Elimina la anotación (sin cambios)
    */
   const eliminarAnotacion = useCallback(() => {
     const mensaje = esDispositiveMovil 
@@ -370,7 +405,7 @@ const TextoAnotacion = ({
   }, [onEliminar, esDispositiveMovil]);
 
   /**
-   * Maneja teclas del modal
+   * Maneja teclas del modal (sin cambios)
    */
   const manejarTeclas = useCallback((event) => {
     if (!mostrarModal) return;
@@ -394,7 +429,7 @@ const TextoAnotacion = ({
   }, [mostrarModal, guardarCambios, cancelarEdicion]);
 
   /**
-   * Auto-focus en modal
+   * Auto-focus en modal (sin cambios)
    */
   useEffect(() => {
     if (mostrarModal && modalTextareaRef.current) {
@@ -406,7 +441,7 @@ const TextoAnotacion = ({
   }, [mostrarModal]);
 
   /**
-   * Event listeners
+   * Event listeners (sin cambios)
    */
   useEffect(() => {
     if (mostrarModal) {
@@ -416,7 +451,7 @@ const TextoAnotacion = ({
   }, [mostrarModal, manejarTeclas]);
 
   /**
-   * ESTILOS CORREGIDOS: Con fuente Caveat y transparencia
+   * ESTILOS (sin cambios)
    */
   const fontSizeEscalado = Math.max(10, fontSizeLocal * zoom);
   const pesoFuente = obtenerPesoFuente(fontSizeLocal);
@@ -433,7 +468,6 @@ const TextoAnotacion = ({
     height: '100%',
     padding: '4px 6px',
     pointerEvents: redimensionando ? 'none' : 'auto',
-    // Aplicar fuente Caveat
     fontFamily: '"Caveat", cursive',
     fontOpticalSizing: 'auto',
     fontWeight: pesoFuente,
@@ -443,7 +477,6 @@ const TextoAnotacion = ({
   const yaGuardada = !anotacion.metadatos?.esNueva;
   const enModoEdicion = modoEdicion && yaGuardada;
   
-  // CORREGIDO: Estilos del contenedor SIN romper touch
   const estilosContenedor = {
     width: '100%',
     height: '100%',
@@ -454,7 +487,7 @@ const TextoAnotacion = ({
         : (anotacionGuardada ? '1px solid transparent' : '1px solid rgba(0,0,0,0.1)'),
     borderRadius: '4px',
     backgroundColor: anotacionGuardada 
-      ? 'transparent' // TRANSPARENTE cuando está guardada
+      ? 'transparent'
       : enModoEdicion 
         ? 'rgba(255, 255, 255, 0.1)'
         : anotacion.metadatos?.esNueva
@@ -472,11 +505,10 @@ const TextoAnotacion = ({
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     userSelect: redimensionando ? 'none' : 'auto',
-    // CORREGIDO: NO interferir con touch del sistema
     touchAction: redimensionando ? 'none' : 'auto'
   };
 
-  // Estilos para handles
+  // Estilos para handles (sin cambios)
   const estiloHandleBase = {
     position: 'absolute',
     backgroundColor: '#de007e',
@@ -493,7 +525,7 @@ const TextoAnotacion = ({
     secundario: { width: '8px', height: '20px' }
   };
 
-  // CORREGIDO: Eventos que NO interfieren con el sistema
+  // EVENTOS: Mantener funcionalidad original para desktop, doble toque para móvil
   const eventosContenedor = {
     ...(esDispositiveMovil ? {
       onTouchStart: manejarTouchStart,
@@ -575,7 +607,25 @@ const TextoAnotacion = ({
           </>
         )}
 
-        {/* Indicadores visuales */}
+        {/* INDICADORES VISUALES simplificados para móvil */}
+        {esDispositiveMovil && seleccionada && anotacionGuardada && (
+          <div style={{
+            position: 'absolute',
+            bottom: '-25px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: '10px',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '3px 8px',
+            borderRadius: '4px',
+            whiteSpace: 'nowrap'
+          }}>
+            Doble toque para editar
+          </div>
+        )}
+
+        {/* Indicadores para modo edición */}
         {enModoEdicion && (
           <div style={{
             position: 'absolute',
@@ -600,42 +650,29 @@ const TextoAnotacion = ({
           </div>
         )}
 
-        {seleccionada && anotacionGuardada && (
+        {/* Indicador cuando está iniciando arrastre */}
+        {toqueEstado.iniciandoArrastre && (
           <div style={{
             position: 'absolute',
-            bottom: '-25px',
+            top: '50%',
             left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '10px',
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(222, 0, 126, 0.9)',
             color: 'white',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            whiteSpace: 'nowrap'
+            padding: '8px 12px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            whiteSpace: 'nowrap',
+            zIndex: 1000,
+            pointerEvents: 'none'
           }}>
-            {esDispositiveMovil ? 'Mantén presionado para opciones' : 'Doble clic para opciones'}
-          </div>
-        )}
-
-        {seleccionada && !modoEdicion && !anotacionGuardada && (
-          <div style={{
-            position: 'absolute',
-            bottom: '-25px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '10px',
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            whiteSpace: 'nowrap'
-          }}>
-            {esDispositiveMovil ? 'Mantén presionado para opciones' : 'Doble clic para opciones'}
+            🔄 Modo arrastre activado
           </div>
         )}
       </div>
 
-      {/* Modal de edición con fuente Caveat */}
+      {/* Modal de edición (sin cambios) */}
       {mostrarModal && (
         <div className="modal-overlay" onClick={cancelarEdicion}>
           <div className="modal-edicion" onClick={(e) => e.stopPropagation()}>
