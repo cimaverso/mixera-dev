@@ -1,4 +1,4 @@
-// src/Componentes/Lector/LectorPDF.jsx - VERSIÃ“N LIMPIA
+// src/Componentes/Lector/LectorPDF.jsx - VERSIÓN CORREGIDA CON COORDENADAS UNIFICADAS
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LayoutUsuario from "../../Componentes/LayoutUsuario";
@@ -12,12 +12,13 @@ import "./lector.css";
 
 /**
  * Componente principal del lector de PDF con sistema de anotaciones
+ * CORREGIDO: Coordenadas consistentes entre móvil y desktop
  */
 const LectorPDF = ({ libroId: libroIdProp }) => {
   const { libroId: libroIdURL } = useParams();
   const navigate = useNavigate();
 
-  // Usar prop si estÃ¡ disponible, sino usar URL param
+  // Usar prop si está disponible, sino usar URL param
   const libroId = libroIdProp || libroIdURL;
 
   // Referencias de componentes
@@ -30,7 +31,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados de navegaciÃ³n y visualizaciÃ³n
+  // Estados de navegación y visualización
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [zoom, setZoom] = useState(1.0);
@@ -41,7 +42,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [anotacionSeleccionada, setAnotacionSeleccionada] = useState(null);
   const [creandoAnotacion, setCreandoAnotacion] = useState(false);
 
-  // Dimensiones del PDF para cÃ¡lculos de coordenadas
+  // NUEVO: Dimensiones base del PDF para coordenadas consistentes
   const [dimensionesPDF, setDimensionesPDF] = useState({
     ancho: 0,
     alto: 0,
@@ -51,17 +52,18 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [anotacionesCargadas, setAnotacionesCargadas] = useState(false);
 
   /**
-   * Convierte anotaciÃ³n del formato backend al formato interno
+   * CORREGIDO: Convierte anotación del formato backend al formato interno
+   * NUEVO: Usa dimensiones base consistentes
    */
   const convertirAnotacionBackend = useCallback(
     (anotacionBackend) => {
-      // Validar que tenga ID vÃ¡lido
+      // Validar que tenga ID válido
       if (!anotacionBackend.id && !anotacionBackend.txt_id) {
         return null;
       }
 
-      // Usar dimensiones por defecto si PDF no estÃ¡ cargado aÃºn
-      const anchoBase = dimensionesPDF.ancho || 595; // A4 estÃ¡ndar
+      // CORREGIDO: Usar dimensiones base del PDF real (no valores por defecto)
+      const anchoBase = dimensionesPDF.ancho || 595;
       const altoBase = dimensionesPDF.alto || 842;
 
       // Obtener datos del backend (puede venir en diferentes formatos)
@@ -69,7 +71,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       const x = anotacionBackend.x || anotacionBackend.txt_x || 0;
       const y = anotacionBackend.y || anotacionBackend.txt_y || 0;
       const texto =
-        anotacionBackend.texto || anotacionBackend.txt_texto || "Texto vacÃ­o";
+        anotacionBackend.texto || anotacionBackend.txt_texto || "Texto vacío";
       const width = anotacionBackend.width || anotacionBackend.txt_ancho || 200;
       const height = anotacionBackend.height || anotacionBackend.txt_alto || 60;
       const fontSize =
@@ -81,14 +83,14 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         id: id,
         tipo: "texto",
         pagina: parseInt(pagina),
-        // Convertir coordenadas absolutas a relativas (0-1)
+        // NUEVO: Asegurar que las coordenadas estén normalizadas correctamente
         posicion: {
           x: Math.max(0, Math.min(1, parseFloat(x) / anchoBase)),
           y: Math.max(0, Math.min(1, parseFloat(y) / altoBase)),
         },
         dimensiones: {
-          ancho: Math.max(0.1, Math.min(0.8, parseFloat(width) / anchoBase)),
-          alto: Math.max(0.05, Math.min(0.5, parseFloat(height) / altoBase)),
+          ancho: Math.max(0.05, Math.min(0.9, parseFloat(width) / anchoBase)),
+          alto: Math.max(0.02, Math.min(0.8, parseFloat(height) / altoBase)),
         },
         contenido: {
           texto: texto,
@@ -133,12 +135,28 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
 
       setAnotaciones(anotacionesConvertidas);
       setAnotacionesCargadas(true);
+      
+      // NUEVO: Debug de coordenadas cargadas
+      if (process.env.NODE_ENV === 'development' && anotacionesConvertidas.length > 0) {
+        console.group('🔄 Anotaciones cargadas del backend');
+        console.log('Dimensiones PDF base:', dimensionesPDF);
+        console.log('Anotaciones convertidas:', anotacionesConvertidas.length);
+        anotacionesConvertidas.forEach((anotacion, index) => {
+          console.log(`Anotación ${index + 1}:`, {
+            id: anotacion.id,
+            posicionRelativa: anotacion.posicion,
+            dimensionesRelativas: anotacion.dimensiones,
+            texto: anotacion.contenido.texto.substring(0, 30) + '...'
+          });
+        });
+        console.groupEnd();
+      }
     } catch (error) {
       setAnotaciones([]);
       setAnotacionesCargadas(true);
-      // No es crÃ­tico, continÃºa sin anotaciones
+      // No es crítico, continúa sin anotaciones
     }
-  }, [libroId, convertirAnotacionBackend]);
+  }, [libroId, convertirAnotacionBackend, dimensionesPDF]);
 
   /**
    * Carga inicial del libro y sus datos
@@ -146,7 +164,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   useEffect(() => {
     const cargarLibro = async () => {
       if (!libroId) {
-        setError("ID de libro no vÃ¡lido");
+        setError("ID de libro no válido");
         setCargando(false);
         return;
       }
@@ -154,7 +172,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       try {
         setCargando(true);
 
-        // Cargar informaciÃ³n del libro
+        // Cargar información del libro
         const { data: libroData } = await getLibroById(libroId);
         setLibro(libroData);
 
@@ -172,7 +190,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, [libroId]);
 
   /**
-   * Cargar anotaciones cuando las dimensiones del PDF estÃ©n disponibles
+   * CORREGIDO: Cargar anotaciones cuando las dimensiones del PDF estén disponibles
    */
   useEffect(() => {
     const debeCagar =
@@ -182,22 +200,25 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       libroId;
 
     if (debeCagar) {
+      console.log('📏 Dimensiones PDF disponibles, cargando anotaciones...', dimensionesPDF);
       cargarAnotaciones();
     }
   }, [dimensionesPDF, anotacionesCargadas, libroId, cargarAnotaciones]);
 
   /**
-   * Convierte anotaciÃ³n del formato interno al formato backend
+   * CORREGIDO: Convierte anotación del formato interno al formato backend
+   * NUEVO: Usa dimensiones base consistentes
    */
   const convertirAnotacionInterno = useCallback(
     (anotacionInterna) => {
+      // CORREGIDO: Usar dimensiones base reales del PDF
       const anchoBase = dimensionesPDF.ancho || 595;
       const altoBase = dimensionesPDF.alto || 842;
 
-      return {
+      const datosBackend = {
         libroId: parseInt(libroId),
         pagina: anotacionInterna.pagina,
-        // Convertir coordenadas relativas a absolutas
+        // NUEVO: Convertir coordenadas relativas a absolutas usando dimensiones base
         x: Math.round(anotacionInterna.posicion.x * anchoBase),
         y: Math.round(anotacionInterna.posicion.y * altoBase),
         texto: anotacionInterna.contenido.texto,
@@ -205,12 +226,26 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         height: Math.round(anotacionInterna.dimensiones.alto * altoBase),
         fontSize: anotacionInterna.contenido.fontSize || 14,
       };
+
+      // NUEVO: Debug de conversión
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Convirtiendo anotación para backend:', {
+          posicionRelativa: anotacionInterna.posicion,
+          posicionAbsoluta: { x: datosBackend.x, y: datosBackend.y },
+          dimensionesBase: { ancho: anchoBase, alto: altoBase },
+          dimensionesRelativas: anotacionInterna.dimensiones,
+          dimensionesAbsolutas: { width: datosBackend.width, height: datosBackend.height }
+        });
+      }
+
+      return datosBackend;
     },
     [libroId, dimensionesPDF]
   );
 
   /**
-   * Crea una nueva anotaciÃ³n de texto
+   * CORREGIDO: Crea una nueva anotación de texto
+   * NUEVO: Usa dimensiones base consistentes
    */
   const crearAnotacion = useCallback(
     async (posicionClick) => {
@@ -220,18 +255,22 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       }
 
       try {
-        // Crear anotaciÃ³n temporal en formato interno
+        // CORREGIDO: Usar dimensiones base del PDF para cálculo consistente
+        const dimensionesBase = dimensionesPDF;
+        
         const nuevaAnotacion = {
           id: `temp_${Date.now()}`, // ID temporal
           tipo: "texto",
           pagina: paginaActual,
           posicion: {
-            x: posicionClick.x / (dimensionesPDF.ancho * zoom),
-            y: posicionClick.y / (dimensionesPDF.alto * zoom),
+            // NUEVO: Calcular coordenadas relativas usando dimensiones base
+            x: posicionClick.x / (dimensionesBase.ancho * zoom),
+            y: posicionClick.y / (dimensionesBase.alto * zoom),
           },
           dimensiones: {
-            ancho: 200 / (dimensionesPDF.ancho * zoom),
-            alto: 60 / (dimensionesPDF.alto * zoom),
+            // NUEVO: Dimensiones relativas basadas en dimensiones base
+            ancho: 200 / dimensionesBase.ancho,
+            alto: 60 / dimensionesBase.alto,
           },
           contenido: {
             texto: "Nuevo texto",
@@ -245,19 +284,30 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
           },
         };
 
+        // NUEVO: Debug de creación
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✨ Creando nueva anotación:', {
+            posicionClick: posicionClick,
+            dimensionesBase: dimensionesBase,
+            zoom: zoom,
+            posicionRelativa: nuevaAnotacion.posicion,
+            dimensionesRelativas: nuevaAnotacion.dimensiones
+          });
+        }
+
         // Agregar a la lista local inmediatamente
         setAnotaciones((prev) => [...prev, nuevaAnotacion]);
         setAnotacionSeleccionada(nuevaAnotacion.id);
         setCreandoAnotacion(false);
       } catch (error) {
-        setError("Error al crear la anotaciÃ³n");
+        setError("Error al crear la anotación");
       }
     },
     [herramientaActiva, paginaActual, dimensionesPDF, zoom]
   );
 
   /**
-   * FunciÃ³n utilitaria para determinar si una anotaciÃ³n es nueva
+   * Función utilitaria para determinar si una anotación es nueva
    */
   const esAnotacionNueva = useCallback((anotacion) => {
     const tieneIdTemporal =
@@ -268,13 +318,13 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * Guarda una anotaciÃ³n en el backend
+   * Guarda una anotación en el backend
    */
   const guardarAnotacion = useCallback(
     async (anotacion) => {
       try {
         if (!anotacion.contenido.texto.trim()) {
-          throw new Error("El texto no puede estar vacÃ­o");
+          throw new Error("El texto no puede estar vacío");
         }
 
         const datosBackend = convertirAnotacionInterno(anotacion);
@@ -297,6 +347,15 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         setAnotaciones((prev) =>
           prev.map((a) => (a.id === anotacion.id ? anotacionConvertida : a))
         );
+
+        // NUEVO: Debug de guardado
+        if (process.env.NODE_ENV === 'development') {
+          console.log('💾 Anotación guardada:', {
+            esNueva: esNueva,
+            datosBackend: datosBackend,
+            anotacionConvertida: anotacionConvertida
+          });
+        }
       } catch (error) {
         setError(`Error al guardar: ${error.message}`);
         throw error;
@@ -306,7 +365,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   );
 
   /**
-   * Elimina una anotaciÃ³n
+   * Elimina una anotación
    */
   const eliminarAnotacion = useCallback(
     async (idAnotacion) => {
@@ -321,14 +380,14 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         setAnotaciones((prev) => prev.filter((a) => a.id !== idAnotacion));
         setAnotacionSeleccionada(null);
       } catch (error) {
-        setError("Error al eliminar la anotaciÃ³n");
+        setError("Error al eliminar la anotación");
       }
     },
     [anotaciones, esAnotacionNueva]
   );
 
   /**
-   * Maneja cambios de pÃ¡gina
+   * Maneja cambios de página
    */
   const cambiarPagina = useCallback(
     (nuevaPagina) => {
@@ -349,7 +408,8 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * Callback cuando las dimensiones del PDF cambian
+   * NUEVO: Callback cuando las dimensiones del PDF cambian
+   * CRÍTICO: Estas son las dimensiones base para coordenadas consistentes
    */
   const manejarCambioDimensiones = useCallback((nuevasDimensiones) => {
     setDimensionesPDF((prev) => {
@@ -357,6 +417,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         prev.ancho !== nuevasDimensiones.ancho ||
         prev.alto !== nuevasDimensiones.alto
       ) {
+        console.log('📏 Dimensiones PDF actualizadas:', nuevasDimensiones);
         return nuevasDimensiones;
       }
       return prev;
@@ -364,7 +425,35 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * Obtiene anotaciones de la pÃ¡gina actual
+   * NUEVO: Función de debug para coordenadas (opcional)
+   */
+  const debugCoordenadas = useCallback((anotacion, evento = 'debug') => {
+    if (process.env.NODE_ENV === 'development') {
+      console.group(`🎯 Debug Coordenadas - ${evento}`);
+      console.log('Dimensiones PDF base:', dimensionesPDF);
+      console.log('Zoom actual:', zoom);
+      console.log('Posición relativa:', anotacion.posicion);
+      console.log('Dimensiones relativas:', anotacion.dimensiones);
+      
+      // Calcular píxeles para verificación
+      const pixeles = {
+        x: anotacion.posicion.x * dimensionesPDF.ancho * zoom,
+        y: anotacion.posicion.y * dimensionesPDF.alto * zoom
+      };
+      console.log('Posición en píxeles:', pixeles);
+      
+      // Calcular coordenadas absolutas para backend
+      const absolutas = {
+        x: Math.round(anotacion.posicion.x * dimensionesPDF.ancho),
+        y: Math.round(anotacion.posicion.y * dimensionesPDF.alto)
+      };
+      console.log('Coordenadas absolutas (backend):', absolutas);
+      console.groupEnd();
+    }
+  }, [dimensionesPDF, zoom]);
+
+  /**
+   * Obtiene anotaciones de la página actual
    */
   const anotacionesPaginaActual = anotaciones.filter(
     (anotacion) => anotacion.pagina === paginaActual
@@ -402,7 +491,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   return (
     <LayoutUsuario activeKey="biblioteca">
       <div className="lector-pdf">
-        {/* Ãrea principal del visor */}
+        {/* Área principal del visor */}
         <div className="visor-container">
           <div className="visor-pdf-wrapper" style={{ position: "relative" }}>
             <VisorPDF

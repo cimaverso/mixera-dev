@@ -1,4 +1,4 @@
-// src/Componentes/Lector/VisorPDF.jsx - VERSIÓN CORREGIDA SIN RE-RENDERS INFINITOS
+// src/Componentes/Lector/VisorPDF.jsx - VERSIÓN CORREGIDA CON COORDENADAS UNIFICADAS
 import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
@@ -6,8 +6,8 @@ import { Document, Page, pdfjs } from 'react-pdf';
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 /**
- * Componente que renderiza el PDF con ajuste automático optimizado para móviles
- * CORREGIDO: Eliminados re-renders infinitos
+ * Componente que renderiza el PDF con sistema de coordenadas unificado
+ * CORREGIDO: Coordenadas consistentes entre móvil y desktop
  */
 const VisorPDF = forwardRef(({
   pdfUrl,
@@ -27,11 +27,11 @@ const VisorPDF = forwardRef(({
   const [esDispositiveMovil, setEsDispositiveMovil] = useState(false);
   const [orientacion, setOrientacion] = useState('portrait');
 
-  // CORREGIDO: Usar useRef para evitar re-creación de objetos en cada render
+  // NUEVO: Referencia para evitar re-creación de objetos
   const ultimaDeteccionRef = useRef({ width: 0, height: 0, esMobile: false });
 
   /**
-   * CORREGIDO: Detectar dispositivo móvil y dimensiones del viewport (memoizado)
+   * Detectar dispositivo móvil y dimensiones del viewport (memoizado)
    */
   const detectarDispositivo = useCallback(() => {
     const esMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -42,7 +42,7 @@ const VisorPDF = forwardRef(({
     const height = window.innerHeight;
     const nuevaOrientacion = width > height ? 'landscape' : 'portrait';
     
-    // CORREGIDO: Solo actualizar estado si hay cambios reales
+    // Solo actualizar estado si hay cambios reales
     const ultimaDeteccion = ultimaDeteccionRef.current;
     if (ultimaDeteccion.width !== width || 
         ultimaDeteccion.height !== height || 
@@ -56,10 +56,30 @@ const VisorPDF = forwardRef(({
     }
     
     return { esMobile, width, height };
-  }, []); // Sin dependencias para evitar re-creación
+  }, []);
 
   /**
-   * CORREGIDO: Calcular ancho óptimo (memoizado con dependencias específicas)
+   * NUEVO: Calcula dimensiones base normalizadas para coordenadas consistentes
+   * Esta función asegura que las coordenadas sean compatibles entre móvil y desktop
+   */
+  const calcularDimensionesBase = useCallback(() => {
+    // Usar dimensiones reales del PDF si están disponibles
+    if (dimensiones.width > 0 && dimensiones.height > 0) {
+      return {
+        ancho: dimensiones.width,
+        alto: dimensiones.height
+      };
+    }
+    
+    // Fallback a dimensiones estándar A4 en puntos PDF
+    return {
+      ancho: 595,  // A4 width en puntos PDF
+      alto: 842    // A4 height en puntos PDF
+    };
+  }, [dimensiones]);
+
+  /**
+   * Calcular ancho óptimo para renderizado (memoizado con dependencias específicas)
    */
   const anchoOptimo = useMemo(() => {
     const { width, height } = dimensionesViewport;
@@ -95,13 +115,12 @@ const VisorPDF = forwardRef(({
   }, [zoom, orientacion, dimensionesViewport, esDispositiveMovil]);
 
   /**
-   * CORREGIDO: Manejar cambios de orientación y resize (con debounce)
+   * Manejar cambios de orientación y resize (con debounce)
    */
   useEffect(() => {
     let timeoutId = null;
     
     const manejarResize = () => {
-      // CORREGIDO: Debounce para evitar múltiples llamadas
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
@@ -112,7 +131,6 @@ const VisorPDF = forwardRef(({
     };
     
     const manejarOrientacion = () => {
-      // Delay más largo para orientación
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
@@ -136,7 +154,7 @@ const VisorPDF = forwardRef(({
       window.removeEventListener('resize', manejarResize);
       window.removeEventListener('orientationchange', manejarOrientacion);
     };
-  }, []); // CORREGIDO: Array vacío para ejecutar solo una vez
+  }, [detectarDispositivo]);
 
   /**
    * Callback cuando el documento PDF se carga exitosamente
@@ -150,25 +168,32 @@ const VisorPDF = forwardRef(({
 
   /**
    * CORREGIDO: Callback cuando una página se renderiza exitosamente
+   * NUEVO: Usa dimensiones base normalizadas para coordenadas consistentes
    */
   const onPageLoadSuccess = useCallback((page) => {
     const { width, height } = page;
     
-    // CORREGIDO: Solo actualizar si las dimensiones realmente cambiaron
+    // Solo actualizar si las dimensiones realmente cambiaron
     setDimensiones(prevDimensiones => {
       if (prevDimensiones.width !== width || prevDimensiones.height !== height) {
-        // Llamar callback solo cuando hay cambio real
+        // NUEVO: Usar dimensiones base normalizadas para coordenadas
+        const dimensionesBase = {
+          ancho: width,  // Dimensiones reales del PDF en puntos
+          alto: height
+        };
+        
+        // Llamar callback con dimensiones base para coordenadas consistentes
         setTimeout(() => {
-          onDimensionesCambiadas?.({ ancho: width, alto: height });
+          onDimensionesCambiadas?.(dimensionesBase);
         }, 0);
         
+        console.log('Página cargada - Dimensiones base:', dimensionesBase);
         return { width, height };
       }
       return prevDimensiones;
     });
     
     setCargandoPagina(false);
-    console.log('Página cargada - Dimensiones:', { width, height });
   }, [onDimensionesCambiadas]);
 
   /**
@@ -180,7 +205,7 @@ const VisorPDF = forwardRef(({
   }, []);
 
   /**
-   * CORREGIDO: Obtener estilos del contenedor (memoizado)
+   * Obtener estilos del contenedor (memoizado)
    */
   const estilosContenedor = useMemo(() => ({
     display: 'flex',
@@ -195,7 +220,7 @@ const VisorPDF = forwardRef(({
   }), [anchoOptimo, esDispositiveMovil]);
 
   /**
-   * CORREGIDO: Obtener estilos de la página (memoizado)
+   * Obtener estilos de la página (memoizado)
    */
   const estilosPagina = useMemo(() => ({
     maxWidth: '100%',
@@ -250,6 +275,9 @@ const VisorPDF = forwardRef(({
     
     getPDFDimensions: () => dimensiones,
     
+    // NUEVO: Obtener dimensiones base para coordenadas
+    getDimensionesBase: () => calcularDimensionesBase(),
+    
     recalcularDimensiones: () => {
       detectarDispositivo();
     }
@@ -257,10 +285,10 @@ const VisorPDF = forwardRef(({
   }), [
     paginaActual, numPages, zoom, dimensiones, modoVista, 
     onPaginaCambiada, esDispositiveMovil, orientacion, 
-    dimensionesViewport, detectarDispositivo
+    dimensionesViewport, detectarDispositivo, calcularDimensionesBase
   ]);
 
-  // CORREGIDO: Manejo de atajos de teclado (sin cambios pero verificado)
+  // Manejo de atajos de teclado
   useEffect(() => {
     const manejarTeclas = (event) => {
       // Solo si no está editando texto
@@ -368,6 +396,7 @@ const VisorPDF = forwardRef(({
                   <div>Viewport: {dimensionesViewport.width}x{dimensionesViewport.height}</div>
                   <div>Ancho PDF: {Math.round(anchoOptimo)}px</div>
                   <div>Zoom: {Math.round(zoom * 100)}%</div>
+                  <div>Base: {dimensiones.width}x{dimensiones.height}</div>
                 </div>
               )}
             </div>
