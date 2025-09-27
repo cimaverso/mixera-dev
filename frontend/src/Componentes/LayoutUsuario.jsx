@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import SidebarUsuario, {
   CatalogoIcon,
@@ -10,7 +10,7 @@ import SidebarUsuario, {
 import "./sidebar/sidebar.css";
 import api from "../servicios/api";
 
-// Íconos para el header móvil del lector
+// Iconos para el header móvil del lector
 const MenuHamburguesaIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 16 16">
     <path fillRule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
@@ -24,13 +24,13 @@ const PerfilIcon = () => (
   </svg>
 );
 
-// Ícono para cerrar sesión en bottom nav
+// Icono para cerrar sesión en bottom nav
 const LogoutIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="white"
-    width="24"
-    height="24"
+    width="20"
+    height="20"
     viewBox="0 0 16 16"
     aria-hidden="true"
   >
@@ -43,6 +43,12 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
   const [fotoPerfil, setFotoPerfil] = useState("");
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [usuarioInfo, setUsuarioInfo] = useState({ nombre: "", email: "" });
+  
+  // Estados para el scroll horizontal del bottom nav
+  const [showLeftIndicator, setShowLeftIndicator] = useState(false);
+  const [showRightIndicator, setShowRightIndicator] = useState(false);
+  const bottomNavRef = useRef(null);
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -107,12 +113,51 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
     };
   }, [menuMovilAbierto, esLector]);
 
+  // Detectar scroll en bottom nav móvil
+  useEffect(() => {
+    const checkScrollIndicators = () => {
+      if (bottomNavRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = bottomNavRef.current;
+        setShowLeftIndicator(scrollLeft > 0);
+        setShowRightIndicator(scrollLeft < scrollWidth - clientWidth - 5);
+      }
+    };
+
+    const bottomNav = bottomNavRef.current;
+    if (bottomNav) {
+      bottomNav.addEventListener('scroll', checkScrollIndicators);
+      // Verificar inicialmente
+      setTimeout(checkScrollIndicators, 100);
+      
+      return () => {
+        bottomNav.removeEventListener('scroll', checkScrollIndicators);
+      };
+    }
+  }, []);
+
   const items = [
     { key: "catalogo", label: "Catálogo", icon: <CatalogoIcon /> },
     { key: "biblioteca", label: "Mi Biblioteca", icon: <BibliotecaIcon /> },
     { key: "tutoriales", label: "Tutoriales", icon: <TutorialesIcon /> },
     { key: "estadisticas", label: "Estadísticas", icon: <EstadisticasIcon /> },
     { key: "soporte", label: "Soporte", icon: <SoporteIcon /> },
+  ];
+
+  // Items para el bottom nav móvil (incluye perfil y logout)
+  const bottomNavItems = [
+    {
+      key: "perfil",
+      label: "Perfil",
+      icon: <PerfilIcon />,
+      isPerfil: true
+    },
+    ...items,
+    {
+      key: "logout",
+      label: "Salir",
+      icon: <LogoutIcon />,
+      isLogout: true
+    }
   ];
 
   const handleLogout = () => {
@@ -122,6 +167,11 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
 
   // Función para navegación
   const handleNav = (key) => {
+    if (key === "logout") {
+      handleLogout();
+      return;
+    }
+    
     onChange?.(key);
     const path = rutas[key];
     if (path) {
@@ -133,6 +183,12 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
 
   const toggleMenuMovil = () => {
     setMenuMovilAbierto(!menuMovilAbierto);
+  };
+
+  // Función para manejar el touch scroll en bottom nav
+  const handleBottomNavTouch = (e) => {
+    // Permitir scroll horizontal natural del contenedor
+    e.stopPropagation();
   };
 
   return (
@@ -226,41 +282,42 @@ const LayoutUsuario = ({ children, activeKey, onChange, onLogout }) => {
 
       <main className="contenido-usuario">{children}</main>
 
-      {/* BOTTOM NAV SOLO PARA MOBILE Y SECCIONES NORMALES */}
+      {/* BOTTOM NAV MÓVIL CON SCROLL HORIZONTAL - SOLO PARA SECCIONES NORMALES */}
       {!esLector && (
         <nav className="bottom-nav-usuario">
-          <button
-            className={activeKey === "catalogo" ? "activo" : ""}
-            onClick={() => handleNav("catalogo")}
-            title="Catálogo"
+          <div 
+            className="bottom-nav-container"
+            ref={bottomNavRef}
+            onTouchStart={handleBottomNavTouch}
+            onTouchMove={handleBottomNavTouch}
           >
-            <CatalogoIcon />
-            <span>Catálogo</span>
-          </button>
-          <button
-            className={activeKey === "biblioteca" ? "activo" : ""}
-            onClick={() => handleNav("biblioteca")}
-            title="Mi Biblioteca"
-          >
-            <BibliotecaIcon />
-            <span>Biblioteca</span>
-          </button>
-          <button
-            className={activeKey === "tutoriales" ? "activo" : ""}
-            onClick={() => handleNav("tutoriales")}
-            title="Tutoriales"
-          >
-            <TutorialesIcon />
-            <span>Tutoriales</span>
-          </button>
-          <button
-            className={activeKey === "soporte" ? "activo" : ""}
-            onClick={() => handleNav("soporte")}
-            title="Soporte"
-          >
-            <SoporteIcon />
-            <span>Soporte</span>
-          </button>
+            {bottomNavItems.map((item) => (
+              <button
+                key={item.key}
+                className={`${activeKey === item.key ? "activo" : ""} ${item.isPerfil ? "perfil" : ""}`}
+                onClick={() => handleNav(item.key)}
+                title={item.label}
+              >
+                {item.isPerfil ? (
+                  <>
+                    <div className="perfil-imagen">
+                      {fotoPerfil ? (
+                        <img src={fotoPerfil} alt="Perfil" />
+                      ) : (
+                        <PerfilIcon />
+                      )}
+                    </div>
+                    <span>{item.label}</span>
+                  </>
+                ) : (
+                  <>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
         </nav>
       )}
     </div>

@@ -1,13 +1,13 @@
-// src/Componentes/Lector/VisorPDF.jsx - VERSIÃ“N ESTABLE
-import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
+// src/Componentes/Lector/VisorPDF.jsx - VERSIÓN CORREGIDA SIN RE-RENDERS INFINITOS
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// ConfiguraciÃ³n del worker que coincide con la API version 2.12.313
+// Configuración del worker que coincide con la API version 2.12.313
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 /**
- * Componente que renderiza el PDF usando react-pdf
- * VersiÃ³n estable optimizada para evitar problemas de worker
+ * Componente que renderiza el PDF con ajuste automático optimizado para móviles
+ * CORREGIDO: Eliminados re-renders infinitos
  */
 const VisorPDF = forwardRef(({
   pdfUrl,
@@ -23,6 +23,120 @@ const VisorPDF = forwardRef(({
   const [cargandoPagina, setCargandoPagina] = useState(false);
   const [errorPDF, setErrorPDF] = useState(null);
   const [dimensiones, setDimensiones] = useState({ width: 0, height: 0 });
+  const [dimensionesViewport, setDimensionesViewport] = useState({ width: 0, height: 0 });
+  const [esDispositiveMovil, setEsDispositiveMovil] = useState(false);
+  const [orientacion, setOrientacion] = useState('portrait');
+
+  // CORREGIDO: Usar useRef para evitar re-creación de objetos en cada render
+  const ultimaDeteccionRef = useRef({ width: 0, height: 0, esMobile: false });
+
+  /**
+   * CORREGIDO: Detectar dispositivo móvil y dimensiones del viewport (memoizado)
+   */
+  const detectarDispositivo = useCallback(() => {
+    const esMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    ('ontouchstart' in window) ||
+                    (window.innerWidth <= 768);
+    
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const nuevaOrientacion = width > height ? 'landscape' : 'portrait';
+    
+    // CORREGIDO: Solo actualizar estado si hay cambios reales
+    const ultimaDeteccion = ultimaDeteccionRef.current;
+    if (ultimaDeteccion.width !== width || 
+        ultimaDeteccion.height !== height || 
+        ultimaDeteccion.esMobile !== esMobile) {
+      
+      ultimaDeteccionRef.current = { width, height, esMobile };
+      
+      setEsDispositiveMovil(esMobile);
+      setDimensionesViewport({ width, height });
+      setOrientacion(nuevaOrientacion);
+    }
+    
+    return { esMobile, width, height };
+  }, []); // Sin dependencias para evitar re-creación
+
+  /**
+   * CORREGIDO: Calcular ancho óptimo (memoizado con dependencias específicas)
+   */
+  const anchoOptimo = useMemo(() => {
+    const { width, height } = dimensionesViewport;
+    
+    if (!esDispositiveMovil) {
+      // Desktop: usar ancho base con zoom
+      return 600 * zoom;
+    }
+    
+    // Móvil: calcular ancho que quepa en la pantalla
+    let anchoMaximo;
+    
+    if (orientacion === 'landscape') {
+      // Horizontal: usar 90% del ancho disponible
+      anchoMaximo = width * 0.9;
+    } else {
+      // Vertical: usar 95% del ancho disponible
+      anchoMaximo = width * 0.95;
+    }
+    
+    // Aplicar padding para los controles y márgenes
+    const padding = esDispositiveMovil ? 40 : 80;
+    anchoMaximo = Math.max(300, anchoMaximo - padding);
+    
+    // Aplicar zoom pero limitando el resultado
+    const anchoConZoom = anchoMaximo * zoom;
+    
+    // En móvil, limitar el zoom máximo para evitar que se corte
+    const zoomMaximoMovil = esDispositiveMovil ? 2.5 : 4;
+    const zoomLimitado = Math.min(zoom, zoomMaximoMovil);
+    
+    return Math.min(anchoConZoom, anchoMaximo * zoomLimitado);
+  }, [zoom, orientacion, dimensionesViewport, esDispositiveMovil]);
+
+  /**
+   * CORREGIDO: Manejar cambios de orientación y resize (con debounce)
+   */
+  useEffect(() => {
+    let timeoutId = null;
+    
+    const manejarResize = () => {
+      // CORREGIDO: Debounce para evitar múltiples llamadas
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      timeoutId = setTimeout(() => {
+        detectarDispositivo();
+      }, 100);
+    };
+    
+    const manejarOrientacion = () => {
+      // Delay más largo para orientación
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      timeoutId = setTimeout(() => {
+        detectarDispositivo();
+      }, 200);
+    };
+    
+    // Event listeners
+    window.addEventListener('resize', manejarResize);
+    window.addEventListener('orientationchange', manejarOrientacion);
+    
+    // Detección inicial solo una vez
+    detectarDispositivo();
+    
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      window.removeEventListener('resize', manejarResize);
+      window.removeEventListener('orientationchange', manejarOrientacion);
+    };
+  }, []); // CORREGIDO: Array vacío para ejecutar solo una vez
 
   /**
    * Callback cuando el documento PDF se carga exitosamente
@@ -31,18 +145,30 @@ const VisorPDF = forwardRef(({
     setNumPages(numPages);
     setErrorPDF(null);
     onTotalPaginas?.(numPages);
-    console.log('PDF cargado exitosamente:', numPages, 'pÃ¡ginas');
+    console.log('PDF cargado exitosamente:', numPages, 'páginas');
   }, [onTotalPaginas]);
 
   /**
-   * Callback cuando una pÃ¡gina se renderiza exitosamente
+   * CORREGIDO: Callback cuando una página se renderiza exitosamente
    */
   const onPageLoadSuccess = useCallback((page) => {
     const { width, height } = page;
-    setDimensiones({ width, height });
-    onDimensionesCambiadas?.({ ancho: width, alto: height });
+    
+    // CORREGIDO: Solo actualizar si las dimensiones realmente cambiaron
+    setDimensiones(prevDimensiones => {
+      if (prevDimensiones.width !== width || prevDimensiones.height !== height) {
+        // Llamar callback solo cuando hay cambio real
+        setTimeout(() => {
+          onDimensionesCambiadas?.({ ancho: width, alto: height });
+        }, 0);
+        
+        return { width, height };
+      }
+      return prevDimensiones;
+    });
+    
     setCargandoPagina(false);
-    console.log('PÃ¡gina cargada - Dimensiones:', { width, height });
+    console.log('Página cargada - Dimensiones:', { width, height });
   }, [onDimensionesCambiadas]);
 
   /**
@@ -54,15 +180,36 @@ const VisorPDF = forwardRef(({
   }, []);
 
   /**
-   * Calcular el ancho de la pÃ¡gina segÃºn el zoom
+   * CORREGIDO: Obtener estilos del contenedor (memoizado)
    */
-  const calcularAnchoPagina = useCallback(() => {
-    const anchoBase = 600;
-    return anchoBase * zoom;
-  }, [zoom]);
+  const estilosContenedor = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: esDispositiveMovil ? '100%' : `${anchoOptimo + 40}px`,
+    margin: '0 auto',
+    overflowX: esDispositiveMovil ? 'hidden' : 'visible',
+    padding: esDispositiveMovil ? '10px' : '20px'
+  }), [anchoOptimo, esDispositiveMovil]);
 
   /**
-   * MÃ©todos expuestos al componente padre via ref
+   * CORREGIDO: Obtener estilos de la página (memoizado)
+   */
+  const estilosPagina = useMemo(() => ({
+    maxWidth: '100%',
+    height: 'auto',
+    margin: '0 auto',
+    boxShadow: esDispositiveMovil 
+      ? '0 2px 8px rgba(0, 0, 0, 0.1)' 
+      : '0 4px 12px rgba(0, 0, 0, 0.15)',
+    borderRadius: esDispositiveMovil ? '4px' : '8px',
+    display: 'block'
+  }), [esDispositiveMovil]);
+
+  /**
+   * CORREGIDO: Métodos expuestos al componente padre via ref
    */
   useImperativeHandle(ref, () => ({
     nextPage: () => {
@@ -95,17 +242,28 @@ const VisorPDF = forwardRef(({
       totalPaginas: numPages,
       zoom,
       dimensiones,
-      modoVista
+      modoVista,
+      esDispositiveMovil,
+      orientacion,
+      dimensionesViewport
     }),
     
-    getPDFDimensions: () => dimensiones
+    getPDFDimensions: () => dimensiones,
     
-  }), [paginaActual, numPages, zoom, dimensiones, modoVista, onPaginaCambiada]);
+    recalcularDimensiones: () => {
+      detectarDispositivo();
+    }
+    
+  }), [
+    paginaActual, numPages, zoom, dimensiones, modoVista, 
+    onPaginaCambiada, esDispositiveMovil, orientacion, 
+    dimensionesViewport, detectarDispositivo
+  ]);
 
-  // Manejo de atajos de teclado
+  // CORREGIDO: Manejo de atajos de teclado (sin cambios pero verificado)
   useEffect(() => {
     const manejarTeclas = (event) => {
-      // Solo si no estÃ¡ editando texto
+      // Solo si no está editando texto
       if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT') {
         return;
       }
@@ -136,10 +294,18 @@ const VisorPDF = forwardRef(({
     return () => window.removeEventListener('keydown', manejarTeclas);
   }, [paginaActual, numPages, onPaginaCambiada]);
 
-  const anchoPagina = calcularAnchoPagina();
-
   return (
-    <div className="visor-pdf">
+    <div 
+      className="visor-pdf"
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        overflowX: esDispositiveMovil ? 'hidden' : 'auto'
+      }}
+    >
       {errorPDF ? (
         <div className="error-pdf">
           <div className="error-contenido">
@@ -159,17 +325,51 @@ const VisorPDF = forwardRef(({
             <div className="cargando-documento">
               <div className="spinner-pdf"></div>
               <p>Cargando documento PDF...</p>
+              {esDispositiveMovil && (
+                <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+                  Ajustando tamaño para tu dispositivo...
+                </p>
+              )}
             </div>
           }
         >
           {numPages && (
-            <div className="contenedor-paginas">
+            <div className="contenedor-paginas" style={estilosContenedor}>
               <Page
                 pageNumber={paginaActual}
-                width={anchoPagina}
+                width={anchoOptimo}
                 onLoadSuccess={onPageLoadSuccess}
-                loading={<div className="cargando-pagina">Cargando pÃ¡gina...</div>}
+                loading={
+                  <div className="cargando-pagina">
+                    <div className="spinner-pagina"></div>
+                    <p>Cargando página...</p>
+                  </div>
+                }
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                style={estilosPagina}
               />
+              
+              {/* Información de debug solo en desarrollo */}
+              {process.env.NODE_ENV === 'development' && esDispositiveMovil && (
+                <div style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  fontSize: '10px',
+                  zIndex: 1000
+                }}>
+                  <div>Móvil: {esDispositiveMovil ? 'Sí' : 'No'}</div>
+                  <div>Orientación: {orientacion}</div>
+                  <div>Viewport: {dimensionesViewport.width}x{dimensionesViewport.height}</div>
+                  <div>Ancho PDF: {Math.round(anchoOptimo)}px</div>
+                  <div>Zoom: {Math.round(zoom * 100)}%</div>
+                </div>
+              )}
             </div>
           )}
         </Document>

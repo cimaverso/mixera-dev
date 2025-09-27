@@ -382,12 +382,33 @@
   background: #23201d;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0 10px;
   border-top: 1px solid #333;
+  overflow: hidden;
+  padding: 0;
 }
 
+/* Contenedor scrolleable */
+.bottom-nav-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 0 8px;
+  gap: 4px;
+  
+  /* Ocultar scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.bottom-nav-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
+
+/* Botones del bottom nav */
 .bottom-nav-usuario button {
   background: none;
   border: none;
@@ -399,13 +420,47 @@
   font-size: 9px;
   gap: 3px;
   width: 55px;
+  min-width: 55px; /* CRÍTICO: evita que se compriman */
   height: 55px;
   border-radius: 12px;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* CRÍTICO: evita compresión */
+  cursor: pointer;
 }
 
+/* Botón de perfil especial */
+.bottom-nav-usuario button.perfil {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bottom-nav-usuario button.perfil .perfil-imagen {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #edb1a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1px;
+}
+
+.bottom-nav-usuario button.perfil .perfil-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bottom-nav-usuario button.perfil .perfil-imagen svg {
+  width: 12px;
+  height: 12px;
+  fill: white;
+}
+
+/* Estados y efectos */
 .bottom-nav-usuario button::before {
   content: '';
   position: absolute;
@@ -429,6 +484,7 @@
   position: relative;
   z-index: 1;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
 }
 
 .bottom-nav-usuario button span {
@@ -437,6 +493,12 @@
   font-weight: 500;
   opacity: 0.8;
   font-size: 8px;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50px;
 }
 
 .bottom-nav-usuario button.activo span {
@@ -579,6 +641,7 @@
   /* MOSTRAR BOTTOM NAV SOLO EN SECCIONES NORMALES */
   .layout-usuario:not(.en-lector-pdf) .bottom-nav-usuario {
     display: flex;
+    flex-direction: column;
   }
 
   /* OCULTAR BOTTOM NAV EN LECTOR */
@@ -601,11 +664,16 @@
   
   .bottom-nav-usuario {
     height: 60px;
+  }
+  
+  .bottom-nav-container {
     padding: 0 5px;
+    gap: 3px;
   }
   
   .bottom-nav-usuario button {
     width: 50px;
+    min-width: 50px;
     height: 50px;
     font-size: 8px;
     gap: 2px;
@@ -618,6 +686,17 @@
 
   .bottom-nav-usuario button span {
     font-size: 7px;
+    max-width: 45px;
+  }
+
+  .bottom-nav-usuario button.perfil .perfil-imagen {
+    width: 22px;
+    height: 22px;
+  }
+
+  .bottom-nav-usuario button.perfil .perfil-imagen svg {
+    width: 11px;
+    height: 11px;
   }
   
   .sidebar-movil {
