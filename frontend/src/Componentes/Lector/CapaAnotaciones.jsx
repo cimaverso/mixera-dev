@@ -1,10 +1,10 @@
-// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÓN CON SOPORTE TÁCTIL MEJORADO
+// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÓN CORREGIDA SIN ROMPER TOUCH
 import React, { useState, useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import TextoAnotacion from './anotaciones/TextoAnotacion';
 
 /**
  * Capa transparente superpuesta al PDF que maneja todas las anotaciones
- * CON SOPORTE COMPLETO PARA DISPOSITIVOS TÁCTILES
+ * CORREGIDO: SIN INTERFERIR CON EL TOUCH/ZOOM DEL SISTEMA
  */
 const CapaAnotaciones = forwardRef(({
   anotaciones,
@@ -90,7 +90,7 @@ const CapaAnotaciones = forwardRef(({
   }, []);
 
   /**
-   * Maneja el clic/toque en la capa para crear nuevas anotaciones
+   * CORREGIDO: Maneja el clic/toque en la capa SOLO para crear anotaciones
    */
   const manejarClickCapa = useCallback((event) => {
     // Solo crear anotación si la herramienta de texto está activa
@@ -99,6 +99,7 @@ const CapaAnotaciones = forwardRef(({
     // Evitar crear si se hizo clic en una anotación existente o sus controles
     if (event.target.closest('.anotacion-texto, .controles-seleccion, .controles-inline, .modal-overlay')) return;
 
+    // IMPORTANTE: NO prevenir comportamiento por defecto aquí para mantener touch del sistema
     const rect = capaRef.current.getBoundingClientRect();
     const coords = obtenerCoordenadas(event);
     const x = coords.clientX - rect.left;
@@ -137,7 +138,7 @@ const CapaAnotaciones = forwardRef(({
       return;
     }
 
-    // Prevenir comportamientos por defecto
+    // CORREGIDO: Solo prevenir si realmente vamos a arrastrar
     event.preventDefault();
     event.stopPropagation();
     
@@ -238,7 +239,7 @@ const CapaAnotaciones = forwardRef(({
   }, [onEliminarAnotacion]);
 
   /**
-   * Deselecciona anotaciones al hacer clic fuera
+   * CORREGIDO: Deselecciona anotaciones sin interferir con touch
    */
   const deseleccionarAnotacion = useCallback((event) => {
     if (herramientaActiva === 'texto') return; // No deseleccionar en modo texto
@@ -248,7 +249,7 @@ const CapaAnotaciones = forwardRef(({
     }
   }, [herramientaActiva, onSeleccionarAnotacion]);
 
-  // Event listeners para mouse
+  // Event listeners para mouse - SIN INTERFERIR CON TOUCH
   useEffect(() => {
     if (!esDispositiveMovil) {
       const manejarMouseMove = (event) => manejarMovimiento(event);
@@ -266,7 +267,7 @@ const CapaAnotaciones = forwardRef(({
     }
   }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
-  // Event listeners para táctil
+  // Event listeners para táctil - SOLO DURANTE ARRASTRE
   useEffect(() => {
     if (esDispositiveMovil) {
       const manejarTouchMove = (event) => {
@@ -351,7 +352,8 @@ const CapaAnotaciones = forwardRef(({
       height: `${dimensionesPixeles.alto}px`,
       zIndex: anotacionSeleccionada === anotacion.id ? 1000 : 100,
       cursor: cursor,
-      touchAction: 'none' // Importante para dispositivos táctiles
+      // CORREGIDO: touchAction dinámico según estado
+      touchAction: arrastrando ? 'none' : 'auto'
     };
 
     const manejarInicioArrastre = (event) => {
@@ -411,7 +413,7 @@ const CapaAnotaciones = forwardRef(({
     eliminarAnotacion
   ]);
 
-  // Calcular dimensiones de la capa según el PDF y zoom
+  // CORREGIDO: Calcular dimensiones de la capa SIN interferir con touch
   const dimensionesCapa = {
     width: dimensionesPDF.ancho * zoom,
     height: dimensionesPDF.alto * zoom,
@@ -419,14 +421,15 @@ const CapaAnotaciones = forwardRef(({
     top: 0,
     left: 0,
     pointerEvents: 'auto',
-    touchAction: herramientaActiva === 'texto' ? 'auto' : 'none' // Controlar comportamiento táctil
+    // CRÍTICO: Solo bloquear touch cuando realmente estamos arrastrando
+    touchAction: arrastrando ? 'none' : 'auto'
   };
 
-  // Eventos principales de la capa
+  // CORREGIDO: Eventos principales que NO bloquean el sistema
   const eventosCapaPrincipal = {
     onClick: manejarClickCapa,
     onMouseDown: !esDispositiveMovil ? deseleccionarAnotacion : undefined,
-    onTouchStart: esDispositiveMovil ? deseleccionarAnotacion : undefined
+    // IMPORTANTE: NO usar onTouchStart aquí para no interferir con zoom/scroll
   };
 
   return (
