@@ -1,9 +1,9 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN CON SOPORTE MÓVIL MEJORADO
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN COMPLETA CON CAVEAT Y TRANSPARENCIA
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
 /**
- * Componente individual para anotaciones de texto con redimensionamiento
+ * Componente individual para anotaciones de texto con fuente Caveat y transparencia integrada
  * CON SOPORTE OPTIMIZADO PARA DISPOSITIVOS MÓVILES
  */
 const TextoAnotacion = ({
@@ -11,8 +11,8 @@ const TextoAnotacion = ({
   seleccionada,
   editando,
   zoom,
-  esDispositiveMovil = false, // Nueva prop
-  puedeArrastrar = false, // Nueva prop
+  esDispositiveMovil = false,
+  puedeArrastrar = false,
   onGuardar,
   onEliminar,
   onIniciarEdicion
@@ -39,33 +39,45 @@ const TextoAnotacion = ({
   const [timerToque, setTimerToque] = useState(null);
 
   /**
+   * NUEVO: Determinar el peso de fuente según el tamaño
+   */
+  const obtenerPesoFuente = useCallback((fontSize) => {
+    if (fontSize <= 12) return 400; // Ligero para texto pequeño
+    if (fontSize <= 18) return 500; // Medio para texto normal
+    if (fontSize <= 24) return 600; // Semi-negrita para texto grande
+    return 700; // Negrita para texto muy grande
+  }, []);
+
+  /**
+   * NUEVO: Determinar si la anotación debe ser transparente (ya guardada)
+   */
+  const esAnotacionGuardada = useCallback(() => {
+    return !anotacion.metadatos?.esNueva && !modoEdicion && !mostrarModal;
+  }, [anotacion.metadatos?.esNueva, modoEdicion, mostrarModal]);
+
+  /**
    * Maneja eventos de toque en móvil con detección de toque largo
    */
   const manejarTouchStart = useCallback((event) => {
     if (!esDispositiveMovil) return;
 
-    // Si está redimensionando o tiene modal abierto, no procesar
     if (redimensionando || mostrarModal) {
       event.stopPropagation();
       return;
     }
 
-    // Si es nueva y tiene modal abierto, no hacer nada
     if (modoEdicion && anotacion.metadatos?.esNueva) {
       return;
     }
 
-    // Limpiar timer anterior
     if (timerToque) {
       clearTimeout(timerToque);
     }
 
-    // Configurar timer para toque largo (opciones)
     const nuevoTimer = setTimeout(() => {
-      // Toque largo: mostrar modal de opciones
       setMostrarModal(true);
       onIniciarEdicion?.();
-    }, 800); // 800ms para toque largo
+    }, 800);
 
     setTimerToque(nuevoTimer);
   }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, timerToque, onIniciarEdicion]);
@@ -76,7 +88,6 @@ const TextoAnotacion = ({
   const manejarTouchEnd = useCallback((event) => {
     if (!esDispositiveMovil) return;
 
-    // Limpiar timer de toque largo
     if (timerToque) {
       clearTimeout(timerToque);
       setTimerToque(null);
@@ -87,15 +98,12 @@ const TextoAnotacion = ({
    * Maneja clics en dispositivos no móviles
    */
   const manejarClick = useCallback((event) => {
-    // En móvil, usar sistema de toques
     if (esDispositiveMovil) return;
     
     event.stopPropagation();
     
-    // Si está redimensionando, no procesar clics
     if (redimensionando) return;
     
-    // Si es nueva y tiene modal abierto, no hacer nada
     if (modoEdicion && anotacion.metadatos?.esNueva) {
       return;
     }
@@ -104,7 +112,6 @@ const TextoAnotacion = ({
     const tiempoEntreclics = ahora - ultimoClic;
     
     if (tiempoEntreclics < 350 && tiempoEntreclics > 50) {
-      // Doble clic: Abrir modal de opciones
       setMostrarModal(true);
       onIniciarEdicion?.();
     }
@@ -116,10 +123,8 @@ const TextoAnotacion = ({
    * Controla cuando se puede arrastrar
    */
   const manejarMouseDown = useCallback((event) => {
-    // En móvil, el arrastre se maneja en el componente padre
     if (esDispositiveMovil) return;
 
-    // No permitir arrastre si está redimensionando o tiene modal abierto
     if (redimensionando || mostrarModal || (anotacion.metadatos?.esNueva && mostrarModal)) {
       event.stopPropagation();
     }
@@ -180,29 +185,27 @@ const TextoAnotacion = ({
     let nuevoAncho = dimensionesIniciales.ancho;
     let nuevoAlto = dimensionesIniciales.alto;
     
-    // Calcular nuevas dimensiones según el tipo de redimensión
     switch (tipoRedimension) {
-      case 'se': // Esquina inferior derecha
+      case 'se':
         nuevoAncho = Math.max(100, dimensionesIniciales.ancho + deltaX);
         nuevoAlto = Math.max(40, dimensionesIniciales.alto + deltaY);
         break;
-      case 'e': // Lado derecho
+      case 'e':
         nuevoAncho = Math.max(100, dimensionesIniciales.ancho + deltaX);
         break;
-      case 's': // Lado inferior
+      case 's':
         nuevoAlto = Math.max(40, dimensionesIniciales.alto + deltaY);
         break;
-      case 'sw': // Esquina inferior izquierda
+      case 'sw':
         nuevoAncho = Math.max(100, dimensionesIniciales.ancho - deltaX);
         nuevoAlto = Math.max(40, dimensionesIniciales.alto + deltaY);
         break;
-      case 'ne': // Esquina superior derecha
+      case 'ne':
         nuevoAncho = Math.max(100, dimensionesIniciales.ancho + deltaX);
         nuevoAlto = Math.max(40, dimensionesIniciales.alto - deltaY);
         break;
     }
     
-    // Aplicar nuevas dimensiones directamente al contenedor
     if (contenedorRef.current) {
       contenedorRef.current.style.width = `${nuevoAncho}px`;
       contenedorRef.current.style.height = `${nuevoAlto}px`;
@@ -217,18 +220,15 @@ const TextoAnotacion = ({
     
     const rect = contenedorRef.current.getBoundingClientRect();
     
-    // Obtener el contenedor de la capa de anotaciones para calcular coordenadas relativas
     const capaAnotaciones = contenedorRef.current.closest('.capa-anotaciones');
     if (!capaAnotaciones) return;
     
     const rectCapa = capaAnotaciones.getBoundingClientRect();
     
-    // Convertir a coordenadas relativas (0-1)
     const anchoRelativo = rect.width / rectCapa.width;
     const altoRelativo = rect.height / rectCapa.height;
     
     try {
-      // Crear anotación actualizada con nuevas dimensiones
       const anotacionActualizada = {
         ...anotacion,
         dimensiones: {
@@ -241,14 +241,12 @@ const TextoAnotacion = ({
         }
       };
       
-      // Guardar los cambios
       await onGuardar?.(anotacionActualizada);
       
     } catch (error) {
       // Error manejado por el padre
     }
     
-    // Limpiar estado de redimensionamiento
     setRedimensionando(false);
     setTipoRedimension(null);
     setDimensionesIniciales(null);
@@ -271,17 +269,14 @@ const TextoAnotacion = ({
       };
       
       if (esDispositiveMovil) {
-        // Eventos táctiles
         document.addEventListener('touchmove', manejarMovimiento, { passive: false });
         document.addEventListener('touchend', manejarFin, { passive: false });
         document.addEventListener('touchcancel', manejarFin, { passive: false });
       } else {
-        // Eventos de mouse
         document.addEventListener('mousemove', manejarMovimiento, { passive: false });
         document.addEventListener('mouseup', manejarFin, { passive: false });
       }
       
-      // Cambiar cursor del documento
       document.body.style.cursor = 'nw-resize';
       document.body.style.userSelect = 'none';
       
@@ -343,7 +338,6 @@ const TextoAnotacion = ({
 
       await onGuardar?.(anotacionActualizada);
       
-      // Cerrar modal y activar modo edición
       setMostrarModal(false);
       setModoEdicion(true);
       
@@ -430,43 +424,55 @@ const TextoAnotacion = ({
   }, [mostrarModal, manejarTeclas]);
 
   /**
-   * Estilos
+   * NUEVO: Estilos mejorados con fuente Caveat y transparencia
    */
   const fontSizeEscalado = Math.max(10, fontSizeLocal * zoom);
+  const pesoFuente = obtenerPesoFuente(fontSizeLocal);
+  const anotacionGuardada = esAnotacionGuardada();
 
   const estilosAnotacion = {
     fontSize: `${fontSizeEscalado}px`,
     color: colorLocal,
-    lineHeight: '1.2',
+    lineHeight: '1.3',
+    letterSpacing: '0.5px',
     wordWrap: 'break-word',
     overflow: 'hidden',
     width: '100%',
     height: '100%',
     padding: '4px 6px',
-    pointerEvents: redimensionando ? 'none' : 'auto'
+    pointerEvents: redimensionando ? 'none' : 'auto',
+    // NUEVO: Aplicar fuente Caveat
+    fontFamily: '"Caveat", cursive',
+    fontOpticalSizing: 'auto',
+    fontWeight: pesoFuente,
+    fontStyle: 'normal'
   };
 
-  // Determinar si debe ser transparente
   const yaGuardada = !anotacion.metadatos?.esNueva;
   const enModoEdicion = modoEdicion && yaGuardada;
   
+  // NUEVO: Estilos del contenedor con lógica de transparencia mejorada
   const estilosContenedor = {
     width: '100%',
     height: '100%',
     border: modoEdicion 
       ? '2px dashed #de007e' 
       : seleccionada 
-        ? '2px solid #de007e' 
-        : '1px solid rgba(0,0,0,0.1)',
+        ? (anotacionGuardada ? '1px solid rgba(222, 0, 126, 0.3)' : '2px solid #de007e')
+        : (anotacionGuardada ? '1px solid transparent' : '1px solid rgba(0,0,0,0.1)'),
     borderRadius: '4px',
-    backgroundColor: enModoEdicion 
-      ? 'rgba(255, 255, 255, 0.1)' // MUY transparente cuando es movible/redimensionable
-      : anotacion.metadatos?.esNueva
-        ? 'rgba(222, 0, 126, 0.1)' // Ligeramente rosa para nuevas
-        : 'rgba(255, 255, 255, 0.9)', // Sólido para normales
-    boxShadow: (seleccionada || modoEdicion)
-      ? '0 2px 8px rgba(222, 0, 126, 0.3)' 
-      : '0 1px 3px rgba(0, 0, 0, 0.1)',
+    backgroundColor: anotacionGuardada 
+      ? 'transparent' // COMPLETAMENTE TRANSPARENTE cuando está guardada
+      : enModoEdicion 
+        ? 'rgba(255, 255, 255, 0.1)'
+        : anotacion.metadatos?.esNueva
+          ? 'rgba(222, 0, 126, 0.1)'
+          : 'rgba(255, 255, 255, 0.9)',
+    boxShadow: anotacionGuardada
+      ? (seleccionada ? '0 1px 6px rgba(222, 0, 126, 0.1)' : 'none')
+      : (seleccionada || modoEdicion)
+        ? '0 2px 8px rgba(222, 0, 126, 0.3)'
+        : '0 1px 3px rgba(0, 0, 0, 0.1)',
     transition: redimensionando ? 'none' : 'all 0.2s ease',
     cursor: redimensionando ? 'nw-resize' : puedeArrastrar ? 'move' : 'pointer',
     position: 'relative',
@@ -474,7 +480,7 @@ const TextoAnotacion = ({
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     userSelect: redimensionando ? 'none' : 'auto',
-    touchAction: 'none' // Importante para dispositivos táctiles
+    touchAction: 'none'
   };
 
   // Estilos para los handles de redimensionamiento
@@ -486,7 +492,6 @@ const TextoAnotacion = ({
     zIndex: 10
   };
 
-  // Ajustar tamaño de handles para móvil
   const tamanoHandle = esDispositiveMovil ? {
     principal: { width: '14px', height: '14px' },
     secundario: { width: '12px', height: '24px' }
@@ -495,7 +500,6 @@ const TextoAnotacion = ({
     secundario: { width: '8px', height: '20px' }
   };
 
-  // Preparar eventos según el dispositivo
   const eventosContenedor = {
     ...(esDispositiveMovil ? {
       onTouchStart: manejarTouchStart,
@@ -510,19 +514,18 @@ const TextoAnotacion = ({
     <>
       <div
         ref={contenedorRef}
-        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${modoEdicion ? 'editando' : ''} ${redimensionando ? 'redimensionando' : ''} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
+        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${modoEdicion ? 'editando' : ''} ${anotacionGuardada ? 'guardada' : ''} ${redimensionando ? 'redimensionando' : ''} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
         style={estilosContenedor}
         {...eventosContenedor}
       >
-        {/* Contenido del texto */}
-        <div className="contenido-texto" style={estilosAnotacion}>
+        {/* Contenido del texto con fuente Caveat */}
+        <div className="contenido-texto contenido-texto-caveat" style={estilosAnotacion}>
           {textoLocal}
         </div>
 
         {/* Handles de redimensionamiento - SOLO en modo edición y ya guardadas */}
         {enModoEdicion && (
           <>
-            {/* Esquina inferior derecha - Principal */}
             <div
               className="resize-handle resize-se"
               onMouseDown={!esDispositiveMovil ? (e) => iniciarRedimension(e, 'se') : undefined}
@@ -538,7 +541,6 @@ const TextoAnotacion = ({
               title="Redimensionar ancho y alto"
             />
             
-            {/* Lado derecho - Solo en desktop o tablets grandes */}
             {(!esDispositiveMovil || window.innerWidth > 600) && (
               <div
                 className="resize-handle resize-e"
@@ -558,7 +560,6 @@ const TextoAnotacion = ({
               />
             )}
             
-            {/* Lado inferior - Solo en desktop o tablets grandes */}
             {(!esDispositiveMovil || window.innerWidth > 600) && (
               <div
                 className="resize-handle resize-s"
@@ -605,7 +606,25 @@ const TextoAnotacion = ({
           </div>
         )}
 
-        {seleccionada && !modoEdicion && (
+        {/* NUEVO: Indicador específico para anotaciones guardadas */}
+        {seleccionada && anotacionGuardada && (
+          <div style={{
+            position: 'absolute',
+            bottom: '-25px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: '10px',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '3px 8px',
+            borderRadius: '4px',
+            whiteSpace: 'nowrap'
+          }}>
+            {esDispositiveMovil ? 'Mantén presionado para opciones' : 'Doble clic para opciones'}
+          </div>
+        )}
+
+        {seleccionada && !modoEdicion && !anotacionGuardada && (
           <div style={{
             position: 'absolute',
             bottom: '-25px',
@@ -623,7 +642,7 @@ const TextoAnotacion = ({
         )}
       </div>
 
-      {/* Modal de edición/opciones */}
+      {/* Modal de edición/opciones con textarea con fuente Caveat */}
       {mostrarModal && (
         <div className="modal-overlay" onClick={cancelarEdicion}>
           <div className="modal-edicion" onClick={(e) => e.stopPropagation()}>
@@ -655,7 +674,14 @@ const TextoAnotacion = ({
                   ref={modalTextareaRef}
                   value={textoLocal}
                   onChange={(e) => setTextoLocal(e.target.value)}
-                  className="textarea-modal"
+                  className="textarea-modal caveat-text"
+                  style={{
+                    fontFamily: '"Caveat", cursive',
+                    fontOpticalSizing: 'auto',
+                    fontWeight: 500,
+                    fontStyle: 'normal',
+                    fontSize: '18px'
+                  }}
                   placeholder="Escribe el contenido de tu anotación..."
                   rows={4}
                 />
@@ -696,10 +722,15 @@ const TextoAnotacion = ({
               <div className="vista-previa">
                 <label>Vista previa:</label>
                 <div 
-                  className="preview-text"
+                  className="preview-text caveat-text"
                   style={{
                     fontSize: `${fontSizeLocal}px`,
-                    color: colorLocal
+                    color: colorLocal,
+                    fontFamily: '"Caveat", cursive',
+                    fontOpticalSizing: 'auto',
+                    fontWeight: obtenerPesoFuente(fontSizeLocal),
+                    fontStyle: 'normal',
+                    letterSpacing: '0.5px'
                   }}
                 >
                   {textoLocal || 'Vista previa del texto...'}

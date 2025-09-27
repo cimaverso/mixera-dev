@@ -1,4 +1,4 @@
-/* src/Componentes/Lector/lector.css - VERSIÓN COMPLETA */
+/* src/Componentes/Lector/lector.css - VERSIÓN COMPLETA CON CAVEAT */
 
 /* ========== VARIABLES CSS ========== */
 :root {
@@ -23,7 +23,23 @@
   --border-radius-small: 4px;
   --transition-fast: 0.2s ease;
   --transition-medium: 0.3s ease;
+  
+  /* FUENTE CAVEAT PARA ANOTACIONES */
+  --font-caveat: "Caveat", cursive;
 }
+
+/* ========== FUENTE CAVEAT PARA ANOTACIONES ========== */
+.caveat-text {
+  font-family: var(--font-caveat);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.caveat-light { font-weight: 400; }
+.caveat-medium { font-weight: 500; }
+.caveat-semi-bold { font-weight: 600; }
+.caveat-bold { font-weight: 700; }
 
 /* ========== LAYOUT PRINCIPAL DEL LECTOR ========== */
 .lector-pdf {
@@ -120,7 +136,7 @@
   box-shadow: 0 0 10px var(--color-primary);
 }
 
-/* ========== ANOTACIONES ========== */
+/* ========== ANOTACIONES CON FUENTE CAVEAT ========== */
 .anotacion-wrapper {
   transition: var(--transition-fast);
   /* Asegurar que los wrappers mantengan su posición */
@@ -137,6 +153,8 @@
   position: relative;
   transition: var(--transition-fast);
   pointer-events: auto;
+  /* Aplicar fuente Caveat por defecto */
+  font-family: var(--font-caveat);
 }
 
 .anotacion-texto.seleccionada {
@@ -145,6 +163,16 @@
 
 .anotacion-texto.editando {
   z-index: 1002;
+}
+
+/* NUEVO: Estilos específicos para contenido de texto con Caveat */
+.contenido-texto-caveat {
+  font-family: var(--font-caveat);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
 }
 
 /* ========== EDITOR INLINE ========== */
@@ -281,7 +309,7 @@
   opacity: 1;
 }
 
-/* ========== ESTADOS DE ANOTACIÓN MEJORADOS ========== */
+/* ========== ESTADOS DE ANOTACIÓN CON TRANSPARENCIA ========== */
 .anotacion-texto:hover:not(.editando) {
   transform: scale(1.02);
   box-shadow: 0 2px 12px rgba(222, 0, 126, 0.2) !important;
@@ -296,6 +324,26 @@
 .anotacion-texto.seleccionada:not(.editando) {
   border-color: #de007e !important;
   box-shadow: 0 2px 12px rgba(222, 0, 126, 0.3) !important;
+}
+
+/* NUEVO: Estados de transparencia para integración */
+.anotacion-texto.guardada {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  /* Mantener solo sombra sutil en hover */
+}
+
+.anotacion-texto.guardada:hover {
+  background-color: rgba(222, 0, 126, 0.05) !important;
+  border: 1px solid rgba(222, 0, 126, 0.2) !important;
+  box-shadow: 0 1px 6px rgba(222, 0, 126, 0.1) !important;
+}
+
+.anotacion-texto.guardada.seleccionada {
+  background-color: rgba(222, 0, 126, 0.08) !important;
+  border: 1px solid rgba(222, 0, 126, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(222, 0, 126, 0.15) !important;
 }
 
 /* ========== ESTADOS DE CARGA Y ERROR ========== */
