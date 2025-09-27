@@ -1,15 +1,18 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN LIMPIA
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN CON SOPORTE MÓVIL MEJORADO
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
 /**
  * Componente individual para anotaciones de texto con redimensionamiento
+ * CON SOPORTE OPTIMIZADO PARA DISPOSITIVOS MÓVILES
  */
 const TextoAnotacion = ({
   anotacion,
   seleccionada,
   editando,
   zoom,
+  esDispositiveMovil = false, // Nueva prop
+  puedeArrastrar = false, // Nueva prop
   onGuardar,
   onEliminar,
   onIniciarEdicion
@@ -33,11 +36,60 @@ const TextoAnotacion = ({
   const modalTextareaRef = useRef(null);
   const contenedorRef = useRef(null);
   const [ultimoClic, setUltimoClic] = useState(0);
+  const [timerToque, setTimerToque] = useState(null);
 
   /**
-   * Maneja clics: Un clic = seleccionar, Doble clic = modal opciones
+   * Maneja eventos de toque en móvil con detección de toque largo
+   */
+  const manejarTouchStart = useCallback((event) => {
+    if (!esDispositiveMovil) return;
+
+    // Si está redimensionando o tiene modal abierto, no procesar
+    if (redimensionando || mostrarModal) {
+      event.stopPropagation();
+      return;
+    }
+
+    // Si es nueva y tiene modal abierto, no hacer nada
+    if (modoEdicion && anotacion.metadatos?.esNueva) {
+      return;
+    }
+
+    // Limpiar timer anterior
+    if (timerToque) {
+      clearTimeout(timerToque);
+    }
+
+    // Configurar timer para toque largo (opciones)
+    const nuevoTimer = setTimeout(() => {
+      // Toque largo: mostrar modal de opciones
+      setMostrarModal(true);
+      onIniciarEdicion?.();
+    }, 800); // 800ms para toque largo
+
+    setTimerToque(nuevoTimer);
+  }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, timerToque, onIniciarEdicion]);
+
+  /**
+   * Maneja cuando termina el toque
+   */
+  const manejarTouchEnd = useCallback((event) => {
+    if (!esDispositiveMovil) return;
+
+    // Limpiar timer de toque largo
+    if (timerToque) {
+      clearTimeout(timerToque);
+      setTimerToque(null);
+    }
+  }, [esDispositiveMovil, timerToque]);
+
+  /**
+   * Maneja clics en dispositivos no móviles
    */
   const manejarClick = useCallback((event) => {
+    // En móvil, usar sistema de toques
+    if (esDispositiveMovil) return;
+    
     event.stopPropagation();
     
     // Si está redimensionando, no procesar clics
@@ -58,26 +110,46 @@ const TextoAnotacion = ({
     }
     
     setUltimoClic(ahora);
-  }, [ultimoClic, modoEdicion, anotacion.metadatos?.esNueva, onIniciarEdicion, redimensionando]);
+  }, [esDispositiveMovil, ultimoClic, modoEdicion, anotacion.metadatos?.esNueva, onIniciarEdicion, redimensionando]);
 
   /**
    * Controla cuando se puede arrastrar
    */
   const manejarMouseDown = useCallback((event) => {
+    // En móvil, el arrastre se maneja en el componente padre
+    if (esDispositiveMovil) return;
+
     // No permitir arrastre si está redimensionando o tiene modal abierto
     if (redimensionando || mostrarModal || (anotacion.metadatos?.esNueva && mostrarModal)) {
       event.stopPropagation();
     }
-  }, [redimensionando, mostrarModal, anotacion.metadatos?.esNueva]);
+  }, [esDispositiveMovil, redimensionando, mostrarModal, anotacion.metadatos?.esNueva]);
 
   /**
-   * Inicia el redimensionamiento
+   * Obtiene coordenadas de evento (mouse o táctil)
+   */
+  const obtenerCoordenadas = useCallback((event) => {
+    if (event.touches && event.touches.length > 0) {
+      return {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY
+      };
+    }
+    return {
+      clientX: event.clientX,
+      clientY: event.clientY
+    };
+  }, []);
+
+  /**
+   * Inicia el redimensionamiento (mouse y táctil)
    */
   const iniciarRedimension = useCallback((event, tipo) => {
     event.stopPropagation();
     event.preventDefault();
     
     const rect = contenedorRef.current.getBoundingClientRect();
+    const coords = obtenerCoordenadas(event);
     
     setRedimensionando(true);
     setTipoRedimension(tipo);
@@ -86,13 +158,13 @@ const TextoAnotacion = ({
       alto: rect.height
     });
     setPosicionInicialMouse({
-      x: event.clientX,
-      y: event.clientY
+      x: coords.clientX,
+      y: coords.clientY
     });
-  }, []);
+  }, [obtenerCoordenadas]);
 
   /**
-   * Maneja el movimiento durante redimensionamiento
+   * Maneja el movimiento durante redimensionamiento (mouse y táctil)
    */
   const manejarMovimientoRedimension = useCallback((event) => {
     if (!redimensionando || !tipoRedimension || !dimensionesIniciales || !posicionInicialMouse) {
@@ -101,8 +173,9 @@ const TextoAnotacion = ({
 
     event.preventDefault();
     
-    const deltaX = event.clientX - posicionInicialMouse.x;
-    const deltaY = event.clientY - posicionInicialMouse.y;
+    const coords = obtenerCoordenadas(event);
+    const deltaX = coords.clientX - posicionInicialMouse.x;
+    const deltaY = coords.clientY - posicionInicialMouse.y;
     
     let nuevoAncho = dimensionesIniciales.ancho;
     let nuevoAlto = dimensionesIniciales.alto;
@@ -134,7 +207,7 @@ const TextoAnotacion = ({
       contenedorRef.current.style.width = `${nuevoAncho}px`;
       contenedorRef.current.style.height = `${nuevoAlto}px`;
     }
-  }, [redimensionando, tipoRedimension, dimensionesIniciales, posicionInicialMouse]);
+  }, [redimensionando, tipoRedimension, dimensionesIniciales, posicionInicialMouse, obtenerCoordenadas]);
 
   /**
    * Finaliza el redimensionamiento y guarda las nuevas dimensiones
@@ -187,30 +260,57 @@ const TextoAnotacion = ({
    */
   useEffect(() => {
     if (redimensionando) {
-      const manejarMouseMove = (e) => {
+      const manejarMovimiento = (e) => {
         e.preventDefault();
         manejarMovimientoRedimension(e);
       };
-      const manejarMouseUp = (e) => {
+      
+      const manejarFin = (e) => {
         e.preventDefault();
         finalizarRedimension();
       };
       
-      document.addEventListener('mousemove', manejarMouseMove, { passive: false });
-      document.addEventListener('mouseup', manejarMouseUp, { passive: false });
+      if (esDispositiveMovil) {
+        // Eventos táctiles
+        document.addEventListener('touchmove', manejarMovimiento, { passive: false });
+        document.addEventListener('touchend', manejarFin, { passive: false });
+        document.addEventListener('touchcancel', manejarFin, { passive: false });
+      } else {
+        // Eventos de mouse
+        document.addEventListener('mousemove', manejarMovimiento, { passive: false });
+        document.addEventListener('mouseup', manejarFin, { passive: false });
+      }
       
       // Cambiar cursor del documento
       document.body.style.cursor = 'nw-resize';
       document.body.style.userSelect = 'none';
       
       return () => {
-        document.removeEventListener('mousemove', manejarMouseMove);
-        document.removeEventListener('mouseup', manejarMouseUp);
+        if (esDispositiveMovil) {
+          document.removeEventListener('touchmove', manejarMovimiento);
+          document.removeEventListener('touchend', manejarFin);
+          document.removeEventListener('touchcancel', manejarFin);
+        } else {
+          document.removeEventListener('mousemove', manejarMovimiento);
+          document.removeEventListener('mouseup', manejarFin);
+        }
+        
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       };
     }
-  }, [redimensionando, manejarMovimientoRedimension, finalizarRedimension]);
+  }, [redimensionando, manejarMovimientoRedimension, finalizarRedimension, esDispositiveMovil]);
+
+  /**
+   * Limpiar timer al desmontar componente
+   */
+  useEffect(() => {
+    return () => {
+      if (timerToque) {
+        clearTimeout(timerToque);
+      }
+    };
+  }, [timerToque]);
 
   /**
    * Guarda la anotación y la pone en modo edición
@@ -274,10 +374,14 @@ const TextoAnotacion = ({
    * Elimina la anotación
    */
   const eliminarAnotacion = useCallback(() => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta anotación?')) {
+    const mensaje = esDispositiveMovil 
+      ? '¿Eliminar esta anotación?' 
+      : '¿Estás seguro de que deseas eliminar esta anotación?';
+      
+    if (window.confirm(mensaje)) {
       onEliminar?.();
     }
-  }, [onEliminar]);
+  }, [onEliminar, esDispositiveMovil]);
 
   /**
    * Maneja teclas del modal
@@ -343,8 +447,8 @@ const TextoAnotacion = ({
   };
 
   // Determinar si debe ser transparente
-  const yaGuardada = !anotacion.metadatos?.esNueva; // Ya fue guardada al menos una vez
-  const enModoEdicion = modoEdicion && yaGuardada; // En modo edición Y ya guardada
+  const yaGuardada = !anotacion.metadatos?.esNueva;
+  const enModoEdicion = modoEdicion && yaGuardada;
   
   const estilosContenedor = {
     width: '100%',
@@ -364,12 +468,13 @@ const TextoAnotacion = ({
       ? '0 2px 8px rgba(222, 0, 126, 0.3)' 
       : '0 1px 3px rgba(0, 0, 0, 0.1)',
     transition: redimensionando ? 'none' : 'all 0.2s ease',
-    cursor: redimensionando ? 'nw-resize' : modoEdicion ? 'move' : 'pointer',
+    cursor: redimensionando ? 'nw-resize' : puedeArrastrar ? 'move' : 'pointer',
     position: 'relative',
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
-    userSelect: redimensionando ? 'none' : 'auto'
+    userSelect: redimensionando ? 'none' : 'auto',
+    touchAction: 'none' // Importante para dispositivos táctiles
   };
 
   // Estilos para los handles de redimensionamiento
@@ -381,14 +486,33 @@ const TextoAnotacion = ({
     zIndex: 10
   };
 
+  // Ajustar tamaño de handles para móvil
+  const tamanoHandle = esDispositiveMovil ? {
+    principal: { width: '14px', height: '14px' },
+    secundario: { width: '12px', height: '24px' }
+  } : {
+    principal: { width: '10px', height: '10px' },
+    secundario: { width: '8px', height: '20px' }
+  };
+
+  // Preparar eventos según el dispositivo
+  const eventosContenedor = {
+    ...(esDispositiveMovil ? {
+      onTouchStart: manejarTouchStart,
+      onTouchEnd: manejarTouchEnd
+    } : {
+      onClick: manejarClick,
+      onMouseDown: manejarMouseDown
+    })
+  };
+
   return (
     <>
       <div
         ref={contenedorRef}
-        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${modoEdicion ? 'editando' : ''} ${redimensionando ? 'redimensionando' : ''}`}
+        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${modoEdicion ? 'editando' : ''} ${redimensionando ? 'redimensionando' : ''} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
         style={estilosContenedor}
-        onClick={manejarClick}
-        onMouseDown={manejarMouseDown}
+        {...eventosContenedor}
       >
         {/* Contenido del texto */}
         <div className="contenido-texto" style={estilosAnotacion}>
@@ -401,52 +525,58 @@ const TextoAnotacion = ({
             {/* Esquina inferior derecha - Principal */}
             <div
               className="resize-handle resize-se"
-              onMouseDown={(e) => iniciarRedimension(e, 'se')}
+              onMouseDown={!esDispositiveMovil ? (e) => iniciarRedimension(e, 'se') : undefined}
+              onTouchStart={esDispositiveMovil ? (e) => iniciarRedimension(e, 'se') : undefined}
               style={{
                 ...estiloHandleBase,
-                bottom: '-4px',
-                right: '-4px',
-                width: '10px',
-                height: '10px',
+                bottom: '-6px',
+                right: '-6px',
+                ...tamanoHandle.principal,
                 cursor: 'nw-resize',
                 borderRadius: '50%'
               }}
               title="Redimensionar ancho y alto"
             />
             
-            {/* Lado derecho */}
-            <div
-              className="resize-handle resize-e"
-              onMouseDown={(e) => iniciarRedimension(e, 'e')}
-              style={{
-                ...estiloHandleBase,
-                top: '50%',
-                right: '-4px',
-                width: '8px',
-                height: '20px',
-                cursor: 'ew-resize',
-                borderRadius: '4px',
-                transform: 'translateY(-50%)'
-              }}
-              title="Redimensionar ancho"
-            />
+            {/* Lado derecho - Solo en desktop o tablets grandes */}
+            {(!esDispositiveMovil || window.innerWidth > 600) && (
+              <div
+                className="resize-handle resize-e"
+                onMouseDown={!esDispositiveMovil ? (e) => iniciarRedimension(e, 'e') : undefined}
+                onTouchStart={esDispositiveMovil ? (e) => iniciarRedimension(e, 'e') : undefined}
+                style={{
+                  ...estiloHandleBase,
+                  top: '50%',
+                  right: '-4px',
+                  width: tamanoHandle.secundario.width,
+                  height: tamanoHandle.secundario.height,
+                  cursor: 'ew-resize',
+                  borderRadius: '4px',
+                  transform: 'translateY(-50%)'
+                }}
+                title="Redimensionar ancho"
+              />
+            )}
             
-            {/* Lado inferior */}
-            <div
-              className="resize-handle resize-s"
-              onMouseDown={(e) => iniciarRedimension(e, 's')}
-              style={{
-                ...estiloHandleBase,
-                bottom: '-4px',
-                left: '50%',
-                width: '20px',
-                height: '8px',
-                cursor: 'ns-resize',
-                borderRadius: '4px',
-                transform: 'translateX(-50%)'
-              }}
-              title="Redimensionar alto"
-            />
+            {/* Lado inferior - Solo en desktop o tablets grandes */}
+            {(!esDispositiveMovil || window.innerWidth > 600) && (
+              <div
+                className="resize-handle resize-s"
+                onMouseDown={!esDispositiveMovil ? (e) => iniciarRedimension(e, 's') : undefined}
+                onTouchStart={esDispositiveMovil ? (e) => iniciarRedimension(e, 's') : undefined}
+                style={{
+                  ...estiloHandleBase,
+                  bottom: '-4px',
+                  left: '50%',
+                  width: tamanoHandle.secundario.height,
+                  height: tamanoHandle.secundario.width,
+                  cursor: 'ns-resize',
+                  borderRadius: '4px',
+                  transform: 'translateX(-50%)'
+                }}
+                title="Redimensionar alto"
+              />
+            )}
           </>
         )}
 
@@ -456,16 +586,22 @@ const TextoAnotacion = ({
             position: 'absolute',
             top: '-30px',
             left: '0',
-            fontSize: '11px',
+            fontSize: esDispositiveMovil ? '10px' : '11px',
             color: '#de007e',
             backgroundColor: 'rgba(255,255,255,0.95)',
             padding: '4px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
             border: '1px solid #de007e',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            maxWidth: esDispositiveMovil ? '120px' : 'none',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}>
-            Arrastra para mover • Esquinas/lados para redimensionar
+            {esDispositiveMovil 
+              ? 'Mantén presionado para mover' 
+              : 'Arrastra para mover • Esquinas/lados para redimensionar'
+            }
           </div>
         )}
 
@@ -482,7 +618,7 @@ const TextoAnotacion = ({
             borderRadius: '4px',
             whiteSpace: 'nowrap'
           }}>
-            Doble clic para opciones
+            {esDispositiveMovil ? 'Mantén presionado para opciones' : 'Doble clic para opciones'}
           </div>
         )}
       </div>
@@ -582,9 +718,11 @@ const TextoAnotacion = ({
 
             {/* Footer */}
             <div className="modal-footer">
-              <div className="atajos-hint">
-                Ctrl+Enter para guardar • Esc para cancelar
-              </div>
+              {!esDispositiveMovil && (
+                <div className="atajos-hint">
+                  Ctrl+Enter para guardar • Esc para cancelar
+                </div>
+              )}
               <div className="botones-modal">
                 {!anotacion.metadatos?.esNueva && (
                   <button

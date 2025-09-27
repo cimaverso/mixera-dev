@@ -1,9 +1,10 @@
-// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÓN LIMPIA
+// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÓN CON SOPORTE TÁCTIL MEJORADO
 import React, { useState, useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import TextoAnotacion from './anotaciones/TextoAnotacion';
 
 /**
  * Capa transparente superpuesta al PDF que maneja todas las anotaciones
+ * CON SOPORTE COMPLETO PARA DISPOSITIVOS TÁCTILES
  */
 const CapaAnotaciones = forwardRef(({
   anotaciones,
@@ -21,6 +22,26 @@ const CapaAnotaciones = forwardRef(({
   const [arrastrando, setArrastrando] = useState(false);
   const [posicionArrastre, setPosicionArrastre] = useState({ x: 0, y: 0 });
   const [anotacionArrastrada, setAnotacionArrastrada] = useState(null);
+  const [offsetArrastre, setOffsetArrastre] = useState({ x: 0, y: 0 });
+  const [esDispositiveMovil, setEsDispositiveMovil] = useState(false);
+
+  // Detectar si es dispositivo móvil
+  useEffect(() => {
+    const detectarMovil = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+             ('ontouchstart' in window) ||
+             (window.innerWidth <= 768);
+    };
+    
+    setEsDispositiveMovil(detectarMovil());
+    
+    const manejarResize = () => {
+      setEsDispositiveMovil(detectarMovil());
+    };
+    
+    window.addEventListener('resize', manejarResize);
+    return () => window.removeEventListener('resize', manejarResize);
+  }, []);
 
   /**
    * Convierte coordenadas relativas (0-1) a píxeles según zoom actual
@@ -51,18 +72,37 @@ const CapaAnotaciones = forwardRef(({
   }, [dimensionesPDF, zoom]);
 
   /**
-   * Maneja el clic en la capa para crear nuevas anotaciones
+   * Obtiene coordenadas desde evento (mouse o táctil)
+   */
+  const obtenerCoordenadas = useCallback((event) => {
+    // Si es evento táctil
+    if (event.touches && event.touches.length > 0) {
+      return {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY
+      };
+    }
+    // Si es evento de mouse
+    return {
+      clientX: event.clientX,
+      clientY: event.clientY
+    };
+  }, []);
+
+  /**
+   * Maneja el clic/toque en la capa para crear nuevas anotaciones
    */
   const manejarClickCapa = useCallback((event) => {
     // Solo crear anotación si la herramienta de texto está activa
     if (herramientaActiva !== 'texto') return;
 
     // Evitar crear si se hizo clic en una anotación existente o sus controles
-    if (event.target.closest('.anotacion-texto, .controles-seleccion, .controles-inline')) return;
+    if (event.target.closest('.anotacion-texto, .controles-seleccion, .controles-inline, .modal-overlay')) return;
 
     const rect = capaRef.current.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const coords = obtenerCoordenadas(event);
+    const x = coords.clientX - rect.left;
+    const y = coords.clientY - rect.top;
 
     // Verificar que el clic esté dentro de los límites del PDF
     const limitesX = dimensionesPDF.ancho * zoom;
@@ -71,36 +111,70 @@ const CapaAnotaciones = forwardRef(({
     if (x >= 0 && x <= limitesX && y >= 0 && y <= limitesY) {
       onCrearAnotacion?.({ x, y });
     }
-  }, [herramientaActiva, dimensionesPDF, zoom, onCrearAnotacion]);
+  }, [herramientaActiva, dimensionesPDF, zoom, onCrearAnotacion, obtenerCoordenadas]);
 
   /**
-   * Inicia el arrastre de una anotación
+   * Determina si una anotación puede ser arrastrada
+   */
+  const puedeArrastrar = useCallback((anotacion) => {
+    // En móvil: permitir arrastre si la anotación está en modo edición O si es cursor
+    if (esDispositiveMovil) {
+      const anotacionCompleta = anotaciones.find(a => a.id === anotacion.id);
+      const enModoEdicion = anotacionCompleta && !anotacionCompleta.metadatos?.esNueva;
+      return herramientaActiva === 'cursor' || enModoEdicion;
+    }
+    
+    // En desktop: solo con cursor
+    return herramientaActiva === 'cursor';
+  }, [esDispositiveMovil, herramientaActiva, anotaciones]);
+
+  /**
+   * Inicia el arrastre de una anotación (mouse y táctil)
    */
   const iniciarArrastre = useCallback((anotacionId, event) => {
-    if (herramientaActiva !== 'cursor') return;
+    const anotacion = anotaciones.find(a => a.id === anotacionId);
+    if (!anotacion || !puedeArrastrar(anotacion)) {
+      return;
+    }
 
+    // Prevenir comportamientos por defecto
+    event.preventDefault();
     event.stopPropagation();
-    setArrastrando(true);
-    setAnotacionArrastrada(anotacionId);
     
     const rect = capaRef.current.getBoundingClientRect();
+    const coords = obtenerCoordenadas(event);
+    
+    // Calcular offset desde la esquina superior izquierda de la anotación
+    const posicionAnotacion = convertirAPixeles(anotacion.posicion);
+    const offsetX = coords.clientX - rect.left - posicionAnotacion.x;
+    const offsetY = coords.clientY - rect.top - posicionAnotacion.y;
+    
+    setArrastrando(true);
+    setAnotacionArrastrada(anotacionId);
+    setOffsetArrastre({ x: offsetX, y: offsetY });
     setPosicionArrastre({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: coords.clientX - rect.left - offsetX,
+      y: coords.clientY - rect.top - offsetY
     });
 
     onSeleccionarAnotacion?.(anotacionId);
-  }, [herramientaActiva, onSeleccionarAnotacion]);
+    
+    console.log(`Iniciando arrastre de anotación ${anotacionId} (${esDispositiveMovil ? 'táctil' : 'mouse'})`);
+  }, [anotaciones, puedeArrastrar, onSeleccionarAnotacion, convertirAPixeles, obtenerCoordenadas, esDispositiveMovil]);
 
   /**
-   * Maneja el movimiento durante el arrastre
+   * Maneja el movimiento durante el arrastre (mouse y táctil)
    */
   const manejarMovimiento = useCallback((event) => {
     if (!arrastrando || !anotacionArrastrada) return;
 
+    event.preventDefault();
+    
     const rect = capaRef.current.getBoundingClientRect();
-    const nuevaX = event.clientX - rect.left;
-    const nuevaY = event.clientY - rect.top;
+    const coords = obtenerCoordenadas(event);
+    
+    const nuevaX = coords.clientX - rect.left - offsetArrastre.x;
+    const nuevaY = coords.clientY - rect.top - offsetArrastre.y;
 
     // Verificar límites del PDF
     const limitesX = dimensionesPDF.ancho * zoom;
@@ -110,7 +184,7 @@ const CapaAnotaciones = forwardRef(({
     const yLimitada = Math.max(0, Math.min(nuevaY, limitesY - 60));  // 60px alto mínimo
 
     setPosicionArrastre({ x: xLimitada, y: yLimitada });
-  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom]);
+  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadas]);
 
   /**
    * Finaliza el arrastre y actualiza la posición de la anotación
@@ -132,11 +206,13 @@ const CapaAnotaciones = forwardRef(({
       };
 
       onGuardarAnotacion?.(anotacionActualizada);
+      console.log(`Arrastre finalizado para anotación ${anotacionArrastrada}`);
     }
 
     setArrastrando(false);
     setAnotacionArrastrada(null);
     setPosicionArrastre({ x: 0, y: 0 });
+    setOffsetArrastre({ x: 0, y: 0 });
   }, [arrastrando, anotacionArrastrada, anotaciones, posicionArrastre, convertirARelativo, onGuardarAnotacion]);
 
   /**
@@ -167,26 +243,57 @@ const CapaAnotaciones = forwardRef(({
   const deseleccionarAnotacion = useCallback((event) => {
     if (herramientaActiva === 'texto') return; // No deseleccionar en modo texto
     
-    if (!event.target.closest('.anotacion-texto')) {
+    if (!event.target.closest('.anotacion-texto, .modal-overlay')) {
       onSeleccionarAnotacion?.(null);
     }
   }, [herramientaActiva, onSeleccionarAnotacion]);
 
-  // Event listeners para arrastre
+  // Event listeners para mouse
   useEffect(() => {
-    const manejarMouseMove = (event) => manejarMovimiento(event);
-    const manejarMouseUp = () => finalizarArrastre();
+    if (!esDispositiveMovil) {
+      const manejarMouseMove = (event) => manejarMovimiento(event);
+      const manejarMouseUp = () => finalizarArrastre();
 
-    if (arrastrando) {
-      document.addEventListener('mousemove', manejarMouseMove);
-      document.addEventListener('mouseup', manejarMouseUp);
+      if (arrastrando) {
+        document.addEventListener('mousemove', manejarMouseMove);
+        document.addEventListener('mouseup', manejarMouseUp);
+      }
+
+      return () => {
+        document.removeEventListener('mousemove', manejarMouseMove);
+        document.removeEventListener('mouseup', manejarMouseUp);
+      };
     }
+  }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
-    return () => {
-      document.removeEventListener('mousemove', manejarMouseMove);
-      document.removeEventListener('mouseup', manejarMouseUp);
-    };
-  }, [arrastrando, manejarMovimiento, finalizarArrastre]);
+  // Event listeners para táctil
+  useEffect(() => {
+    if (esDispositiveMovil) {
+      const manejarTouchMove = (event) => {
+        if (arrastrando) {
+          manejarMovimiento(event);
+        }
+      };
+      
+      const manejarTouchEnd = () => {
+        if (arrastrando) {
+          finalizarArrastre();
+        }
+      };
+
+      if (arrastrando) {
+        document.addEventListener('touchmove', manejarTouchMove, { passive: false });
+        document.addEventListener('touchend', manejarTouchEnd);
+        document.addEventListener('touchcancel', manejarTouchEnd);
+      }
+
+      return () => {
+        document.removeEventListener('touchmove', manejarTouchMove);
+        document.removeEventListener('touchend', manejarTouchEnd);
+        document.removeEventListener('touchcancel', manejarTouchEnd);
+      };
+    }
+  }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
   // Métodos expuestos al componente padre
   useImperativeHandle(ref, () => ({
@@ -226,6 +333,16 @@ const CapaAnotaciones = forwardRef(({
       ? posicionArrastre 
       : posicionPixeles;
 
+    // Determinar cursor según el estado
+    const yaGuardada = !anotacion.metadatos?.esNueva;
+    let cursor = 'pointer';
+    
+    if (puedeArrastrar(anotacion) && yaGuardada) {
+      cursor = 'move';
+    } else if (herramientaActiva === 'cursor') {
+      cursor = 'move';
+    }
+
     const estilosAnotacion = {
       position: 'absolute',
       left: `${posicionFinal.x}px`,
@@ -233,7 +350,20 @@ const CapaAnotaciones = forwardRef(({
       width: `${dimensionesPixeles.ancho}px`,
       height: `${dimensionesPixeles.alto}px`,
       zIndex: anotacionSeleccionada === anotacion.id ? 1000 : 100,
-      cursor: herramientaActiva === 'cursor' ? 'move' : 'pointer'
+      cursor: cursor,
+      touchAction: 'none' // Importante para dispositivos táctiles
+    };
+
+    const manejarInicioArrastre = (event) => {
+      // Tanto para mouse como para táctil
+      iniciarArrastre(anotacion.id, event);
+    };
+
+    const manejarSeleccion = (event) => {
+      // Si no está arrastrando, seleccionar
+      if (!arrastrando) {
+        seleccionarAnotacion(anotacion.id, event);
+      }
     };
 
     switch (anotacion.tipo) {
@@ -243,14 +373,17 @@ const CapaAnotaciones = forwardRef(({
             key={anotacion.id}
             style={estilosAnotacion}
             className={`anotacion-wrapper ${anotacionSeleccionada === anotacion.id ? 'seleccionada' : ''}`}
-            onMouseDown={(e) => iniciarArrastre(anotacion.id, e)}
-            onClick={(e) => seleccionarAnotacion(anotacion.id, e)}
+            onMouseDown={!esDispositiveMovil ? manejarInicioArrastre : undefined}
+            onTouchStart={esDispositiveMovil ? manejarInicioArrastre : undefined}
+            onClick={manejarSeleccion}
           >
             <TextoAnotacion
               anotacion={anotacion}
               seleccionada={anotacionSeleccionada === anotacion.id}
               editando={anotacion.metadatos?.editando || false}
               zoom={zoom}
+              esDispositiveMovil={esDispositiveMovil}
+              puedeArrastrar={puedeArrastrar(anotacion)}
               onGuardar={guardarCambiosAnotacion}
               onEliminar={() => eliminarAnotacion(anotacion.id)}
               onIniciarEdicion={() => seleccionarAnotacion(anotacion.id)}
@@ -270,6 +403,8 @@ const CapaAnotaciones = forwardRef(({
     posicionArrastre,
     anotacionSeleccionada,
     herramientaActiva,
+    esDispositiveMovil,
+    puedeArrastrar,
     iniciarArrastre,
     seleccionarAnotacion,
     guardarCambiosAnotacion,
@@ -283,21 +418,28 @@ const CapaAnotaciones = forwardRef(({
     position: 'absolute',
     top: 0,
     left: 0,
-    pointerEvents: 'auto'
+    pointerEvents: 'auto',
+    touchAction: herramientaActiva === 'texto' ? 'auto' : 'none' // Controlar comportamiento táctil
+  };
+
+  // Eventos principales de la capa
+  const eventosCapaPrincipal = {
+    onClick: manejarClickCapa,
+    onMouseDown: !esDispositiveMovil ? deseleccionarAnotacion : undefined,
+    onTouchStart: esDispositiveMovil ? deseleccionarAnotacion : undefined
   };
 
   return (
     <div
       ref={capaRef}
-      className={`capa-anotaciones ${herramientaActiva}`}
+      className={`capa-anotaciones ${herramientaActiva} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
       style={dimensionesCapa}
-      onClick={manejarClickCapa}
-      onMouseDown={deseleccionarAnotacion}
+      {...eventosCapaPrincipal}
     >
       {/* Indicador visual cuando está en modo texto */}
       {herramientaActiva === 'texto' && (
         <div className="cursor-texto-indicador">
-          Haz clic para agregar texto
+          {esDispositiveMovil ? 'Toca para agregar texto' : 'Haz clic para agregar texto'}
         </div>
       )}
 
@@ -311,6 +453,23 @@ const CapaAnotaciones = forwardRef(({
             left: `${posicionArrastre.x}px`,
             top: `${posicionArrastre.y}px`
           }} />
+        </div>
+      )}
+
+      {/* Indicador de capacidades en móvil */}
+      {esDispositiveMovil && anotacionSeleccionada && (
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          zIndex: 1001
+        }}>
+          💡 Mantén presionado para arrastrar
         </div>
       )}
     </div>
