@@ -1,4 +1,4 @@
-// src/Componentes/Lector/CapaAnotaciones.jsx - FIX SIMPLE DEL ARRASTRE MÓVIL
+// src/Componentes/Lector/CapaAnotaciones.jsx - FIX DEFINITIVO PARA ARRASTRE MÓVIL
 import React, { useState, useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import TextoAnotacion from './anotaciones/TextoAnotacion';
 
@@ -20,6 +20,9 @@ const CapaAnotaciones = forwardRef(({
   const [anotacionArrastrada, setAnotacionArrastrada] = useState(null);
   const [offsetArrastre, setOffsetArrastre] = useState({ x: 0, y: 0 });
   const [esDispositiveMovil, setEsDispositiveMovil] = useState(false);
+  
+  // NUEVO: Guardar dimensiones de la anotación al iniciar arrastre
+  const [dimensionesAnotacionArrastrada, setDimensionesAnotacionArrastrada] = useState(null);
 
   // Detectar si es dispositivo móvil
   useEffect(() => {
@@ -68,7 +71,39 @@ const CapaAnotaciones = forwardRef(({
   }, [dimensionesPDF, zoom]);
 
   /**
-   * Obtiene coordenadas desde evento (mouse o táctil)
+   * CORREGIDO: Obtiene coordenadas desde evento considerando scroll (CLAVE DEL FIX)
+   */
+  const obtenerCoordenadasCorregidas = useCallback((event, rect) => {
+    let clientX, clientY;
+    
+    if (event.touches && event.touches.length > 0) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+
+    // FIX PRINCIPAL: Considerar scroll para móvil
+    if (esDispositiveMovil) {
+      const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      
+      return {
+        x: clientX + scrollX - rect.left,
+        y: clientY + scrollY - rect.top
+      };
+    }
+    
+    // Desktop: comportamiento original
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }, [esDispositiveMovil]);
+
+  /**
+   * Obtiene coordenadas simples (para compatibilidad)
    */
   const obtenerCoordenadas = useCallback((event) => {
     if (event.touches && event.touches.length > 0) {
@@ -91,17 +126,15 @@ const CapaAnotaciones = forwardRef(({
     if (event.target.closest('.anotacion-texto, .controles-seleccion, .controles-inline, .modal-overlay')) return;
 
     const rect = capaRef.current.getBoundingClientRect();
-    const coords = obtenerCoordenadas(event);
-    const x = coords.clientX - rect.left;
-    const y = coords.clientY - rect.top;
+    const coords = obtenerCoordenadasCorregidas(event, rect);
 
     const limitesX = dimensionesPDF.ancho * zoom;
     const limitesY = dimensionesPDF.alto * zoom;
 
-    if (x >= 0 && x <= limitesX && y >= 0 && y <= limitesY) {
-      onCrearAnotacion?.({ x, y });
+    if (coords.x >= 0 && coords.x <= limitesX && coords.y >= 0 && coords.y <= limitesY) {
+      onCrearAnotacion?.({ x: coords.x, y: coords.y });
     }
-  }, [herramientaActiva, dimensionesPDF, zoom, onCrearAnotacion, obtenerCoordenadas]);
+  }, [herramientaActiva, dimensionesPDF, zoom, onCrearAnotacion, obtenerCoordenadasCorregidas]);
 
   /**
    * Determina si una anotación puede ser arrastrada
@@ -129,56 +162,60 @@ const CapaAnotaciones = forwardRef(({
     event.stopPropagation();
     
     const rect = capaRef.current.getBoundingClientRect();
-    const coords = obtenerCoordenadas(event);
+    const coords = obtenerCoordenadasCorregidas(event, rect);
     
     const posicionAnotacion = convertirAPixeles(anotacion.posicion);
-    const offsetX = coords.clientX - rect.left - posicionAnotacion.x;
-    const offsetY = coords.clientY - rect.top - posicionAnotacion.y;
+    const offsetX = coords.x - posicionAnotacion.x;
+    const offsetY = coords.y - posicionAnotacion.y;
+    
+    // NUEVO: Guardar dimensiones de la anotación al iniciar
+    const dimensiones = {
+      ancho: anotacion.dimensiones.ancho * dimensionesPDF.ancho * zoom,
+      alto: anotacion.dimensiones.alto * dimensionesPDF.alto * zoom
+    };
     
     setArrastrando(true);
     setAnotacionArrastrada(anotacionId);
     setOffsetArrastre({ x: offsetX, y: offsetY });
+    setDimensionesAnotacionArrastrada(dimensiones); // CLAVE: Fijar dimensiones
     setPosicionArrastre({
-      x: coords.clientX - rect.left - offsetX,
-      y: coords.clientY - rect.top - offsetY
+      x: coords.x - offsetX,
+      y: coords.y - offsetY
     });
 
     onSeleccionarAnotacion?.(anotacionId);
     
     console.log(`Iniciando arrastre de anotación ${anotacionId} (${esDispositiveMovil ? 'táctil' : 'mouse'})`);
-  }, [anotaciones, puedeArrastrar, onSeleccionarAnotacion, convertirAPixeles, obtenerCoordenadas, esDispositiveMovil]);
+  }, [anotaciones, puedeArrastrar, onSeleccionarAnotacion, convertirAPixeles, obtenerCoordenadasCorregidas, dimensionesPDF, zoom, esDispositiveMovil]);
 
   /**
    * CORREGIDO: Maneja el movimiento durante el arrastre - FIX PRINCIPAL
    */
   const manejarMovimiento = useCallback((event) => {
-    if (!arrastrando || !anotacionArrastrada) return;
+    if (!arrastrando || !anotacionArrastrada || !dimensionesAnotacionArrastrada) return;
 
     event.preventDefault();
     
     const rect = capaRef.current.getBoundingClientRect();
-    const coords = obtenerCoordenadas(event);
+    const coords = obtenerCoordenadasCorregidas(event, rect);
     
-    const nuevaX = coords.clientX - rect.left - offsetArrastre.x;
-    const nuevaY = coords.clientY - rect.top - offsetArrastre.y;
+    const nuevaX = coords.x - offsetArrastre.x;
+    const nuevaY = coords.y - offsetArrastre.y;
 
-    // FIX PRINCIPAL: Obtener dimensiones reales de la anotación que se está arrastrando
-    const anotacion = anotaciones.find(a => a.id === anotacionArrastrada);
-    if (!anotacion) return;
-    
-    const anchoAnotacion = anotacion.dimensiones.ancho * dimensionesPDF.ancho * zoom;
-    const altoAnotacion = anotacion.dimensiones.alto * dimensionesPDF.alto * zoom;
+    // CORREGIDO: Usar dimensiones fijas guardadas al iniciar arrastre
+    const anchoAnotacion = dimensionesAnotacionArrastrada.ancho;
+    const altoAnotacion = dimensionesAnotacionArrastrada.alto;
     
     // Límites del PDF
     const limitesX = dimensionesPDF.ancho * zoom;
     const limitesY = dimensionesPDF.alto * zoom;
 
-    // CORREGIDO: Usar las dimensiones reales de la anotación
+    // CORREGIDO: Usar las dimensiones fijas
     const xLimitada = Math.max(0, Math.min(nuevaX, limitesX - anchoAnotacion));
     const yLimitada = Math.max(0, Math.min(nuevaY, limitesY - altoAnotacion));
 
     setPosicionArrastre({ x: xLimitada, y: yLimitada });
-  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadas, anotaciones]);
+  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadasCorregidas, dimensionesAnotacionArrastrada]);
 
   /**
    * Finaliza el arrastre y actualiza la posición de la anotación
@@ -203,10 +240,12 @@ const CapaAnotaciones = forwardRef(({
       console.log(`Arrastre finalizado para anotación ${anotacionArrastrada}`);
     }
 
+    // NUEVO: Limpiar dimensiones guardadas
     setArrastrando(false);
     setAnotacionArrastrada(null);
     setPosicionArrastre({ x: 0, y: 0 });
     setOffsetArrastre({ x: 0, y: 0 });
+    setDimensionesAnotacionArrastrada(null);
   }, [arrastrando, anotacionArrastrada, anotaciones, posicionArrastre, convertirARelativo, onGuardarAnotacion]);
 
   /**
@@ -260,7 +299,7 @@ const CapaAnotaciones = forwardRef(({
     }
   }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
-  // CORREGIDO: Event listeners para táctil - SIMPLIFICADO
+  // Event listeners para táctil - SIN CAMBIOS
   useEffect(() => {
     if (esDispositiveMovil) {
       const manejarTouchMove = (event) => {
@@ -276,7 +315,6 @@ const CapaAnotaciones = forwardRef(({
       };
 
       if (arrastrando) {
-        // SIMPLIFICADO: Solo agregar listeners cuando sea necesario
         document.addEventListener('touchmove', manejarTouchMove, { passive: false });
         document.addEventListener('touchend', manejarTouchEnd);
         document.addEventListener('touchcancel', manejarTouchEnd);
@@ -343,7 +381,6 @@ const CapaAnotaciones = forwardRef(({
       height: `${dimensionesPixeles.alto}px`,
       zIndex: anotacionSeleccionada === anotacion.id ? 1000 : 100,
       cursor: cursor,
-      // SIMPLIFICADO: touchAction básico
       touchAction: arrastrando ? 'none' : 'auto'
     };
 
@@ -402,7 +439,7 @@ const CapaAnotaciones = forwardRef(({
     eliminarAnotacion
   ]);
 
-  // SIMPLIFICADO: Calcular dimensiones de la capa
+  // Calcular dimensiones de la capa
   const dimensionesCapa = {
     width: dimensionesPDF.ancho * zoom,
     height: dimensionesPDF.alto * zoom,
@@ -410,7 +447,6 @@ const CapaAnotaciones = forwardRef(({
     top: 0,
     left: 0,
     pointerEvents: 'auto',
-    // BÁSICO: Solo bloquear touch cuando realmente estamos arrastrando
     touchAction: arrastrando ? 'none' : 'auto'
   };
 
@@ -422,7 +458,7 @@ const CapaAnotaciones = forwardRef(({
   return (
     <div
       ref={capaRef}
-      className={`capa-anotaciones ${herramientaActiva} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
+      className={`capa-anotaciones ${herramientaActiva} ${esDispositiveMovil ? 'movil' : 'desktop'} ${arrastrando ? 'arrastrando' : ''}`}
       style={dimensionesCapa}
       {...eventosCapaPrincipal}
     >
