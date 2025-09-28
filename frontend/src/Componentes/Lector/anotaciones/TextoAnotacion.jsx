@@ -1,10 +1,21 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÃ“N CORREGIDA CON SEPARACIÃ“N DE FUNCIONES MÃ“VIL
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSION SIN SELECTOR DE COLOR
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
 /**
- * Componente individual para anotaciones de texto con fuente Caveat y transparencia
- * SEPARACIÃ“N CLARA: Doble toque para editar, mantener presionado para arrastrar
+ * FUNCIÓN UTILITARIA: Determinar el peso de fuente según el tamaño (FUERA DEL COMPONENTE)
+ */
+const obtenerPesoFuente = (fontSize) => {
+  if (fontSize <= 12) return 400;
+  if (fontSize <= 18) return 500;
+  if (fontSize <= 24) return 600;
+  return 700;
+};
+
+/**
+ * Componente individual para anotaciones de texto con fuente Caveat y auto-ajuste de dimensiones
+ * NUEVA FUNCIONALIDAD: Auto-ajuste del contenedor al contenido del texto
+ * MODIFICADO: Sin selector de color - siempre usa color negro por defecto
  */
 const TextoAnotacion = ({
   anotacion,
@@ -23,7 +34,7 @@ const TextoAnotacion = ({
   const [mostrarModal, setMostrarModal] = useState(anotacion.metadatos?.esNueva || false);
   const [textoLocal, setTextoLocal] = useState(anotacion.contenido.texto);
   const [fontSizeLocal, setFontSizeLocal] = useState(anotacion.contenido.fontSize || 14);
-  const [colorLocal, setColorLocal] = useState(anotacion.contenido.color || '#000000');
+  // REMOVIDO: colorLocal - siempre usar negro
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   
@@ -33,7 +44,11 @@ const TextoAnotacion = ({
   const [dimensionesIniciales, setDimensionesIniciales] = useState(null);
   const [posicionInicialMouse, setPosicionInicialMouse] = useState(null);
   
-  // NUEVOS ESTADOS PARA SEPARAR FUNCIONES MÃ“VIL (solo afecta mÃ³vil)
+  // NUEVO: Estados para auto-ajuste
+  const [dimensionesCalculadas, setDimensionesCalculadas] = useState(null);
+  const [necesitaAutoAjuste, setNecesitaAutoAjuste] = useState(false);
+  
+  // ESTADOS PARA SEPARAR FUNCIONES MOVIL
   const [toqueEstado, setToqueEstado] = useState({
     ultimoToque: 0,
     timerDobleToque: null
@@ -41,20 +56,177 @@ const TextoAnotacion = ({
   
   const modalTextareaRef = useRef(null);
   const contenedorRef = useRef(null);
+  const contenidoRef = useRef(null); // NUEVO: Ref para medir contenido
   const [ultimoClic, setUltimoClic] = useState(0);
 
+  // CONSTANTE: Color siempre negro
+  const COLOR_TEXTO = '#000000';
+
   /**
-   * Determinar el peso de fuente segÃºn el tamaÃ±o
+   * CORREGIDO: Calcula dimensiones manteniendo proporción o usando mínimas necesarias
    */
-  const obtenerPesoFuente = useCallback((fontSize) => {
-    if (fontSize <= 12) return 400;
-    if (fontSize <= 18) return 500;
-    if (fontSize <= 24) return 600;
-    return 700;
+  const calcularDimensionesTexto = useCallback((texto, fontSize, preservarProporcion = true) => {
+    if (!texto || !texto.trim()) {
+      return { ancho: 150, alto: 40 };
+    }
+
+    // Si debe preservar proporción (anotación existente), mantener el ratio actual
+    if (preservarProporcion && anotacion.dimensiones) {
+      const capaAnotaciones = contenedorRef.current?.closest('.capa-anotaciones');
+      if (capaAnotaciones) {
+        const rectCapa = capaAnotaciones.getBoundingClientRect();
+        const anchoActualPixeles = anotacion.dimensiones.ancho * rectCapa.width;
+        const altoActualPixeles = anotacion.dimensiones.alto * rectCapa.height;
+        
+        // Verificar si el texto cabe en las dimensiones actuales
+        const dimensionesNecesarias = calcularDimensionesMinimasTexto(texto, fontSize);
+        
+        // Solo auto-ajustar si el texto NO cabe (evita redimensiones innecesarias)
+        if (dimensionesNecesarias.ancho <= anchoActualPixeles && 
+            dimensionesNecesarias.alto <= altoActualPixeles) {
+          // El texto cabe, mantener dimensiones actuales
+          return {
+            ancho: anchoActualPixeles,
+            alto: altoActualPixeles
+          };
+        }
+        
+        // El texto no cabe, calcular nuevo tamaño manteniendo proporción
+        const ratioActual = anchoActualPixeles / altoActualPixeles;
+        
+        // Escalar proporcionalmente para que quepa el texto
+        let nuevoAncho = Math.max(dimensionesNecesarias.ancho, anchoActualPixeles);
+        let nuevoAlto = nuevoAncho / ratioActual;
+        
+        // Si el alto no es suficiente, ajustar por alto y recalcular ancho
+        if (nuevoAlto < dimensionesNecesarias.alto) {
+          nuevoAlto = dimensionesNecesarias.alto;
+          nuevoAncho = nuevoAlto * ratioActual;
+        }
+        
+        return {
+          ancho: Math.ceil(nuevoAncho),
+          alto: Math.ceil(nuevoAlto)
+        };
+      }
+    }
+
+    // Para anotaciones nuevas o cuando no se puede preservar proporción
+    return calcularDimensionesMinimasTexto(texto, fontSize);
+  }, [zoom, esDispositiveMovil, anotacion.dimensiones]);
+
+  /**
+   * NUEVA FUNCIÓN: Calcula dimensiones mínimas necesarias para el texto
+   */
+  const calcularDimensionesMinimasTexto = useCallback((texto, fontSize) => {
+    // Crear elemento temporal para medir
+    const elementoTemporal = document.createElement('div');
+    elementoTemporal.style.position = 'absolute';
+    elementoTemporal.style.visibility = 'hidden';
+    elementoTemporal.style.whiteSpace = 'pre-wrap';
+    elementoTemporal.style.wordWrap = 'break-word';
+    elementoTemporal.style.fontFamily = '"Caveat", cursive';
+    elementoTemporal.style.fontOpticalSizing = 'auto';
+    elementoTemporal.style.fontWeight = obtenerPesoFuente(fontSize);
+    elementoTemporal.style.fontStyle = 'normal';
+    elementoTemporal.style.fontSize = `${fontSize * zoom}px`;
+    elementoTemporal.style.lineHeight = '1.3';
+    elementoTemporal.style.letterSpacing = '0.5px';
+    elementoTemporal.style.padding = '4px 6px';
+    
+    // Ancho máximo razonable según dispositivo
+    const anchoMaximo = esDispositiveMovil ? 280 * zoom : 400 * zoom;
+    elementoTemporal.style.maxWidth = `${anchoMaximo}px`;
+    
+    elementoTemporal.textContent = texto;
+    document.body.appendChild(elementoTemporal);
+    
+    const rect = elementoTemporal.getBoundingClientRect();
+    const anchoCalculado = Math.max(150 * zoom, rect.width + 8); // +8 para padding extra
+    const altoCalculado = Math.max(40 * zoom, rect.height + 8);
+    
+    document.body.removeChild(elementoTemporal);
+    
+    return {
+      ancho: Math.ceil(anchoCalculado),
+      alto: Math.ceil(altoCalculado)
+    };
+  }, [zoom, esDispositiveMovil, obtenerPesoFuente]);
+
+  /**
+   * NUEVA FUNCIÓN: Convierte dimensiones de píxeles a relativas
+   */
+  const convertirDimensionesARelativas = useCallback((dimensionesPixeles) => {
+    const capaAnotaciones = contenedorRef.current?.closest('.capa-anotaciones');
+    if (!capaAnotaciones) return null;
+    
+    const rectCapa = capaAnotaciones.getBoundingClientRect();
+    return {
+      ancho: dimensionesPixeles.ancho / rectCapa.width,
+      alto: dimensionesPixeles.alto / rectCapa.height
+    };
   }, []);
 
   /**
-   * Determinar si la anotaciÃ³n debe ser transparente (ya guardada)
+   * CORREGIDO: Auto-ajusta manteniendo proporción solo cuando es necesario
+   */
+  const autoAjustarDimensiones = useCallback(async (nuevoTexto = null, nuevoFontSize = null) => {
+    const texto = nuevoTexto !== null ? nuevoTexto : textoLocal;
+    const fontSize = nuevoFontSize !== null ? nuevoFontSize : fontSizeLocal;
+    
+    if (!texto || !texto.trim()) return;
+
+    // IMPORTANTE: Para anotaciones existentes, preservar proporción
+    const esAnotacionExistente = !anotacion.metadatos?.esNueva;
+    const dimensionesPixeles = calcularDimensionesTexto(texto, fontSize, esAnotacionExistente);
+    const dimensionesRelativas = convertirDimensionesARelativas(dimensionesPixeles);
+    
+    if (!dimensionesRelativas) return;
+
+    // Solo auto-ajustar si las dimensiones han cambiado significativamente
+    const cambioAncho = Math.abs(dimensionesRelativas.ancho - anotacion.dimensiones.ancho);
+    const cambioAlto = Math.abs(dimensionesRelativas.alto - anotacion.dimensiones.alto);
+    
+    // Threshold más alto para evitar micro-ajustes al cambiar de dispositivo
+    if (cambioAncho > 0.02 || cambioAlto > 0.02) {
+      const anotacionActualizada = {
+        ...anotacion,
+        dimensiones: dimensionesRelativas,
+        metadatos: {
+          ...anotacion.metadatos,
+          modificado: new Date().toISOString(),
+          autoAjustada: true, // Marcar que fue auto-ajustada
+          preservaProporcion: esAnotacionExistente // Indicar si preserva proporción
+        }
+      };
+      
+      try {
+        await onGuardar?.(anotacionActualizada);
+        setNecesitaAutoAjuste(false);
+      } catch (error) {
+        console.warn('Error al auto-ajustar dimensiones:', error);
+      }
+    }
+  }, [textoLocal, fontSizeLocal, anotacion, calcularDimensionesTexto, convertirDimensionesARelativas, onGuardar]);
+
+  /**
+   * EFECTO: Auto-ajustar cuando cambia el contenido (solo para anotaciones guardadas)
+   */
+  useEffect(() => {
+    const esAnotacionGuardada = !anotacion.metadatos?.esNueva && !mostrarModal && !modoEdicion;
+    
+    if (esAnotacionGuardada && textoLocal && !redimensionando) {
+      // Pequeño delay para asegurar que el DOM esté actualizado
+      const timer = setTimeout(() => {
+        autoAjustarDimensiones();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [textoLocal, fontSizeLocal, zoom, anotacion.metadatos?.esNueva, mostrarModal, modoEdicion, redimensionando, autoAjustarDimensiones]);
+
+  /**
+   * Determinar si la anotación debe ser transparente (ya guardada)
    */
   const esAnotacionGuardada = useCallback(() => {
     return !anotacion.metadatos?.esNueva && !modoEdicion && !mostrarModal;
@@ -74,23 +246,20 @@ const TextoAnotacion = ({
   }, [toqueEstado.timerDobleToque]);
 
   /**
-   * CORREGIDO: Maneja eventos de toque SOLO en mÃ³vil con separaciÃ³n clara
+   * Maneja eventos de toque SOLO en móvil con separación clara
    */
   const manejarTouchStart = useCallback((event) => {
     if (!esDispositiveMovil) return;
 
-    // Si estÃ¡ en redimensionamiento o modal, no procesar
     if (redimensionando || mostrarModal) {
       event.stopPropagation();
       return;
     }
 
-    // Si es nueva anotaciÃ³n en modo ediciÃ³n, no interferir
     if (modoEdicion && anotacion.metadatos?.esNueva) {
       return;
     }
 
-    // Limpiar timers previos
     limpiarTimersToques();
 
     const ahora = Date.now();
@@ -98,7 +267,6 @@ const TextoAnotacion = ({
 
     // DETECTAR DOBLE TOQUE (para editar)
     if (tiempoEntreToque < 300 && tiempoEntreToque > 50) {
-      // Es un doble toque - abrir modal
       event.preventDefault();
       event.stopPropagation();
       
@@ -114,15 +282,11 @@ const TextoAnotacion = ({
       return;
     }
 
-    // PRIMER TOQUE: Solo registrar tiempo para detectar doble toque
     setToqueEstado(prev => ({
       ...prev,
       ultimoToque: ahora,
       contadorToques: 1
     }));
-
-    // Para arrastre: usar la funcionalidad original del sistema (onTouchStart del padre)
-    // NO prevenir el comportamiento por defecto aquÃ­
 
   }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, toqueEstado.ultimoToque, limpiarTimersToques, onIniciarEdicion]);
 
@@ -135,7 +299,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, limpiarTimersToques]);
 
   /**
-   * Maneja clics en dispositivos no mÃ³viles (sin cambios)
+   * Maneja clics en dispositivos no móviles
    */
   const manejarClick = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -160,7 +324,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, ultimoClic, modoEdicion, anotacion.metadatos?.esNueva, onIniciarEdicion, redimensionando]);
 
   /**
-   * Controla cuando se puede arrastrar (sin cambios)
+   * Controla cuando se puede arrastrar
    */
   const manejarMouseDown = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -171,7 +335,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, redimensionando, mostrarModal, anotacion.metadatos?.esNueva]);
 
   /**
-   * Obtiene coordenadas de evento (mouse o tÃ¡ctil)
+   * Obtiene coordenadas de evento (mouse o táctil)
    */
   const obtenerCoordenadas = useCallback((event) => {
     if (event.touches && event.touches.length > 0) {
@@ -187,7 +351,7 @@ const TextoAnotacion = ({
   }, []);
 
   /**
-   * Inicia el redimensionamiento (sin cambios)
+   * Inicia el redimensionamiento
    */
   const iniciarRedimension = useCallback((event, tipo) => {
     event.stopPropagation();
@@ -209,7 +373,7 @@ const TextoAnotacion = ({
   }, [obtenerCoordenadas]);
 
   /**
-   * Maneja el movimiento durante redimensionamiento (sin cambios)
+   * Maneja el movimiento durante redimensionamiento
    */
   const manejarMovimientoRedimension = useCallback((event) => {
     if (!redimensionando || !tipoRedimension || !dimensionesIniciales || !posicionInicialMouse) {
@@ -245,45 +409,43 @@ const TextoAnotacion = ({
   }, [redimensionando, tipoRedimension, dimensionesIniciales, posicionInicialMouse, obtenerCoordenadas]);
 
   /**
-   * Finaliza el redimensionamiento (sin cambios)
+   * Finaliza el redimensionamiento
    */
   const finalizarRedimension = useCallback(async () => {
     if (!redimensionando || !contenedorRef.current) return;
     
     const rect = contenedorRef.current.getBoundingClientRect();
-    const capaAnotaciones = contenedorRef.current.closest('.capa-anotaciones');
-    if (!capaAnotaciones) return;
+    const dimensionesRelativas = convertirDimensionesARelativas({
+      ancho: rect.width,
+      alto: rect.height
+    });
     
-    const rectCapa = capaAnotaciones.getBoundingClientRect();
-    const anchoRelativo = rect.width / rectCapa.width;
-    const altoRelativo = rect.height / rectCapa.height;
+    if (!dimensionesRelativas) return;
     
     try {
       const anotacionActualizada = {
         ...anotacion,
-        dimensiones: {
-          ancho: anchoRelativo,
-          alto: altoRelativo
-        },
+        dimensiones: dimensionesRelativas,
         metadatos: {
           ...anotacion.metadatos,
-          modificado: new Date().toISOString()
+          modificado: new Date().toISOString(),
+          redimensionadaManualmente: true // Marcar que fue redimensionada manualmente
         }
       };
       
       await onGuardar?.(anotacionActualizada);
     } catch (error) {
-      // Error manejado por el padre
+      console.warn('Error al guardar redimensionamiento:', error);
     }
     
     setRedimensionando(false);
     setTipoRedimension(null);
     setDimensionesIniciales(null);
     setPosicionInicialMouse(null);
-  }, [redimensionando, anotacion, onGuardar]);
+  }, [redimensionando, anotacion, onGuardar, convertirDimensionesARelativas]);
 
   /**
-   * Event listeners para redimensionamiento global (sin cambios)
+   * Event listeners para redimensionamiento global
    */
   useEffect(() => {
     if (redimensionando) {
@@ -326,7 +488,7 @@ const TextoAnotacion = ({
   }, [redimensionando, manejarMovimientoRedimension, finalizarRedimension, esDispositiveMovil]);
 
   /**
-   * NUEVO: Limpiar timers al desmontar
+   * Limpiar timers al desmontar
    */
   useEffect(() => {
     return () => {
@@ -335,11 +497,11 @@ const TextoAnotacion = ({
   }, [limpiarTimersToques]);
 
   /**
-   * Guarda la anotaciÃ³n (sin cambios)
+   * CORREGIDO: Guarda la anotación preservando proporción para existentes
    */
   const guardarCambios = useCallback(async () => {
     if (!textoLocal.trim()) {
-      setError('El texto no puede estar vacÃ­o');
+      setError('El texto no puede estar vacío');
       return;
     }
 
@@ -347,19 +509,34 @@ const TextoAnotacion = ({
       setGuardando(true);
       setError(null);
 
+      // CORREGIDO: Solo calcular nuevas dimensiones para anotaciones NUEVAS
+      let dimensionesFinales = anotacion.dimensiones;
+      
+      if (anotacion.metadatos?.esNueva) {
+        // Para anotaciones nuevas: calcular dimensiones óptimas
+        const dimensionesIdeales = calcularDimensionesMinimasTexto(textoLocal.trim(), fontSizeLocal);
+        const dimensionesRelativas = convertirDimensionesARelativas(dimensionesIdeales);
+        if (dimensionesRelativas) {
+          dimensionesFinales = dimensionesRelativas;
+        }
+      }
+      // Para anotaciones existentes: mantener dimensiones actuales (preservar proporción)
+
       const anotacionActualizada = {
         ...anotacion,
         contenido: {
           ...anotacion.contenido,
           texto: textoLocal.trim(),
           fontSize: fontSizeLocal,
-          color: colorLocal
+          color: COLOR_TEXTO // SIEMPRE negro
         },
+        dimensiones: dimensionesFinales,
         metadatos: {
           ...anotacion.metadatos,
           modificado: new Date().toISOString(),
           editando: false,
-          esNueva: false
+          esNueva: false,
+          proporcionPreservada: !anotacion.metadatos?.esNueva // Marcar si se preservó proporción
         }
       };
 
@@ -369,14 +546,14 @@ const TextoAnotacion = ({
       setModoEdicion(true);
       
     } catch (err) {
-      setError('Error al guardar. IntÃ©ntalo de nuevo.');
+      setError('Error al guardar. Inténtalo de nuevo.');
     } finally {
       setGuardando(false);
     }
-  }, [textoLocal, fontSizeLocal, colorLocal, anotacion, onGuardar]);
+  }, [textoLocal, fontSizeLocal, anotacion, onGuardar, calcularDimensionesMinimasTexto, convertirDimensionesARelativas]);
 
   /**
-   * Cancela la ediciÃ³n (sin cambios)
+   * Cancela la edición
    */
   const cancelarEdicion = useCallback(() => {
     if (anotacion.metadatos?.esNueva) {
@@ -386,18 +563,17 @@ const TextoAnotacion = ({
 
     setTextoLocal(anotacion.contenido.texto);
     setFontSizeLocal(anotacion.contenido.fontSize || 14);
-    setColorLocal(anotacion.contenido.color || '#000000');
     setMostrarModal(false);
     setError(null);
   }, [anotacion, onEliminar]);
 
   /**
-   * Elimina la anotaciÃ³n (sin cambios)
+   * Elimina la anotación
    */
   const eliminarAnotacion = useCallback(() => {
     const mensaje = esDispositiveMovil 
-      ? 'Â¿Eliminar esta anotaciÃ³n?' 
-      : 'Â¿EstÃ¡s seguro de que deseas eliminar esta anotaciÃ³n?';
+      ? '¿Eliminar esta anotación?' 
+      : '¿Estás seguro de que deseas eliminar esta anotación?';
       
     if (window.confirm(mensaje)) {
       onEliminar?.();
@@ -405,7 +581,7 @@ const TextoAnotacion = ({
   }, [onEliminar, esDispositiveMovil]);
 
   /**
-   * Maneja teclas del modal (sin cambios)
+   * Maneja teclas del modal
    */
   const manejarTeclas = useCallback((event) => {
     if (!mostrarModal) return;
@@ -429,7 +605,7 @@ const TextoAnotacion = ({
   }, [mostrarModal, guardarCambios, cancelarEdicion]);
 
   /**
-   * Auto-focus en modal (sin cambios)
+   * Auto-focus en modal
    */
   useEffect(() => {
     if (mostrarModal && modalTextareaRef.current) {
@@ -441,7 +617,7 @@ const TextoAnotacion = ({
   }, [mostrarModal]);
 
   /**
-   * Event listeners (sin cambios)
+   * Event listeners
    */
   useEffect(() => {
     if (mostrarModal) {
@@ -451,7 +627,7 @@ const TextoAnotacion = ({
   }, [mostrarModal, manejarTeclas]);
 
   /**
-   * ESTILOS (sin cambios)
+   * ESTILOS
    */
   const fontSizeEscalado = Math.max(10, fontSizeLocal * zoom);
   const pesoFuente = obtenerPesoFuente(fontSizeLocal);
@@ -459,7 +635,7 @@ const TextoAnotacion = ({
 
   const estilosAnotacion = {
     fontSize: `${fontSizeEscalado}px`,
-    color: colorLocal,
+    color: COLOR_TEXTO, // SIEMPRE negro
     lineHeight: '1.3',
     letterSpacing: '0.5px',
     wordWrap: 'break-word',
@@ -508,7 +684,7 @@ const TextoAnotacion = ({
     touchAction: redimensionando ? 'none' : 'auto'
   };
 
-  // Estilos para handles (sin cambios)
+  // Estilos para handles
   const estiloHandleBase = {
     position: 'absolute',
     backgroundColor: '#de007e',
@@ -525,7 +701,7 @@ const TextoAnotacion = ({
     secundario: { width: '8px', height: '20px' }
   };
 
-  // EVENTOS: Mantener funcionalidad original para desktop, doble toque para mÃ³vil
+  // EVENTOS: Mantener funcionalidad original para desktop, doble toque para móvil
   const eventosContenedor = {
     ...(esDispositiveMovil ? {
       onTouchStart: manejarTouchStart,
@@ -545,11 +721,15 @@ const TextoAnotacion = ({
         {...eventosContenedor}
       >
         {/* Contenido del texto con fuente Caveat */}
-        <div className="contenido-texto contenido-texto-caveat" style={estilosAnotacion}>
+        <div 
+          ref={contenidoRef}
+          className="contenido-texto contenido-texto-caveat" 
+          style={estilosAnotacion}
+        >
           {textoLocal}
         </div>
 
-        {/* Handles de redimensionamiento - SOLO en modo ediciÃ³n */}
+        {/* Handles de redimensionamiento - SOLO en modo edición */}
         {enModoEdicion && (
           <>
             <div
@@ -607,7 +787,7 @@ const TextoAnotacion = ({
           </>
         )}
 
-        {/* INDICADORES VISUALES simplificados para mÃ³vil */}
+        {/* INDICADORES VISUALES simplificados para móvil */}
         {esDispositiveMovil && seleccionada && anotacionGuardada && (
           <div style={{
             position: 'absolute',
@@ -625,7 +805,7 @@ const TextoAnotacion = ({
           </div>
         )}
 
-        {/* Indicadores para modo ediciÃ³n */}
+        {/* Indicadores para modo edición */}
         {enModoEdicion && (
           <div style={{
             position: 'absolute',
@@ -644,35 +824,32 @@ const TextoAnotacion = ({
             textOverflow: 'ellipsis'
           }}>
             {esDispositiveMovil 
-              ? 'MantÃ©n presionado para mover' 
+              ? 'Mantén presionado para mover' 
               : 'Arrastra para mover'
             }
           </div>
         )}
 
-        {/* Indicador cuando estÃ¡ iniciando arrastre */}
-        {toqueEstado.iniciandoArrastre && (
+        {/* NUEVO: Indicador de auto-ajuste */}
+        {necesitaAutoAjuste && !redimensionando && (
           <div style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: 'rgba(222, 0, 126, 0.9)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            whiteSpace: 'nowrap',
-            zIndex: 1000,
-            pointerEvents: 'none'
+            top: '-25px',
+            right: '0',
+            fontSize: '9px',
+            color: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            border: '1px solid #28a745',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            whiteSpace: 'nowrap'
           }}>
-            ðŸ”„ Modo arrastre activado
+            Auto-ajustando...
           </div>
         )}
       </div>
 
-      {/* Modal de ediciÃ³n (sin cambios) */}
+      {/* Modal de edición - SIN SELECTOR DE COLOR */}
       {mostrarModal && (
         <div className="modal-overlay" onClick={cancelarEdicion}>
           <div className="modal-edicion" onClick={(e) => e.stopPropagation()}>
@@ -708,14 +885,15 @@ const TextoAnotacion = ({
                     letterSpacing: '0.5px',
                     lineHeight: '1.4'
                   }}
-                  placeholder="Escribe el contenido de tu anotaciÃ³n..."
+                  placeholder="Escribe el contenido de tu anotación..."
                   rows={4}
                 />
               </div>
 
+              {/* CONTROLES DE FORMATO SIMPLIFICADOS - SIN COLOR */}
               <div className="controles-formato">
                 <div className="control-item">
-                  <label htmlFor="font-size">TamaÃ±o:</label>
+                  <label htmlFor="font-size">Tamaño:</label>
                   <div className="input-with-unit">
                     <input
                       id="font-size"
@@ -730,19 +908,7 @@ const TextoAnotacion = ({
                   </div>
                 </div>
 
-                <div className="control-item">
-                  <label htmlFor="color">Color:</label>
-                  <div className="color-picker-container">
-                    <input
-                      id="color"
-                      type="color"
-                      value={colorLocal}
-                      onChange={(e) => setColorLocal(e.target.value)}
-                      className="color-input-modal"
-                    />
-                    <span className="color-value">{colorLocal}</span>
-                  </div>
-                </div>
+                {/* REMOVIDO: Control de color */}
               </div>
 
               <div className="vista-previa">
@@ -751,7 +917,7 @@ const TextoAnotacion = ({
                   className="preview-text"
                   style={{
                     fontSize: `${fontSizeLocal}px`,
-                    color: colorLocal,
+                    color: COLOR_TEXTO, // SIEMPRE negro
                     fontFamily: '"Caveat", cursive',
                     fontOpticalSizing: 'auto',
                     fontWeight: obtenerPesoFuente(fontSizeLocal),
@@ -777,7 +943,7 @@ const TextoAnotacion = ({
             <div className="modal-footer">
               {!esDispositiveMovil && (
                 <div className="atajos-hint">
-                  Ctrl+Enter para guardar â€¢ Esc para cancelar
+                  {/* Ctrl+Enter para guardar • Esc para cancelar */}
                 </div>
               )}
               <div className="botones-modal">
@@ -816,7 +982,7 @@ const TextoAnotacion = ({
                     <>
                       <div className="spinner-btn"></div>
                       Guardando...
-                    </>
+                    </> 
                   ) : (
                     <>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">

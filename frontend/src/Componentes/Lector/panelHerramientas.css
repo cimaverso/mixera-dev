@@ -1,5 +1,5 @@
 /* src/Componentes/Lector/panelHerramientas.css */
-/* Estilos dedicados para el Panel de Herramientas Flotante - OPTIMIZADO MÃƒâ€œVIL */
+/* Estilos dedicados para el Panel de Herramientas Flotante - OPTIMIZADO MOVIL CON COLAPSAR */
 
 /* ========== PANEL DE HERRAMIENTAS FLOTANTE ========== */
 
@@ -12,9 +12,35 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 800; /* Menor que bottom nav (1000) y header mÃƒÂ³vil (1200) */
+  z-index: 800; /* Menor que bottom nav (1000) y header movil (1200) */
   user-select: none;
   transition: all 0.3s ease;
+}
+
+/* Estado colapsado del panel - solo desktop */
+.panel-herramientas-flotante.colapsado .herramienta-label,
+.panel-herramientas-flotante.colapsado .herramienta-shortcut {
+  display: none !important;
+}
+
+.panel-herramientas-flotante.colapsado .herramienta-btn-flotante {
+  min-width: 48px !important;
+  width: 48px !important;
+  justify-content: center !important;
+  padding: 12px !important;
+  gap: 0 !important;
+}
+
+.panel-herramientas-flotante.colapsado .herramientas-container {
+  min-width: 48px;
+  padding: 8px;
+}
+
+/* Asegurar que el botón de colapsar también se ajuste cuando está colapsado */
+.panel-herramientas-flotante.colapsado .boton-colapsar {
+  min-width: 48px;
+  width: 48px;
+  padding: 12px;
 }
 
 /* Indicador de herramienta activa */
@@ -77,6 +103,63 @@
     0 12px 40px rgba(0, 0, 0, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* ========== BOTÓN DE COLAPSAR ========== */
+
+/* Botón de colapsar - solo visible en desktop */
+.boton-colapsar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: #f8f9fa;
+  border: 1px solid rgba(222, 0, 126, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #666666;
+  min-height: 36px;
+}
+
+.boton-colapsar:hover {
+  background: #f0b7d1;
+  border-color: #de007e;
+  color: #b8005a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(222, 0, 126, 0.15);
+}
+
+.boton-colapsar:active {
+  transform: translateY(0);
+  transition: transform 0.1s ease;
+}
+
+/* Icono de colapsar con animación */
+.icono-colapsar {
+  transition: transform 0.2s ease;
+}
+
+.icono-colapsar.expandir {
+  transform: rotate(0deg);
+}
+
+.icono-colapsar.colapsar {
+  transform: rotate(180deg);
+}
+
+/* Separador visual */
+.separador-herramientas {
+  height: 1px;
+  background: linear-gradient(
+    90deg, 
+    transparent 0%, 
+    rgba(222, 0, 126, 0.2) 50%, 
+    transparent 100%
+  );
+  margin: 4px 0;
+}
+
+/* ========== BOTONES DE HERRAMIENTAS ========== */
 
 /* Botones de herramientas flotantes */
 .herramienta-btn-flotante {
@@ -153,7 +236,7 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
-/* Efectos de presiÃƒÂ³n */
+/* Efectos de presion */
 .herramienta-btn-flotante:active {
   transform: translateY(0);
   transition: transform 0.1s ease;
@@ -190,7 +273,7 @@
   color: white;
 }
 
-/* InformaciÃƒÂ³n de atajos (solo visible en hover del panel) */
+/* Informacion de atajos (solo visible en hover del panel) */
 .atajos-info-flotante {
   position: absolute;
   right: 100%;
@@ -247,6 +330,36 @@
     display: none;
   }
 
+  /* Ocultar botón de colapsar en tablet y móvil */
+  .boton-colapsar {
+    display: none;
+  }
+
+  .separador-herramientas {
+    display: none;
+  }
+
+  /* Resetear estilos de colapsado en tablet - mantener texto visible */
+  .panel-herramientas-flotante.colapsado .herramienta-label {
+    display: block !important;
+  }
+  
+  .panel-herramientas-flotante.colapsado .herramienta-shortcut {
+    display: flex !important;
+  }
+
+  .panel-herramientas-flotante.colapsado .herramienta-btn-flotante {
+    min-width: 140px !important;
+    width: auto !important;
+    justify-content: flex-start !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+  }
+
+  .panel-herramientas-flotante.colapsado .herramientas-container {
+    padding: 10px;
+  }
+
   .herramientas-container {
     padding: 10px;
     border-radius: 20px;
@@ -278,12 +391,40 @@
     top: 50%;
     right: 10px;
     transform: translateY(-50%);
-    z-index: 800; /* Asegurar que estÃƒÂ© debajo del header (1200) y bottom nav (1000) */
+    z-index: 800; /* Asegurar que este debajo del header (1200) y bottom nav (1000) */
   }
 
   /* Ocultar completamente el indicador */
   .herramienta-activa-indicator {
     display: none;
+  }
+
+  /* Ocultar botón de colapsar en móvil */
+  .boton-colapsar {
+    display: none;
+  }
+
+  .separador-herramientas {
+    display: none;
+  }
+
+  /* En móvil siempre solo iconos, sin importar el estado colapsado */
+  .panel-herramientas-flotante .herramienta-label,
+  .panel-herramientas-flotante .herramienta-shortcut,
+  .panel-herramientas-flotante.colapsado .herramienta-label,
+  .panel-herramientas-flotante.colapsado .herramienta-shortcut {
+    display: none !important;
+  }
+
+  .panel-herramientas-flotante .herramienta-btn-flotante,
+  .panel-herramientas-flotante.colapsado .herramienta-btn-flotante {
+    min-width: 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 14px;
+    gap: 0 !important;
   }
 
   .herramientas-container {
@@ -292,39 +433,19 @@
     border-radius: 16px;
   }
 
-  /* SOLO ICONOS en mÃƒÂ³vil */
-  .herramienta-btn-flotante {
-    min-width: 48px;
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 14px;
-  }
-
-  /* Ocultar etiquetas de texto en mÃƒÂ³vil */
-  .herramienta-label {
-    display: none;
-  }
-
-  /* Ocultar atajos en mÃƒÂ³vil */
-  .herramienta-shortcut {
-    display: none;
-  }
-
-  /* Info de atajos oculta en mÃƒÂ³vil */
+  /* Info de atajos oculta en movil */
   .atajos-info-flotante {
     display: none;
   }
 
-  /* Ajustar iconos para mÃƒÂ³vil */
+  /* Ajustar iconos para movil */
   .herramienta-btn-flotante svg {
     width: 22px;
     height: 22px;
   }
 }
 
-/* Mobile muy pequeÃƒÂ±o */
+/* Mobile muy pequeño */
 @media (max-width: 360px) {
   .panel-herramientas-flotante {
     right: 8px;
@@ -410,5 +531,27 @@
   .herramienta-shortcut {
     background: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;
+  }
+
+  /* Estilos para botón de colapsar en modo oscuro */
+  .boton-colapsar {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(222, 0, 126, 0.2);
+    color: #e0e0e0;
+  }
+
+  .boton-colapsar:hover {
+    background: rgba(222, 0, 126, 0.2);
+    border-color: #de007e;
+    color: #f0b7d1;
+  }
+
+  .separador-herramientas {
+    background: linear-gradient(
+      90deg, 
+      transparent 0%, 
+      rgba(222, 0, 126, 0.3) 50%, 
+      transparent 100%
+    );
   }
 }

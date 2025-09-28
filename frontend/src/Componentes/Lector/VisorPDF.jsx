@@ -1,13 +1,13 @@
-// src/Componentes/Lector/VisorPDF.jsx - VERSIÃƒâ€œN ESTABLE
+// src/Componentes/Lector/VisorPDF.jsx - VERSION ESTABLE
 import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// ConfiguraciÃƒÂ³n del worker que coincide con la API version 2.12.313
+// Configuracion del worker que coincide con la API version 2.12.313
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 /**
  * Componente que renderiza el PDF usando react-pdf
- * VersiÃƒÂ³n estable optimizada para evitar problemas de worker
+ * Version estable optimizada para evitar problemas de worker
  */
 const VisorPDF = forwardRef(({
   pdfUrl,
@@ -31,30 +31,27 @@ const VisorPDF = forwardRef(({
     setNumPages(numPages);
     setErrorPDF(null);
     onTotalPaginas?.(numPages);
-    console.log('PDF cargado exitosamente:', numPages, 'pÃƒÂ¡ginas');
   }, [onTotalPaginas]);
 
   /**
-   * Callback cuando una pÃƒÂ¡gina se renderiza exitosamente
+   * Callback cuando una pagina se renderiza exitosamente
    */
   const onPageLoadSuccess = useCallback((page) => {
     const { width, height } = page;
     setDimensiones({ width, height });
     onDimensionesCambiadas?.({ ancho: width, alto: height });
     setCargandoPagina(false);
-    console.log('PÃƒÂ¡gina cargada - Dimensiones:', { width, height });
   }, [onDimensionesCambiadas]);
 
   /**
    * Callback para errores de carga del documento
    */
   const onDocumentLoadError = useCallback((error) => {
-    console.error('Error cargando PDF:', error);
     setErrorPDF('Error al cargar el documento PDF. Verifica que el archivo existe y tienes permisos.');
   }, []);
 
   /**
-   * Calcular el ancho de la pÃƒÂ¡gina segÃƒÂºn el zoom
+   * Calcular el ancho de la pagina segun el zoom
    */
   const calcularAnchoPagina = useCallback(() => {
     const anchoBase = 600;
@@ -62,7 +59,7 @@ const VisorPDF = forwardRef(({
   }, [zoom]);
 
   /**
-   * MÃƒÂ©todos expuestos al componente padre via ref
+   * Metodos expuestos al componente padre via ref
    */
   useImperativeHandle(ref, () => ({
     nextPage: () => {
@@ -105,7 +102,7 @@ const VisorPDF = forwardRef(({
   // Manejo de atajos de teclado
   useEffect(() => {
     const manejarTeclas = (event) => {
-      // Solo si no estÃƒÂ¡ editando texto
+      // Solo si no esta editando texto
       if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT') {
         return;
       }
@@ -168,7 +165,7 @@ const VisorPDF = forwardRef(({
                 pageNumber={paginaActual}
                 width={anchoPagina}
                 onLoadSuccess={onPageLoadSuccess}
-                loading={<div className="cargando-pagina">Cargando pÃƒÂ¡gina...</div>}
+                loading={<div className="cargando-pagina">Cargando pagina...</div>}
               />
             </div>
           )}

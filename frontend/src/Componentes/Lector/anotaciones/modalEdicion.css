@@ -1,5 +1,5 @@
 /* src/Componentes/Lector/anotaciones/modalEdicion.css */
-/* Estilos para el Modal de EdiciÃƒÂ³n Mejorado con Fuente Caveat */
+/* Estilos para el Modal de Edición Mejorado con Fuente Caveat - SIN SELECTOR DE COLOR */
 
 /* ========== OVERLAY DEL MODAL ========== */
 .modal-overlay {
@@ -131,7 +131,7 @@
   overflow-y: auto;
 }
 
-/* ========== ÃƒÂREA DE TEXTO CON FUENTE CAVEAT ========== */
+/* ========== ÁREA DE TEXTO CON FUENTE CAVEAT ========== */
 .textarea-container {
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@
   font-family: inherit;
 }
 
-/* NUEVO: Estilos especÃƒÂ­ficos para textarea con Caveat */
+/* NUEVO: Estilos específicos para textarea con Caveat */
 .textarea-modal.caveat-text {
   font-family: "Caveat", cursive;
   font-optical-sizing: auto;
@@ -182,10 +182,10 @@
   font-style: italic;
 }
 
-/* ========== CONTROLES DE FORMATO ========== */
+/* ========== CONTROLES DE FORMATO SIMPLIFICADOS (SIN COLOR) ========== */
 .controles-formato {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr; /* CAMBIADO: Solo una columna */
   gap: 1.5rem;
 }
 
@@ -261,38 +261,8 @@
   border-radius: 6px;
 }
 
-/* Color Picker */
-.color-picker-container {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.color-input-modal {
-  width: 50px;
-  height: 40px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: none;
-}
-
-.color-input-modal:hover {
-  border-color: #de007e;
-  transform: scale(1.05);
-}
-
-.color-value {
-  font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #666;
-  background: #f5f5f5;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
-}
+/* REMOVIDO: Estilos del selector de color */
+/* .color-picker-container, .color-input-modal, .color-value - Ya no son necesarios */
 
 /* ========== VISTA PREVIA CON FUENTE CAVEAT ========== */
 .vista-previa {
@@ -319,6 +289,7 @@
   text-align: center;
   transition: all 0.2s ease;
   line-height: 1.4;
+  color: #000000; /* FIJO: Siempre negro */
 }
 
 /* NUEVO: Vista previa con fuente Caveat */
@@ -454,7 +425,7 @@
   box-shadow: none;
 }
 
-/* Spinner para el botÃƒÂ³n de guardar */
+/* Spinner para el botón de guardar */
 .spinner-btn {
   width: 16px;
   height: 16px;
@@ -487,7 +458,7 @@
   }
 
   .controles-formato {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Mantener una sola columna */
     gap: 1rem;
   }
 
@@ -554,7 +525,7 @@
     gap: 0.5rem;
   }
 
-  /* Ocultar hints en mÃƒÂ³vil para ahorrar espacio */
+  /* Ocultar hints en móvil para ahorrar espacio */
   .atajos-hint {
     display: none;
   }
@@ -591,6 +562,7 @@
   .preview-text {
     background: #3a3a3a;
     border-color: #555;
+    color: #000000 !important; /* Mantener texto negro incluso en modo oscuro */
   }
 
   .modal-footer {
@@ -600,12 +572,6 @@
 
   .atajos-hint {
     color: #bbb;
-  }
-
-  .color-value {
-    background: #3a3a3a;
-    border-color: #555;
-    color: #e0e0e0;
   }
 
   .unit-display {

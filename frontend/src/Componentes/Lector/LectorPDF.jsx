@@ -1,4 +1,4 @@
-// src/Componentes/Lector/LectorPDF.jsx - VERSIÓN CON ZOOM INICIAL MÓVIL
+// src/Componentes/Lector/LectorPDF.jsx - VERSION CON ZOOM INICIAL MOVIL
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LayoutUsuario from "../../Componentes/LayoutUsuario";
@@ -17,7 +17,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const { libroId: libroIdURL } = useParams();
   const navigate = useNavigate();
 
-  // Usar prop si está disponible, sino usar URL param
+  // Usar prop si esta disponible, sino usar URL param
   const libroId = libroIdProp || libroIdURL;
 
   // Referencias de componentes
@@ -30,17 +30,17 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados de navegación y visualización
+  // Estados de navegacion y visualizacion
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
   
-  // NUEVO: Función para determinar zoom inicial según dispositivo
+  // NUEVO: Funcion para determinar zoom inicial segun dispositivo
   const obtenerZoomInicial = useCallback(() => {
     const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                    ('ontouchstart' in window) ||
                    (window.innerWidth <= 768);
     
-    return esMovil ? 0.6 : 1.0; // 60% en móvil, 100% en desktop
+    return esMovil ? 0.6 : 1.0; // 60% en movil, 100% en desktop
   }, []);
 
   const [zoom, setZoom] = useState(obtenerZoomInicial);
@@ -51,7 +51,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [anotacionSeleccionada, setAnotacionSeleccionada] = useState(null);
   const [creandoAnotacion, setCreandoAnotacion] = useState(false);
 
-  // Dimensiones del PDF para cálculos de coordenadas
+  // Dimensiones del PDF para calculos de coordenadas
   const [dimensionesPDF, setDimensionesPDF] = useState({
     ancho: 0,
     alto: 0,
@@ -60,11 +60,11 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   // Estado para controlar si ya se cargaron las anotaciones
   const [anotacionesCargadas, setAnotacionesCargadas] = useState(false);
 
-  // NUEVO: Effect para ajustar zoom en cambios de orientación/resize
+  // NUEVO: Effect para ajustar zoom en cambios de orientacion/resize
   useEffect(() => {
     const manejarResize = () => {
       const nuevoZoomInicial = obtenerZoomInicial();
-      // Solo actualizar si cambió de móvil a desktop o viceversa
+      // Solo actualizar si cambio de movil a desktop o viceversa
       const esMovilActual = window.innerWidth <= 768;
       const zoomEsMovil = zoom === 0.6;
       const zoomEsDesktop = zoom === 1.0;
@@ -86,17 +86,17 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, [zoom, obtenerZoomInicial]);
 
   /**
-   * Convierte anotación del formato backend al formato interno
+   * Convierte anotacion del formato backend al formato interno
    */
   const convertirAnotacionBackend = useCallback(
     (anotacionBackend) => {
-      // Validar que tenga ID válido
+      // Validar que tenga ID valido
       if (!anotacionBackend.id && !anotacionBackend.txt_id) {
         return null;
       }
 
-      // Usar dimensiones por defecto si PDF no está cargado aún
-      const anchoBase = dimensionesPDF.ancho || 595; // A4 estándar
+      // Usar dimensiones por defecto si PDF no esta cargado aun
+      const anchoBase = dimensionesPDF.ancho || 595; // A4 estandar
       const altoBase = dimensionesPDF.alto || 842;
 
       // Obtener datos del backend (puede venir en diferentes formatos)
@@ -104,7 +104,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       const x = anotacionBackend.x || anotacionBackend.txt_x || 0;
       const y = anotacionBackend.y || anotacionBackend.txt_y || 0;
       const texto =
-        anotacionBackend.texto || anotacionBackend.txt_texto || "Texto vacío";
+        anotacionBackend.texto || anotacionBackend.txt_texto || "Texto vacio";
       const width = anotacionBackend.width || anotacionBackend.txt_ancho || 200;
       const height = anotacionBackend.height || anotacionBackend.txt_alto || 60;
       const fontSize =
@@ -171,7 +171,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
     } catch (error) {
       setAnotaciones([]);
       setAnotacionesCargadas(true);
-      // No es crítico, continúa sin anotaciones
+      // No es critico, continua sin anotaciones
     }
   }, [libroId, convertirAnotacionBackend]);
 
@@ -181,7 +181,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   useEffect(() => {
     const cargarLibro = async () => {
       if (!libroId) {
-        setError("ID de libro no válido");
+        setError("ID de libro no valido");
         setCargando(false);
         return;
       }
@@ -189,7 +189,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       try {
         setCargando(true);
 
-        // Cargar información del libro
+        // Cargar informacion del libro
         const { data: libroData } = await getLibroById(libroId);
         setLibro(libroData);
 
@@ -207,7 +207,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, [libroId]);
 
   /**
-   * Cargar anotaciones cuando las dimensiones del PDF estén disponibles
+   * Cargar anotaciones cuando las dimensiones del PDF esten disponibles
    */
   useEffect(() => {
     const debeCagar =
@@ -222,7 +222,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, [dimensionesPDF, anotacionesCargadas, libroId, cargarAnotaciones]);
 
   /**
-   * Convierte anotación del formato interno al formato backend
+   * Convierte anotacion del formato interno al formato backend
    */
   const convertirAnotacionInterno = useCallback(
     (anotacionInterna) => {
@@ -245,7 +245,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   );
 
   /**
-   * Crea una nueva anotación de texto
+   * Crea una nueva anotacion de texto
    */
   const crearAnotacion = useCallback(
     async (posicionClick) => {
@@ -255,7 +255,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       }
 
       try {
-        // Crear anotación temporal en formato interno
+        // Crear anotacion temporal en formato interno
         const nuevaAnotacion = {
           id: `temp_${Date.now()}`, // ID temporal
           tipo: "texto",
@@ -285,14 +285,14 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         setAnotacionSeleccionada(nuevaAnotacion.id);
         setCreandoAnotacion(false);
       } catch (error) {
-        setError("Error al crear la anotación");
+        setError("Error al crear la anotacion");
       }
     },
     [herramientaActiva, paginaActual, dimensionesPDF, zoom]
   );
 
   /**
-   * Función utilitaria para determinar si una anotación es nueva
+   * Funcion utilitaria para determinar si una anotacion es nueva
    */
   const esAnotacionNueva = useCallback((anotacion) => {
     const tieneIdTemporal =
@@ -303,13 +303,13 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * Guarda una anotación en el backend
+   * Guarda una anotacion en el backend
    */
   const guardarAnotacion = useCallback(
     async (anotacion) => {
       try {
         if (!anotacion.contenido.texto.trim()) {
-          throw new Error("El texto no puede estar vacío");
+          throw new Error("El texto no puede estar vacio");
         }
 
         const datosBackend = convertirAnotacionInterno(anotacion);
@@ -341,7 +341,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   );
 
   /**
-   * Elimina una anotación
+   * Elimina una anotacion
    */
   const eliminarAnotacion = useCallback(
     async (idAnotacion) => {
@@ -356,14 +356,14 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         setAnotaciones((prev) => prev.filter((a) => a.id !== idAnotacion));
         setAnotacionSeleccionada(null);
       } catch (error) {
-        setError("Error al eliminar la anotación");
+        setError("Error al eliminar la anotacion");
       }
     },
     [anotaciones, esAnotacionNueva]
   );
 
   /**
-   * Maneja cambios de página
+   * Maneja cambios de pagina
    */
   const cambiarPagina = useCallback(
     (nuevaPagina) => {
@@ -399,7 +399,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * Obtiene anotaciones de la página actual
+   * Obtiene anotaciones de la pagina actual
    */
   const anotacionesPaginaActual = anotaciones.filter(
     (anotacion) => anotacion.pagina === paginaActual
@@ -437,7 +437,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   return (
     <LayoutUsuario activeKey="biblioteca">
       <div className="lector-pdf">
-        {/* Área principal del visor */}
+        {/* Area principal del visor */}
         <div className="visor-container">
           <div className="visor-pdf-wrapper" style={{ position: "relative" }}>
             <VisorPDF

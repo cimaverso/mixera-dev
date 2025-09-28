@@ -1,10 +1,11 @@
-// src/Componentes/Lector/PanelHerramientas.jsx - VERSIÃ“N FLOTANTE MEJORADA
-import React from "react";
+// src/Componentes/Lector/PanelHerramientas.jsx - VERSION FLOTANTE CON COLAPSAR
+import React, { useState } from "react";
 import "./panelHerramientas.css";
 
 /**
  * Panel de herramientas flotante minimalista del lector PDF
  * Solo incluye las herramientas esenciales: cursor y texto
+ * Con opción de colapsar en desktop
  */
 export default function PanelHerramientas({
   herramientaActiva,
@@ -12,9 +13,11 @@ export default function PanelHerramientas({
   visorRef,
   onHerramientaCambiada,
 }) {
+  // Estado para controlar si el panel está colapsado (solo desktop)
+  const [panelColapsado, setPanelColapsado] = useState(false);
 
   /**
-   * DefiniciÃ³n de herramientas principales
+   * Definicion de herramientas principales
    */
   const herramientas = [
     {
@@ -61,8 +64,13 @@ export default function PanelHerramientas({
   const manejarCambioHerramienta = (herramientaId) => {
     setHerramientaActiva(herramientaId);
     onHerramientaCambiada?.(herramientaId);
-    
-    console.log(`Herramienta cambiada a: ${herramientaId}`);
+  };
+
+  /**
+   * Alterna el estado colapsado del panel
+   */
+  const alternarColapso = () => {
+    setPanelColapsado(!panelColapsado);
   };
 
   /**
@@ -70,7 +78,7 @@ export default function PanelHerramientas({
    */
   React.useEffect(() => {
     const manejarTeclas = (event) => {
-      // Solo activar si no se estÃ¡ editando texto
+      // Solo activar si no se esta editando texto
       if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'INPUT') {
         return;
       }
@@ -85,6 +93,10 @@ export default function PanelHerramientas({
         case 'T':
           event.preventDefault();
           manejarCambioHerramienta('texto');
+          break;
+        case 'H': // Atajo para colapsar/expandir panel
+          event.preventDefault();
+          alternarColapso();
           break;
         default:
           break;
@@ -112,12 +124,12 @@ export default function PanelHerramientas({
       >
         {herramienta.icono}
         
-        {/* Etiqueta de la herramienta */}
+        {/* Etiqueta de la herramienta - se oculta cuando está colapsado */}
         <span className="herramienta-label">
           {herramienta.nombre}
         </span>
         
-        {/* Indicador de atajo */}
+        {/* Indicador de atajo - se oculta cuando está colapsado */}
         <span className="herramienta-shortcut">
           {herramienta.shortcut}
         </span>
@@ -126,27 +138,65 @@ export default function PanelHerramientas({
   };
 
   return (
-    <div className="panel-herramientas-flotante" role="toolbar" aria-label="Herramientas de anotaciÃ³n">
+    <div 
+      className={`panel-herramientas-flotante ${panelColapsado ? 'colapsado' : ''}`} 
+      role="toolbar" 
+      aria-label="Herramientas de anotacion"
+    >
       
-      {/* Indicador de herramienta activa */}
-      <div className="herramienta-activa-indicator">
-        <div className="indicator-dot"></div>
-        <span className="indicator-text">
-          {herramientas.find(h => h.id === herramientaActiva)?.nombre || 'Cursor'}
-        </span>
-      </div>
+      {/* Indicador de herramienta activa - solo se muestra cuando NO está colapsado */}
+      {!panelColapsado && (
+        <div className="herramienta-activa-indicator">
+          <div className="indicator-dot"></div>
+          <span className="indicator-text">
+            {herramientas.find(h => h.id === herramientaActiva)?.nombre || 'Cursor'}
+          </span>
+        </div>
+      )}
 
       {/* Contenedor de herramientas */}
       <div className="herramientas-container">
+        {/* Botón de colapsar/expandir - solo visible en desktop */}
+        <button
+          className="boton-colapsar"
+          onClick={alternarColapso}
+          title={`${panelColapsado ? 'Expandir' : 'Colapsar'} panel (H)`}
+          aria-label={`${panelColapsado ? 'Expandir' : 'Colapsar'} panel de herramientas`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+            className={`icono-colapsar ${panelColapsado ? 'expandir' : 'colapsar'}`}
+          >
+            {panelColapsado ? (
+              // Icono de expandir (flecha hacia la izquierda)
+              <path d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+            ) : (
+              // Icono de colapsar (flecha hacia la derecha)
+              <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+            )}
+          </svg>
+        </button>
+
+        {/* Separador visual */}
+        <div className="separador-herramientas"></div>
+
+        {/* Herramientas principales */}
         {herramientas.map(renderizarHerramienta)}
       </div>
 
-      {/* InformaciÃ³n de atajos (solo visible en hover del panel) */}
-      <div className="atajos-info-flotante">
-        <div className="atajos-titulo">Atajos:</div>
-        <div className="atajo-item">C - Cursor</div>
-        <div className="atajo-item">T - Texto</div>
-      </div>
+      {/* Informacion de atajos (solo visible en hover del panel y cuando NO está colapsado) */}
+      {!panelColapsado && (
+        <div className="atajos-info-flotante">
+          <div className="atajos-titulo">Atajos:</div>
+          <div className="atajo-item">C - Cursor</div>
+          <div className="atajo-item">T - Texto</div>
+          <div className="atajo-item">H - Colapsar</div>
+        </div>
+      )}
     </div>
   );
 }

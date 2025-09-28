@@ -387,10 +387,11 @@
   padding: 0;
 }
 
-/* Contenedor scrolleable */
+/* Contenedor scrolleable CENTRADO */
 .bottom-nav-container {
   display: flex;
   align-items: center;
+  justify-content: center; /* 🔥 CENTRAR HORIZONTALMENTE */
   height: 100%;
   width: 100%;
   overflow-x: auto;
@@ -398,6 +399,7 @@
   scroll-behavior: smooth;
   padding: 0 8px;
   gap: 4px;
+  min-width: 100%; /* Asegurar que ocupe todo el ancho */
   
   /* Ocultar scrollbars */
   scrollbar-width: none; /* Firefox */
@@ -406,6 +408,13 @@
 
 .bottom-nav-container::-webkit-scrollbar {
   display: none; /* Chrome/Safari/Webkit */
+}
+
+/* Cuando hay scroll, justificar al inicio */
+@media (max-width: 480px) {
+  .bottom-nav-container {
+    justify-content: flex-start; /* En pantallas muy pequeñas, permitir scroll normal */
+  }
 }
 
 /* Botones del bottom nav */
@@ -648,6 +657,18 @@
   .en-lector-pdf .bottom-nav-usuario {
     display: none !important;
   }
+
+  /* 🔥 CENTRADO MEJORADO EN TABLETS Y MÓVILES GRANDES */
+  .bottom-nav-container {
+    justify-content: center;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  
+  .bottom-nav-usuario button {
+    width: 58px;
+    min-width: 58px;
+  }
 }
 
 /* MOBILE PEQUEÑO (480px y menor) */
@@ -669,6 +690,7 @@
   .bottom-nav-container {
     padding: 0 5px;
     gap: 3px;
+    justify-content: flex-start; /* En pantallas muy pequeñas, scroll normal */
   }
   
   .bottom-nav-usuario button {
