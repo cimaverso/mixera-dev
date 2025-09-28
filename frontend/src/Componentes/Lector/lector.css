@@ -619,3 +619,118 @@
     justify-content: flex-start;
   }
 }
+
+/* Agregar al final de lector.css */
+
+/* ========== CORRECCIONES PARA ARRASTRE MÓVIL ========== */
+
+/* Estado de arrastre activo */
+.capa-anotaciones.arrastrando {
+  /* Bloquear completamente el scroll durante arrastre */
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Contenedor del visor durante arrastre móvil */
+@media (max-width: 768px) {
+  /* Cuando se está arrastrando, bloquear scroll del contenedor padre */
+  .visor-container:has(.capa-anotaciones.arrastrando) {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+  
+  /* Wrapper del PDF durante arrastre */
+  .visor-pdf-wrapper:has(.capa-anotaciones.arrastrando) {
+    touch-action: none !important;
+  }
+}
+
+/* Indicador visual durante arrastre */
+.overlay-arrastrando {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  pointer-events: none;
+  /* Fondo sutil durante arrastre */
+  background: rgba(222, 0, 126, 0.02);
+}
+
+.indicador-posicion {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 
+    0 0 10px var(--color-primary),
+    0 0 20px rgba(222, 0, 126, 0.3);
+  animation: pulseIndicador 1s ease-in-out infinite;
+}
+
+@keyframes pulseIndicador {
+  0%, 100% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: translate(-50%, -50%) scale(1.2); 
+  }
+}
+
+/* Anotación siendo arrastrada */
+.anotacion-wrapper.siendo-arrastrada {
+  opacity: 0.8;
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(222, 0, 126, 0.3) !important;
+  z-index: 1001 !important;
+}
+
+/* Prevenir selección de texto durante arrastre en móvil */
+@media (max-width: 768px) {
+  .capa-anotaciones.arrastrando * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+  
+  /* Bloquear zoom del navegador durante arrastre */
+  .capa-anotaciones.arrastrando {
+    touch-action: none !important;
+  }
+}
+
+/* Estados específicos para debugging (remover en producción) */
+.debug-arrastre {
+  position: fixed;
+  top: 60px;
+  left: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  font-family: monospace;
+  z-index: 10001;
+}
+
+/* Corrección para el cursor durante arrastre móvil */
+@media (max-width: 768px) {
+  .anotacion-wrapper {
+    cursor: pointer;
+  }
+  
+  .anotacion-wrapper.puede-arrastrar {
+    cursor: grab;
+  }
+  
+  .anotacion-wrapper.arrastrando {
+    cursor: grabbing;
+  }
+}
