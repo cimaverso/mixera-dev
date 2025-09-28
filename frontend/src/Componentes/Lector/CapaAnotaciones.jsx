@@ -215,7 +215,7 @@ const CapaAnotaciones = forwardRef(({
   }, [anotaciones, puedeArrastrar, onSeleccionarAnotacion, convertirAPixeles, obtenerCoordenadasSinScroll, obtenerCoordenadasConScroll, dimensionesPDF, zoom]);
 
   /**
-   * CORREGIDO: Maneja el movimiento durante el arrastre
+   * CORREGIDO: Maneja el movimiento durante el arrastre - FIX LÍMITES
    */
   const manejarMovimiento = useCallback((event) => {
     if (!arrastrando || !anotacionArrastrada || !dimensionesAnotacionArrastrada) return;
@@ -230,20 +230,37 @@ const CapaAnotaciones = forwardRef(({
     const nuevaX = coords.x - offsetArrastre.x;
     const nuevaY = coords.y - offsetArrastre.y;
 
-    // CORREGIDO: Usar dimensiones fijas guardadas al iniciar arrastre
+    // FIX CRÍTICO: Usar dimensiones escaladas correctamente
     const anchoAnotacion = dimensionesAnotacionArrastrada.ancho;
     const altoAnotacion = dimensionesAnotacionArrastrada.alto;
     
-    // Límites del PDF
+    // Límites del PDF escalados
     const limitesX = dimensionesPDF.ancho * zoom;
     const limitesY = dimensionesPDF.alto * zoom;
 
-    // CORREGIDO: Usar las dimensiones fijas
-    const xLimitada = Math.max(0, Math.min(nuevaX, limitesX - anchoAnotacion));
-    const yLimitada = Math.max(0, Math.min(nuevaY, limitesY - altoAnotacion));
+    // FIX PRINCIPAL: Límites más permisivos para móvil
+    let xLimitada, yLimitada;
+    
+    if (esDispositiveMovil) {
+      // En móvil: límites más amplios, solo evitar que se salga completamente
+      xLimitada = Math.max(-anchoAnotacion * 0.8, Math.min(nuevaX, limitesX - anchoAnotacion * 0.2));
+      yLimitada = Math.max(-altoAnotacion * 0.8, Math.min(nuevaY, limitesY - altoAnotacion * 0.2));
+    } else {
+      // Desktop: límites estrictos originales
+      xLimitada = Math.max(0, Math.min(nuevaX, limitesX - anchoAnotacion));
+      yLimitada = Math.max(0, Math.min(nuevaY, limitesY - altoAnotacion));
+    }
 
     setPosicionArrastre({ x: xLimitada, y: yLimitada });
-  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadasConScroll, dimensionesAnotacionArrastrada]);
+    
+    // Debug temporal para móvil
+    if (esDispositiveMovil) {
+      console.log('DEBUG MÓVIL - Límites:', limitesX, limitesY);
+      console.log('DEBUG MÓVIL - Dimensiones anotación:', anchoAnotacion, altoAnotacion);
+      console.log('DEBUG MÓVIL - Nueva posición:', nuevaX, nuevaY);
+      console.log('DEBUG MÓVIL - Posición limitada:', xLimitada, yLimitada);
+    }
+  }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadasConScroll, dimensionesAnotacionArrastrada, esDispositiveMovil]);
 
   /**
    * Finaliza el arrastre y actualiza la posición de la anotación
