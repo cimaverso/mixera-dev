@@ -1,4 +1,4 @@
-// src/Componentes/Lector/LectorPDF.jsx - VERSIÓN CORREGIDA CON COORDENADAS UNIFICADAS
+// src/Componentes/Lector/LectorPDF.jsx - VERSIÓN CON ZOOM INICIAL MÓVIL
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import LayoutUsuario from "../../Componentes/LayoutUsuario";
@@ -12,7 +12,6 @@ import "./lector.css";
 
 /**
  * Componente principal del lector de PDF con sistema de anotaciones
- * CORREGIDO: Coordenadas consistentes entre móvil y desktop
  */
 const LectorPDF = ({ libroId: libroIdProp }) => {
   const { libroId: libroIdURL } = useParams();
@@ -34,7 +33,17 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   // Estados de navegación y visualización
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
-  const [zoom, setZoom] = useState(1.0);
+  
+  // NUEVO: Función para determinar zoom inicial según dispositivo
+  const obtenerZoomInicial = useCallback(() => {
+    const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   ('ontouchstart' in window) ||
+                   (window.innerWidth <= 768);
+    
+    return esMovil ? 0.6 : 1.0; // 60% en móvil, 100% en desktop
+  }, []);
+
+  const [zoom, setZoom] = useState(obtenerZoomInicial);
 
   // Estados de herramientas y anotaciones
   const [herramientaActiva, setHerramientaActiva] = useState("cursor");
@@ -42,7 +51,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   const [anotacionSeleccionada, setAnotacionSeleccionada] = useState(null);
   const [creandoAnotacion, setCreandoAnotacion] = useState(false);
 
-  // NUEVO: Dimensiones base del PDF para coordenadas consistentes
+  // Dimensiones del PDF para cálculos de coordenadas
   const [dimensionesPDF, setDimensionesPDF] = useState({
     ancho: 0,
     alto: 0,
@@ -51,9 +60,33 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   // Estado para controlar si ya se cargaron las anotaciones
   const [anotacionesCargadas, setAnotacionesCargadas] = useState(false);
 
+  // NUEVO: Effect para ajustar zoom en cambios de orientación/resize
+  useEffect(() => {
+    const manejarResize = () => {
+      const nuevoZoomInicial = obtenerZoomInicial();
+      // Solo actualizar si cambió de móvil a desktop o viceversa
+      const esMovilActual = window.innerWidth <= 768;
+      const zoomEsMovil = zoom === 0.6;
+      const zoomEsDesktop = zoom === 1.0;
+      
+      if (esMovilActual && zoomEsDesktop) {
+        setZoom(0.6);
+      } else if (!esMovilActual && zoomEsMovil) {
+        setZoom(1.0);
+      }
+    };
+
+    window.addEventListener('resize', manejarResize);
+    window.addEventListener('orientationchange', manejarResize);
+    
+    return () => {
+      window.removeEventListener('resize', manejarResize);
+      window.removeEventListener('orientationchange', manejarResize);
+    };
+  }, [zoom, obtenerZoomInicial]);
+
   /**
-   * CORREGIDO: Convierte anotación del formato backend al formato interno
-   * NUEVO: Usa dimensiones base consistentes
+   * Convierte anotación del formato backend al formato interno
    */
   const convertirAnotacionBackend = useCallback(
     (anotacionBackend) => {
@@ -62,8 +95,8 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         return null;
       }
 
-      // CORREGIDO: Usar dimensiones base del PDF real (no valores por defecto)
-      const anchoBase = dimensionesPDF.ancho || 595;
+      // Usar dimensiones por defecto si PDF no está cargado aún
+      const anchoBase = dimensionesPDF.ancho || 595; // A4 estándar
       const altoBase = dimensionesPDF.alto || 842;
 
       // Obtener datos del backend (puede venir en diferentes formatos)
@@ -83,14 +116,14 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         id: id,
         tipo: "texto",
         pagina: parseInt(pagina),
-        // NUEVO: Asegurar que las coordenadas estén normalizadas correctamente
+        // Convertir coordenadas absolutas a relativas (0-1)
         posicion: {
           x: Math.max(0, Math.min(1, parseFloat(x) / anchoBase)),
           y: Math.max(0, Math.min(1, parseFloat(y) / altoBase)),
         },
         dimensiones: {
-          ancho: Math.max(0.05, Math.min(0.9, parseFloat(width) / anchoBase)),
-          alto: Math.max(0.02, Math.min(0.8, parseFloat(height) / altoBase)),
+          ancho: Math.max(0.1, Math.min(0.8, parseFloat(width) / anchoBase)),
+          alto: Math.max(0.05, Math.min(0.5, parseFloat(height) / altoBase)),
         },
         contenido: {
           texto: texto,
@@ -135,28 +168,12 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
 
       setAnotaciones(anotacionesConvertidas);
       setAnotacionesCargadas(true);
-      
-      // NUEVO: Debug de coordenadas cargadas
-      if (process.env.NODE_ENV === 'development' && anotacionesConvertidas.length > 0) {
-        console.group('🔄 Anotaciones cargadas del backend');
-        console.log('Dimensiones PDF base:', dimensionesPDF);
-        console.log('Anotaciones convertidas:', anotacionesConvertidas.length);
-        anotacionesConvertidas.forEach((anotacion, index) => {
-          console.log(`Anotación ${index + 1}:`, {
-            id: anotacion.id,
-            posicionRelativa: anotacion.posicion,
-            dimensionesRelativas: anotacion.dimensiones,
-            texto: anotacion.contenido.texto.substring(0, 30) + '...'
-          });
-        });
-        console.groupEnd();
-      }
     } catch (error) {
       setAnotaciones([]);
       setAnotacionesCargadas(true);
       // No es crítico, continúa sin anotaciones
     }
-  }, [libroId, convertirAnotacionBackend, dimensionesPDF]);
+  }, [libroId, convertirAnotacionBackend]);
 
   /**
    * Carga inicial del libro y sus datos
@@ -190,7 +207,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, [libroId]);
 
   /**
-   * CORREGIDO: Cargar anotaciones cuando las dimensiones del PDF estén disponibles
+   * Cargar anotaciones cuando las dimensiones del PDF estén disponibles
    */
   useEffect(() => {
     const debeCagar =
@@ -200,25 +217,22 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       libroId;
 
     if (debeCagar) {
-      console.log('📏 Dimensiones PDF disponibles, cargando anotaciones...', dimensionesPDF);
       cargarAnotaciones();
     }
   }, [dimensionesPDF, anotacionesCargadas, libroId, cargarAnotaciones]);
 
   /**
-   * CORREGIDO: Convierte anotación del formato interno al formato backend
-   * NUEVO: Usa dimensiones base consistentes
+   * Convierte anotación del formato interno al formato backend
    */
   const convertirAnotacionInterno = useCallback(
     (anotacionInterna) => {
-      // CORREGIDO: Usar dimensiones base reales del PDF
       const anchoBase = dimensionesPDF.ancho || 595;
       const altoBase = dimensionesPDF.alto || 842;
 
-      const datosBackend = {
+      return {
         libroId: parseInt(libroId),
         pagina: anotacionInterna.pagina,
-        // NUEVO: Convertir coordenadas relativas a absolutas usando dimensiones base
+        // Convertir coordenadas relativas a absolutas
         x: Math.round(anotacionInterna.posicion.x * anchoBase),
         y: Math.round(anotacionInterna.posicion.y * altoBase),
         texto: anotacionInterna.contenido.texto,
@@ -226,26 +240,12 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         height: Math.round(anotacionInterna.dimensiones.alto * altoBase),
         fontSize: anotacionInterna.contenido.fontSize || 14,
       };
-
-      // NUEVO: Debug de conversión
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 Convirtiendo anotación para backend:', {
-          posicionRelativa: anotacionInterna.posicion,
-          posicionAbsoluta: { x: datosBackend.x, y: datosBackend.y },
-          dimensionesBase: { ancho: anchoBase, alto: altoBase },
-          dimensionesRelativas: anotacionInterna.dimensiones,
-          dimensionesAbsolutas: { width: datosBackend.width, height: datosBackend.height }
-        });
-      }
-
-      return datosBackend;
     },
     [libroId, dimensionesPDF]
   );
 
   /**
-   * CORREGIDO: Crea una nueva anotación de texto
-   * NUEVO: Usa dimensiones base consistentes
+   * Crea una nueva anotación de texto
    */
   const crearAnotacion = useCallback(
     async (posicionClick) => {
@@ -255,22 +255,18 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       }
 
       try {
-        // CORREGIDO: Usar dimensiones base del PDF para cálculo consistente
-        const dimensionesBase = dimensionesPDF;
-        
+        // Crear anotación temporal en formato interno
         const nuevaAnotacion = {
           id: `temp_${Date.now()}`, // ID temporal
           tipo: "texto",
           pagina: paginaActual,
           posicion: {
-            // NUEVO: Calcular coordenadas relativas usando dimensiones base
-            x: posicionClick.x / (dimensionesBase.ancho * zoom),
-            y: posicionClick.y / (dimensionesBase.alto * zoom),
+            x: posicionClick.x / (dimensionesPDF.ancho * zoom),
+            y: posicionClick.y / (dimensionesPDF.alto * zoom),
           },
           dimensiones: {
-            // NUEVO: Dimensiones relativas basadas en dimensiones base
-            ancho: 200 / dimensionesBase.ancho,
-            alto: 60 / dimensionesBase.alto,
+            ancho: 200 / (dimensionesPDF.ancho * zoom),
+            alto: 60 / (dimensionesPDF.alto * zoom),
           },
           contenido: {
             texto: "Nuevo texto",
@@ -283,17 +279,6 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
             editando: true,
           },
         };
-
-        // NUEVO: Debug de creación
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✨ Creando nueva anotación:', {
-            posicionClick: posicionClick,
-            dimensionesBase: dimensionesBase,
-            zoom: zoom,
-            posicionRelativa: nuevaAnotacion.posicion,
-            dimensionesRelativas: nuevaAnotacion.dimensiones
-          });
-        }
 
         // Agregar a la lista local inmediatamente
         setAnotaciones((prev) => [...prev, nuevaAnotacion]);
@@ -347,15 +332,6 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         setAnotaciones((prev) =>
           prev.map((a) => (a.id === anotacion.id ? anotacionConvertida : a))
         );
-
-        // NUEVO: Debug de guardado
-        if (process.env.NODE_ENV === 'development') {
-          console.log('💾 Anotación guardada:', {
-            esNueva: esNueva,
-            datosBackend: datosBackend,
-            anotacionConvertida: anotacionConvertida
-          });
-        }
       } catch (error) {
         setError(`Error al guardar: ${error.message}`);
         throw error;
@@ -408,8 +384,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   }, []);
 
   /**
-   * NUEVO: Callback cuando las dimensiones del PDF cambian
-   * CRÍTICO: Estas son las dimensiones base para coordenadas consistentes
+   * Callback cuando las dimensiones del PDF cambian
    */
   const manejarCambioDimensiones = useCallback((nuevasDimensiones) => {
     setDimensionesPDF((prev) => {
@@ -417,40 +392,11 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
         prev.ancho !== nuevasDimensiones.ancho ||
         prev.alto !== nuevasDimensiones.alto
       ) {
-        console.log('📏 Dimensiones PDF actualizadas:', nuevasDimensiones);
         return nuevasDimensiones;
       }
       return prev;
     });
   }, []);
-
-  /**
-   * NUEVO: Función de debug para coordenadas (opcional)
-   */
-  const debugCoordenadas = useCallback((anotacion, evento = 'debug') => {
-    if (process.env.NODE_ENV === 'development') {
-      console.group(`🎯 Debug Coordenadas - ${evento}`);
-      console.log('Dimensiones PDF base:', dimensionesPDF);
-      console.log('Zoom actual:', zoom);
-      console.log('Posición relativa:', anotacion.posicion);
-      console.log('Dimensiones relativas:', anotacion.dimensiones);
-      
-      // Calcular píxeles para verificación
-      const pixeles = {
-        x: anotacion.posicion.x * dimensionesPDF.ancho * zoom,
-        y: anotacion.posicion.y * dimensionesPDF.alto * zoom
-      };
-      console.log('Posición en píxeles:', pixeles);
-      
-      // Calcular coordenadas absolutas para backend
-      const absolutas = {
-        x: Math.round(anotacion.posicion.x * dimensionesPDF.ancho),
-        y: Math.round(anotacion.posicion.y * dimensionesPDF.alto)
-      };
-      console.log('Coordenadas absolutas (backend):', absolutas);
-      console.groupEnd();
-    }
-  }, [dimensionesPDF, zoom]);
 
   /**
    * Obtiene anotaciones de la página actual

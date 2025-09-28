@@ -1,5 +1,5 @@
 /* src/Componentes/Lector/anotaciones/modalEdicion.css */
-/* Estilos para el Modal de EdiciÃ³n Mejorado con Fuente Caveat */
+/* Estilos para el Modal de EdiciÃƒÂ³n Mejorado con Fuente Caveat */
 
 /* ========== OVERLAY DEL MODAL ========== */
 .modal-overlay {
@@ -131,7 +131,7 @@
   overflow-y: auto;
 }
 
-/* ========== ÃREA DE TEXTO CON FUENTE CAVEAT ========== */
+/* ========== ÃƒÂREA DE TEXTO CON FUENTE CAVEAT ========== */
 .textarea-container {
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@
   font-family: inherit;
 }
 
-/* NUEVO: Estilos especÃ­ficos para textarea con Caveat */
+/* NUEVO: Estilos especÃƒÂ­ficos para textarea con Caveat */
 .textarea-modal.caveat-text {
   font-family: "Caveat", cursive;
   font-optical-sizing: auto;
@@ -454,7 +454,7 @@
   box-shadow: none;
 }
 
-/* Spinner para el botÃ³n de guardar */
+/* Spinner para el botÃƒÂ³n de guardar */
 .spinner-btn {
   width: 16px;
   height: 16px;
@@ -554,7 +554,7 @@
     gap: 0.5rem;
   }
 
-  /* Ocultar hints en mÃ³vil para ahorrar espacio */
+  /* Ocultar hints en mÃƒÂ³vil para ahorrar espacio */
   .atajos-hint {
     display: none;
   }

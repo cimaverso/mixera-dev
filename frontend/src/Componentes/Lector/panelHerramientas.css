@@ -1,5 +1,5 @@
 /* src/Componentes/Lector/panelHerramientas.css */
-/* Estilos dedicados para el Panel de Herramientas Flotante - OPTIMIZADO MÃ“VIL */
+/* Estilos dedicados para el Panel de Herramientas Flotante - OPTIMIZADO MÃƒâ€œVIL */
 
 /* ========== PANEL DE HERRAMIENTAS FLOTANTE ========== */
 
@@ -12,7 +12,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 800; /* Menor que bottom nav (1000) y header mÃ³vil (1200) */
+  z-index: 800; /* Menor que bottom nav (1000) y header mÃƒÂ³vil (1200) */
   user-select: none;
   transition: all 0.3s ease;
 }
@@ -153,7 +153,7 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
-/* Efectos de presiÃ³n */
+/* Efectos de presiÃƒÂ³n */
 .herramienta-btn-flotante:active {
   transform: translateY(0);
   transition: transform 0.1s ease;
@@ -190,7 +190,7 @@
   color: white;
 }
 
-/* InformaciÃ³n de atajos (solo visible en hover del panel) */
+/* InformaciÃƒÂ³n de atajos (solo visible en hover del panel) */
 .atajos-info-flotante {
   position: absolute;
   right: 100%;
@@ -278,7 +278,7 @@
     top: 50%;
     right: 10px;
     transform: translateY(-50%);
-    z-index: 800; /* Asegurar que estÃ© debajo del header (1200) y bottom nav (1000) */
+    z-index: 800; /* Asegurar que estÃƒÂ© debajo del header (1200) y bottom nav (1000) */
   }
 
   /* Ocultar completamente el indicador */
@@ -292,7 +292,7 @@
     border-radius: 16px;
   }
 
-  /* SOLO ICONOS en mÃ³vil */
+  /* SOLO ICONOS en mÃƒÂ³vil */
   .herramienta-btn-flotante {
     min-width: 48px;
     width: 48px;
@@ -302,29 +302,29 @@
     border-radius: 14px;
   }
 
-  /* Ocultar etiquetas de texto en mÃ³vil */
+  /* Ocultar etiquetas de texto en mÃƒÂ³vil */
   .herramienta-label {
     display: none;
   }
 
-  /* Ocultar atajos en mÃ³vil */
+  /* Ocultar atajos en mÃƒÂ³vil */
   .herramienta-shortcut {
     display: none;
   }
 
-  /* Info de atajos oculta en mÃ³vil */
+  /* Info de atajos oculta en mÃƒÂ³vil */
   .atajos-info-flotante {
     display: none;
   }
 
-  /* Ajustar iconos para mÃ³vil */
+  /* Ajustar iconos para mÃƒÂ³vil */
   .herramienta-btn-flotante svg {
     width: 22px;
     height: 22px;
   }
 }
 
-/* Mobile muy pequeÃ±o */
+/* Mobile muy pequeÃƒÂ±o */
 @media (max-width: 360px) {
   .panel-herramientas-flotante {
     right: 8px;

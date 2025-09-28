@@ -1,4 +1,4 @@
-// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÃ“N CORREGIDA SIN ROMPER TOUCH
+// src/Componentes/Lector/CapaAnotaciones.jsx - VERSIÃƒâ€œN CORREGIDA SIN ROMPER TOUCH
 import React, { useState, useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import TextoAnotacion from './anotaciones/TextoAnotacion';
 
@@ -25,7 +25,7 @@ const CapaAnotaciones = forwardRef(({
   const [offsetArrastre, setOffsetArrastre] = useState({ x: 0, y: 0 });
   const [esDispositiveMovil, setEsDispositiveMovil] = useState(false);
 
-  // Detectar si es dispositivo mÃ³vil
+  // Detectar si es dispositivo mÃƒÂ³vil
   useEffect(() => {
     const detectarMovil = () => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -44,7 +44,7 @@ const CapaAnotaciones = forwardRef(({
   }, []);
 
   /**
-   * Convierte coordenadas relativas (0-1) a pÃ­xeles segÃºn zoom actual
+   * Convierte coordenadas relativas (0-1) a pÃƒÂ­xeles segÃƒÂºn zoom actual
    */
   const convertirAPixeles = useCallback((coordenadasRelativas) => {
     if (!dimensionesPDF.ancho || !dimensionesPDF.alto) {
@@ -58,7 +58,7 @@ const CapaAnotaciones = forwardRef(({
   }, [dimensionesPDF, zoom]);
 
   /**
-   * Convierte coordenadas de pÃ­xeles a relativas (0-1)
+   * Convierte coordenadas de pÃƒÂ­xeles a relativas (0-1)
    */
   const convertirARelativo = useCallback((coordenadasPixeles) => {
     if (!dimensionesPDF.ancho || !dimensionesPDF.alto) {
@@ -72,10 +72,10 @@ const CapaAnotaciones = forwardRef(({
   }, [dimensionesPDF, zoom]);
 
   /**
-   * Obtiene coordenadas desde evento (mouse o tÃ¡ctil)
+   * Obtiene coordenadas desde evento (mouse o tÃƒÂ¡ctil)
    */
   const obtenerCoordenadas = useCallback((event) => {
-    // Si es evento tÃ¡ctil
+    // Si es evento tÃƒÂ¡ctil
     if (event.touches && event.touches.length > 0) {
       return {
         clientX: event.touches[0].clientX,
@@ -93,19 +93,19 @@ const CapaAnotaciones = forwardRef(({
    * CORREGIDO: Maneja el clic/toque en la capa SOLO para crear anotaciones
    */
   const manejarClickCapa = useCallback((event) => {
-    // Solo crear anotaciÃ³n si la herramienta de texto estÃ¡ activa
+    // Solo crear anotaciÃƒÂ³n si la herramienta de texto estÃƒÂ¡ activa
     if (herramientaActiva !== 'texto') return;
 
-    // Evitar crear si se hizo clic en una anotaciÃ³n existente o sus controles
+    // Evitar crear si se hizo clic en una anotaciÃƒÂ³n existente o sus controles
     if (event.target.closest('.anotacion-texto, .controles-seleccion, .controles-inline, .modal-overlay')) return;
 
-    // IMPORTANTE: NO prevenir comportamiento por defecto aquÃ­ para mantener touch del sistema
+    // IMPORTANTE: NO prevenir comportamiento por defecto aquÃƒÂ­ para mantener touch del sistema
     const rect = capaRef.current.getBoundingClientRect();
     const coords = obtenerCoordenadas(event);
     const x = coords.clientX - rect.left;
     const y = coords.clientY - rect.top;
 
-    // Verificar que el clic estÃ© dentro de los lÃ­mites del PDF
+    // Verificar que el clic estÃƒÂ© dentro de los lÃƒÂ­mites del PDF
     const limitesX = dimensionesPDF.ancho * zoom;
     const limitesY = dimensionesPDF.alto * zoom;
 
@@ -115,10 +115,10 @@ const CapaAnotaciones = forwardRef(({
   }, [herramientaActiva, dimensionesPDF, zoom, onCrearAnotacion, obtenerCoordenadas]);
 
   /**
-   * Determina si una anotaciÃ³n puede ser arrastrada
+   * Determina si una anotaciÃƒÂ³n puede ser arrastrada
    */
   const puedeArrastrar = useCallback((anotacion) => {
-    // En mÃ³vil: permitir arrastre si la anotaciÃ³n estÃ¡ en modo ediciÃ³n O si es cursor
+    // En mÃƒÂ³vil: permitir arrastre si la anotaciÃƒÂ³n estÃƒÂ¡ en modo ediciÃƒÂ³n O si es cursor
     if (esDispositiveMovil) {
       const anotacionCompleta = anotaciones.find(a => a.id === anotacion.id);
       const enModoEdicion = anotacionCompleta && !anotacionCompleta.metadatos?.esNueva;
@@ -130,7 +130,7 @@ const CapaAnotaciones = forwardRef(({
   }, [esDispositiveMovil, herramientaActiva, anotaciones]);
 
   /**
-   * Inicia el arrastre de una anotaciÃ³n (mouse y tÃ¡ctil)
+   * Inicia el arrastre de una anotaciÃƒÂ³n (mouse y tÃƒÂ¡ctil)
    */
   const iniciarArrastre = useCallback((anotacionId, event) => {
     const anotacion = anotaciones.find(a => a.id === anotacionId);
@@ -145,7 +145,7 @@ const CapaAnotaciones = forwardRef(({
     const rect = capaRef.current.getBoundingClientRect();
     const coords = obtenerCoordenadas(event);
     
-    // Calcular offset desde la esquina superior izquierda de la anotaciÃ³n
+    // Calcular offset desde la esquina superior izquierda de la anotaciÃƒÂ³n
     const posicionAnotacion = convertirAPixeles(anotacion.posicion);
     const offsetX = coords.clientX - rect.left - posicionAnotacion.x;
     const offsetY = coords.clientY - rect.top - posicionAnotacion.y;
@@ -160,11 +160,11 @@ const CapaAnotaciones = forwardRef(({
 
     onSeleccionarAnotacion?.(anotacionId);
     
-    console.log(`Iniciando arrastre de anotaciÃ³n ${anotacionId} (${esDispositiveMovil ? 'tÃ¡ctil' : 'mouse'})`);
+    console.log(`Iniciando arrastre de anotaciÃƒÂ³n ${anotacionId} (${esDispositiveMovil ? 'tÃƒÂ¡ctil' : 'mouse'})`);
   }, [anotaciones, puedeArrastrar, onSeleccionarAnotacion, convertirAPixeles, obtenerCoordenadas, esDispositiveMovil]);
 
   /**
-   * Maneja el movimiento durante el arrastre (mouse y tÃ¡ctil)
+   * Maneja el movimiento durante el arrastre (mouse y tÃƒÂ¡ctil)
    */
   const manejarMovimiento = useCallback((event) => {
     if (!arrastrando || !anotacionArrastrada) return;
@@ -177,18 +177,18 @@ const CapaAnotaciones = forwardRef(({
     const nuevaX = coords.clientX - rect.left - offsetArrastre.x;
     const nuevaY = coords.clientY - rect.top - offsetArrastre.y;
 
-    // Verificar lÃ­mites del PDF
+    // Verificar lÃƒÂ­mites del PDF
     const limitesX = dimensionesPDF.ancho * zoom;
     const limitesY = dimensionesPDF.alto * zoom;
 
-    const xLimitada = Math.max(0, Math.min(nuevaX, limitesX - 200)); // 200px ancho mÃ­nimo
-    const yLimitada = Math.max(0, Math.min(nuevaY, limitesY - 60));  // 60px alto mÃ­nimo
+    const xLimitada = Math.max(0, Math.min(nuevaX, limitesX - 200)); // 200px ancho mÃƒÂ­nimo
+    const yLimitada = Math.max(0, Math.min(nuevaY, limitesY - 60));  // 60px alto mÃƒÂ­nimo
 
     setPosicionArrastre({ x: xLimitada, y: yLimitada });
   }, [arrastrando, anotacionArrastrada, dimensionesPDF, zoom, offsetArrastre, obtenerCoordenadas]);
 
   /**
-   * Finaliza el arrastre y actualiza la posiciÃ³n de la anotaciÃ³n
+   * Finaliza el arrastre y actualiza la posiciÃƒÂ³n de la anotaciÃƒÂ³n
    */
   const finalizarArrastre = useCallback(() => {
     if (!arrastrando || !anotacionArrastrada) return;
@@ -207,7 +207,7 @@ const CapaAnotaciones = forwardRef(({
       };
 
       onGuardarAnotacion?.(anotacionActualizada);
-      console.log(`Arrastre finalizado para anotaciÃ³n ${anotacionArrastrada}`);
+      console.log(`Arrastre finalizado para anotaciÃƒÂ³n ${anotacionArrastrada}`);
     }
 
     setArrastrando(false);
@@ -217,7 +217,7 @@ const CapaAnotaciones = forwardRef(({
   }, [arrastrando, anotacionArrastrada, anotaciones, posicionArrastre, convertirARelativo, onGuardarAnotacion]);
 
   /**
-   * Selecciona una anotaciÃ³n
+   * Selecciona una anotaciÃƒÂ³n
    */
   const seleccionarAnotacion = useCallback((anotacionId, event) => {
     event?.stopPropagation();
@@ -225,14 +225,14 @@ const CapaAnotaciones = forwardRef(({
   }, [onSeleccionarAnotacion]);
 
   /**
-   * Guarda los cambios de una anotaciÃ³n editada
+   * Guarda los cambios de una anotaciÃƒÂ³n editada
    */
   const guardarCambiosAnotacion = useCallback((anotacionActualizada) => {
     onGuardarAnotacion?.(anotacionActualizada);
   }, [onGuardarAnotacion]);
 
   /**
-   * Elimina una anotaciÃ³n
+   * Elimina una anotaciÃƒÂ³n
    */
   const eliminarAnotacion = useCallback((anotacionId) => {
     onEliminarAnotacion?.(anotacionId);
@@ -267,7 +267,7 @@ const CapaAnotaciones = forwardRef(({
     }
   }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
-  // Event listeners para tÃ¡ctil - SOLO DURANTE ARRASTRE
+  // Event listeners para tÃƒÂ¡ctil - SOLO DURANTE ARRASTRE
   useEffect(() => {
     if (esDispositiveMovil) {
       const manejarTouchMove = (event) => {
@@ -296,7 +296,7 @@ const CapaAnotaciones = forwardRef(({
     }
   }, [arrastrando, manejarMovimiento, finalizarArrastre, esDispositiveMovil]);
 
-  // MÃ©todos expuestos al componente padre
+  // MÃƒÂ©todos expuestos al componente padre
   useImperativeHandle(ref, () => ({
     deseleccionarTodos: () => {
       onSeleccionarAnotacion?.(null);
@@ -315,10 +315,10 @@ const CapaAnotaciones = forwardRef(({
   }), [anotaciones, anotacionSeleccionada, onSeleccionarAnotacion, convertirAPixeles]);
 
   /**
-   * Renderiza una anotaciÃ³n segÃºn su tipo
+   * Renderiza una anotaciÃƒÂ³n segÃƒÂºn su tipo
    */
   const renderizarAnotacion = useCallback((anotacion) => {
-    // Verificar que la anotaciÃ³n tenga datos vÃ¡lidos
+    // Verificar que la anotaciÃƒÂ³n tenga datos vÃƒÂ¡lidos
     if (!anotacion.posicion || !anotacion.dimensiones) {
       return null;
     }
@@ -329,12 +329,12 @@ const CapaAnotaciones = forwardRef(({
       alto: anotacion.dimensiones.alto * dimensionesPDF.alto * zoom
     };
 
-    // Usar posiciÃ³n de arrastre si esta anotaciÃ³n se estÃ¡ arrastrando
+    // Usar posiciÃƒÂ³n de arrastre si esta anotaciÃƒÂ³n se estÃƒÂ¡ arrastrando
     const posicionFinal = (arrastrando && anotacionArrastrada === anotacion.id) 
       ? posicionArrastre 
       : posicionPixeles;
 
-    // Determinar cursor segÃºn el estado
+    // Determinar cursor segÃƒÂºn el estado
     const yaGuardada = !anotacion.metadatos?.esNueva;
     let cursor = 'pointer';
     
@@ -352,17 +352,17 @@ const CapaAnotaciones = forwardRef(({
       height: `${dimensionesPixeles.alto}px`,
       zIndex: anotacionSeleccionada === anotacion.id ? 1000 : 100,
       cursor: cursor,
-      // CORREGIDO: touchAction dinÃ¡mico segÃºn estado
+      // CORREGIDO: touchAction dinÃƒÂ¡mico segÃƒÂºn estado
       touchAction: arrastrando ? 'none' : 'auto'
     };
 
     const manejarInicioArrastre = (event) => {
-      // Tanto para mouse como para tÃ¡ctil
+      // Tanto para mouse como para tÃƒÂ¡ctil
       iniciarArrastre(anotacion.id, event);
     };
 
     const manejarSeleccion = (event) => {
-      // Si no estÃ¡ arrastrando, seleccionar
+      // Si no estÃƒÂ¡ arrastrando, seleccionar
       if (!arrastrando) {
         seleccionarAnotacion(anotacion.id, event);
       }
@@ -421,7 +421,7 @@ const CapaAnotaciones = forwardRef(({
     top: 0,
     left: 0,
     pointerEvents: 'auto',
-    // CRÃTICO: Solo bloquear touch cuando realmente estamos arrastrando
+    // CRÃƒÂTICO: Solo bloquear touch cuando realmente estamos arrastrando
     touchAction: arrastrando ? 'none' : 'auto'
   };
 
@@ -429,7 +429,7 @@ const CapaAnotaciones = forwardRef(({
   const eventosCapaPrincipal = {
     onClick: manejarClickCapa,
     onMouseDown: !esDispositiveMovil ? deseleccionarAnotacion : undefined,
-    // IMPORTANTE: NO usar onTouchStart aquÃ­ para no interferir con zoom/scroll
+    // IMPORTANTE: NO usar onTouchStart aquÃƒÂ­ para no interferir con zoom/scroll
   };
 
   return (
@@ -439,7 +439,7 @@ const CapaAnotaciones = forwardRef(({
       style={dimensionesCapa}
       {...eventosCapaPrincipal}
     >
-      {/* Indicador visual cuando estÃ¡ en modo texto */}
+      {/* Indicador visual cuando estÃƒÂ¡ en modo texto */}
       {herramientaActiva === 'texto' && (
         <div className="cursor-texto-indicador">
           {esDispositiveMovil ? 'Toca para agregar texto' : 'Haz clic para agregar texto'}
@@ -459,7 +459,7 @@ const CapaAnotaciones = forwardRef(({
         </div>
       )}
 
-      {/* Indicador de capacidades en mÃ³vil */}
+      {/* Indicador de capacidades en mÃƒÂ³vil */}
       {esDispositiveMovil && anotacionSeleccionada && (
         <div style={{
           position: 'absolute',
@@ -472,7 +472,7 @@ const CapaAnotaciones = forwardRef(({
           fontSize: '12px',
           zIndex: 1001
         }}>
-          ðŸ’¡ MantÃ©n presionado para arrastrar
+          Ã°Å¸â€™Â¡ MantÃƒÂ©n presionado para arrastrar
         </div>
       )}
     </div>

@@ -126,7 +126,7 @@
   height: 100%;
 }
 
-/* ========== CONTROLES DE NAVEGACIÃ“N ========== */
+/* ========== CONTROLES DE NAVEGACIÃƒâ€œN ========== */
 
 .navegacion {
   gap: 0.5rem;
@@ -137,7 +137,7 @@
   height: 44px;
 }
 
-/* Botones de primera y Ãºltima pÃ¡gina */
+/* Botones de primera y ÃƒÂºltima pÃƒÂ¡gina */
 .navegacion button:first-child,
 .navegacion button:last-child {
   width: 36px;
@@ -150,7 +150,7 @@
   opacity: 1;
 }
 
-/* ========== INFORMACIÃ“N DE PÃGINA ========== */
+/* ========== INFORMACIÃƒâ€œN DE PÃƒÂGINA ========== */
 
 .pagina-info {
   display: flex;
@@ -296,7 +296,7 @@
   margin: 0 0.25rem;
 }
 
-/* ========== RESPONSIVE DESIGN OPTIMIZADO PARA MÃ“VIL ========== */
+/* ========== RESPONSIVE DESIGN OPTIMIZADO PARA MÃƒâ€œVIL ========== */
 
 /* Tablet */
 @media (max-width: 768px) {
@@ -408,7 +408,7 @@
     gap: 0.15rem;
   }
 
-  /* Mobile muy pequeÃ±o - ULTRA COMPACTO */
+  /* Mobile muy pequeÃƒÂ±o - ULTRA COMPACTO */
   @media (max-width: 360px) {
     .barra-inferior {
       padding: 5px 0.4rem;
@@ -459,7 +459,7 @@
 
 /* ========== ANIMACIONES ESPECIALES ========== */
 
-/* Efecto de apariciÃ³n suave */
+/* Efecto de apariciÃƒÂ³n suave */
 @keyframes barraSlideUp {
   from {
     transform: translateY(100%);

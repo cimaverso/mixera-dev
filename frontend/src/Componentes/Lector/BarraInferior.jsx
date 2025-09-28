@@ -1,10 +1,10 @@
-// src/Componentes/Lector/BarraInferior.jsx - VERSIÃ“N SIMPLIFICADA
+// src/Componentes/Lector/BarraInferior.jsx - VERSIÃƒâ€œN SIMPLIFICADA
 import React, { useState, useCallback } from 'react';
 import './barraInferior.css';
 
 /**
  * Barra de controles inferior del lector PDF simplificada
- * Solo incluye: navegaciÃ³n, zoom y pantalla completa
+ * Solo incluye: navegaciÃƒÂ³n, zoom y pantalla completa
  */
 export default function BarraInferior({ 
   paginaActual, 
@@ -19,7 +19,7 @@ export default function BarraInferior({
   const [mostrandoZoomInput, setMostrandoZoomInput] = useState(false);
 
   /**
-   * NavegaciÃ³n de pÃ¡ginas
+   * NavegaciÃƒÂ³n de pÃƒÂ¡ginas
    */
   const irPaginaAnterior = useCallback(() => {
     if (paginaActual > 1) {
@@ -48,7 +48,7 @@ export default function BarraInferior({
   }, [totalPaginas, onCambiarPagina]);
 
   /**
-   * Maneja el input directo de pÃ¡gina
+   * Maneja el input directo de pÃƒÂ¡gina
    */
   const manejarCambioPagina = useCallback((event) => {
     if (event.key === 'Enter') {
@@ -56,7 +56,7 @@ export default function BarraInferior({
       if (numeroPagina >= 1 && numeroPagina <= totalPaginas) {
         onCambiarPagina?.(numeroPagina);
       } else {
-        // Revertir a pÃ¡gina actual si nÃºmero invÃ¡lido
+        // Revertir a pÃƒÂ¡gina actual si nÃƒÂºmero invÃƒÂ¡lido
         setInputPagina(paginaActual.toString());
       }
     }
@@ -94,7 +94,7 @@ export default function BarraInferior({
   }, []);
 
   /**
-   * Sincronizar input de pÃ¡gina con prop
+   * Sincronizar input de pÃƒÂ¡gina con prop
    */
   React.useEffect(() => {
     setInputPagina(paginaActual.toString());
@@ -108,15 +108,15 @@ export default function BarraInferior({
   return (
     <div className="barra-inferior" role="toolbar" aria-label="Controles del lector">
       
-      {/* Grupo: NavegaciÃ³n de pÃ¡ginas */}
+      {/* Grupo: NavegaciÃƒÂ³n de pÃƒÂ¡ginas */}
       <div className="grupo-controles navegacion">
         
-        {/* Primera pÃ¡gina */}
+        {/* Primera pÃƒÂ¡gina */}
         <button 
           onClick={irPrimeraPagina}
           disabled={paginaActual <= 1}
-          title="Primera pÃ¡gina (Inicio)"
-          aria-label="Ir a la primera pÃ¡gina"
+          title="Primera pÃƒÂ¡gina (Inicio)"
+          aria-label="Ir a la primera pÃƒÂ¡gina"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
@@ -124,19 +124,19 @@ export default function BarraInferior({
           </svg>
         </button>
 
-        {/* PÃ¡gina anterior */}
+        {/* PÃƒÂ¡gina anterior */}
         <button 
           onClick={irPaginaAnterior}
           disabled={paginaActual <= 1}
-          title="PÃ¡gina anterior (â†)"
-          aria-label="PÃ¡gina anterior"
+          title="PÃƒÂ¡gina anterior (Ã¢â€ Â)"
+          aria-label="PÃƒÂ¡gina anterior"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
             <path d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.52-.302 1.233.043 1.233.696v7.384c0 .653-.713.998-1.233.696L5 8.752V12a.5.5 0 0 1-1 0zm7.5.633L5.696 8l5.804 3.367z"/>
           </svg>
         </button>
 
-        {/* Indicador de pÃ¡gina con input */}
+        {/* Indicador de pÃƒÂ¡gina con input */}
         <div className="pagina-info">
           <input
             type="number"
@@ -147,30 +147,30 @@ export default function BarraInferior({
             min="1"
             max={totalPaginas}
             className="input-pagina"
-            aria-label="NÃºmero de pÃ¡gina actual"
+            aria-label="NÃƒÂºmero de pÃƒÂ¡gina actual"
           />
           <span className="separador-pagina">/</span>
           <span className="total-paginas">{totalPaginas}</span>
         </div>
 
-        {/* PÃ¡gina siguiente */}
+        {/* PÃƒÂ¡gina siguiente */}
         <button 
           onClick={irPaginaSiguiente}
           disabled={paginaActual >= totalPaginas}
-          title="PÃ¡gina siguiente (â†’)"
-          aria-label="PÃ¡gina siguiente"
+          title="PÃƒÂ¡gina siguiente (Ã¢â€ â€™)"
+          aria-label="PÃƒÂ¡gina siguiente"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
             <path d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.713 3.31 4 3.655 4 4.308v7.384c0 .653.713.998 1.233.696L11.5 8.752V12a.5.5 0 0 0 1 0zM5 4.633 10.804 8 5 11.367z"/>
           </svg>
         </button>
 
-        {/* Ãšltima pÃ¡gina */}
+        {/* ÃƒÅ¡ltima pÃƒÂ¡gina */}
         <button 
           onClick={irUltimaPagina}
           disabled={paginaActual >= totalPaginas}
-          title="Ãšltima pÃ¡gina (Fin)"
-          aria-label="Ir a la Ãºltima pÃ¡gina"
+          title="ÃƒÅ¡ltima pÃƒÂ¡gina (Fin)"
+          aria-label="Ir a la ÃƒÂºltima pÃƒÂ¡gina"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
             <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
@@ -245,7 +245,7 @@ export default function BarraInferior({
           </svg>
         </button>
 
-        {/* Ajuste rÃ¡pido: Ajustar a 100% */}
+        {/* Ajuste rÃƒÂ¡pido: Ajustar a 100% */}
         <button 
           onClick={() => ajustarZoom(1)}
           title="Zoom original (100%)"

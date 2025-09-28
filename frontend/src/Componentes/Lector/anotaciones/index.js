@@ -1,7 +1,7 @@
 // src/Componentes/Lector/anotaciones/index.js
 
 /**
- * Archivo Ã­ndice para exportar todos los tipos de anotaciones
+ * Archivo ÃƒÂ­ndice para exportar todos los tipos de anotaciones
  * Facilita las importaciones y organiza los componentes de anotaciones
  */
 
@@ -26,7 +26,7 @@ export const TIPOS_ANOTACION = {
 };
 
 /**
- * Configuraciones por defecto para cada tipo de anotaciÃ³n
+ * Configuraciones por defecto para cada tipo de anotaciÃƒÂ³n
  */
 export const CONFIGURACIONES_DEFECTO = {
   [TIPOS_ANOTACION.TEXTO]: {
@@ -89,13 +89,13 @@ export const CONFIGURACIONES_DEFECTO = {
 };
 
 /**
- * Utilidad para crear una nueva anotaciÃ³n con valores por defecto
+ * Utilidad para crear una nueva anotaciÃƒÂ³n con valores por defecto
  */
 export const crearAnotacionDefecto = (tipo, posicion, pagina) => {
   const config = CONFIGURACIONES_DEFECTO[tipo];
   
   if (!config) {
-    throw new Error(`Tipo de anotaciÃ³n no soportado: ${tipo}`);
+    throw new Error(`Tipo de anotaciÃƒÂ³n no soportado: ${tipo}`);
   }
 
   return {
@@ -123,7 +123,7 @@ export const crearAnotacionDefecto = (tipo, posicion, pagina) => {
 };
 
 /**
- * Valida si una anotaciÃ³n tiene la estructura correcta
+ * Valida si una anotaciÃƒÂ³n tiene la estructura correcta
  */
 export const validarAnotacion = (anotacion) => {
   const camposRequeridos = ['id', 'tipo', 'pagina', 'posicion', 'dimensiones', 'contenido'];
@@ -136,24 +136,24 @@ export const validarAnotacion = (anotacion) => {
   
   // Validar tipo
   if (!Object.values(TIPOS_ANOTACION).includes(anotacion.tipo)) {
-    return { valida: false, error: `Tipo de anotaciÃ³n no vÃ¡lido: ${anotacion.tipo}` };
+    return { valida: false, error: `Tipo de anotaciÃƒÂ³n no vÃƒÂ¡lido: ${anotacion.tipo}` };
   }
   
-  // Validar posiciÃ³n
+  // Validar posiciÃƒÂ³n
   if (typeof anotacion.posicion.x !== 'number' || typeof anotacion.posicion.y !== 'number') {
-    return { valida: false, error: 'PosiciÃ³n debe contener coordenadas numÃ©ricas' };
+    return { valida: false, error: 'PosiciÃƒÂ³n debe contener coordenadas numÃƒÂ©ricas' };
   }
   
   // Validar dimensiones
   if (typeof anotacion.dimensiones.ancho !== 'number' || typeof anotacion.dimensiones.alto !== 'number') {
-    return { valida: false, error: 'Dimensiones deben ser numÃ©ricas' };
+    return { valida: false, error: 'Dimensiones deben ser numÃƒÂ©ricas' };
   }
   
   return { valida: true };
 };
 
 /**
- * Utilidad para calcular el Ã¡rea ocupada por una anotaciÃ³n
+ * Utilidad para calcular el ÃƒÂ¡rea ocupada por una anotaciÃƒÂ³n
  */
 export const calcularAreaAnotacion = (anotacion) => {
   return anotacion.dimensiones.ancho * anotacion.dimensiones.alto;
@@ -185,11 +185,11 @@ export const verificarSuperposicion = (anotacion1, anotacion2) => {
  */
 export const organizarPorZIndex = (anotaciones, anotacionSeleccionada) => {
   return [...anotaciones].sort((a, b) => {
-    // AnotaciÃ³n seleccionada siempre encima
+    // AnotaciÃƒÂ³n seleccionada siempre encima
     if (a.id === anotacionSeleccionada) return 1;
     if (b.id === anotacionSeleccionada) return -1;
     
-    // Ordenar por fecha de creaciÃ³n (mÃ¡s recientes encima)
+    // Ordenar por fecha de creaciÃƒÂ³n (mÃƒÂ¡s recientes encima)
     return new Date(b.metadatos.creado) - new Date(a.metadatos.creado);
   });
 };

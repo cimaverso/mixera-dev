@@ -1,10 +1,10 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÓN CORREGIDA CON SEPARACIÓN DE FUNCIONES MÓVIL
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSIÃ“N CORREGIDA CON SEPARACIÃ“N DE FUNCIONES MÃ“VIL
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
 /**
  * Componente individual para anotaciones de texto con fuente Caveat y transparencia
- * SEPARACIÓN CLARA: Doble toque para editar, mantener presionado para arrastrar
+ * SEPARACIÃ“N CLARA: Doble toque para editar, mantener presionado para arrastrar
  */
 const TextoAnotacion = ({
   anotacion,
@@ -33,7 +33,7 @@ const TextoAnotacion = ({
   const [dimensionesIniciales, setDimensionesIniciales] = useState(null);
   const [posicionInicialMouse, setPosicionInicialMouse] = useState(null);
   
-  // NUEVOS ESTADOS PARA SEPARAR FUNCIONES MÓVIL (solo afecta móvil)
+  // NUEVOS ESTADOS PARA SEPARAR FUNCIONES MÃ“VIL (solo afecta mÃ³vil)
   const [toqueEstado, setToqueEstado] = useState({
     ultimoToque: 0,
     timerDobleToque: null
@@ -44,7 +44,7 @@ const TextoAnotacion = ({
   const [ultimoClic, setUltimoClic] = useState(0);
 
   /**
-   * Determinar el peso de fuente según el tamaño
+   * Determinar el peso de fuente segÃºn el tamaÃ±o
    */
   const obtenerPesoFuente = useCallback((fontSize) => {
     if (fontSize <= 12) return 400;
@@ -54,7 +54,7 @@ const TextoAnotacion = ({
   }, []);
 
   /**
-   * Determinar si la anotación debe ser transparente (ya guardada)
+   * Determinar si la anotaciÃ³n debe ser transparente (ya guardada)
    */
   const esAnotacionGuardada = useCallback(() => {
     return !anotacion.metadatos?.esNueva && !modoEdicion && !mostrarModal;
@@ -74,18 +74,18 @@ const TextoAnotacion = ({
   }, [toqueEstado.timerDobleToque]);
 
   /**
-   * CORREGIDO: Maneja eventos de toque SOLO en móvil con separación clara
+   * CORREGIDO: Maneja eventos de toque SOLO en mÃ³vil con separaciÃ³n clara
    */
   const manejarTouchStart = useCallback((event) => {
     if (!esDispositiveMovil) return;
 
-    // Si está en redimensionamiento o modal, no procesar
+    // Si estÃ¡ en redimensionamiento o modal, no procesar
     if (redimensionando || mostrarModal) {
       event.stopPropagation();
       return;
     }
 
-    // Si es nueva anotación en modo edición, no interferir
+    // Si es nueva anotaciÃ³n en modo ediciÃ³n, no interferir
     if (modoEdicion && anotacion.metadatos?.esNueva) {
       return;
     }
@@ -122,7 +122,7 @@ const TextoAnotacion = ({
     }));
 
     // Para arrastre: usar la funcionalidad original del sistema (onTouchStart del padre)
-    // NO prevenir el comportamiento por defecto aquí
+    // NO prevenir el comportamiento por defecto aquÃ­
 
   }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, toqueEstado.ultimoToque, limpiarTimersToques, onIniciarEdicion]);
 
@@ -135,7 +135,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, limpiarTimersToques]);
 
   /**
-   * Maneja clics en dispositivos no móviles (sin cambios)
+   * Maneja clics en dispositivos no mÃ³viles (sin cambios)
    */
   const manejarClick = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -171,7 +171,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, redimensionando, mostrarModal, anotacion.metadatos?.esNueva]);
 
   /**
-   * Obtiene coordenadas de evento (mouse o táctil)
+   * Obtiene coordenadas de evento (mouse o tÃ¡ctil)
    */
   const obtenerCoordenadas = useCallback((event) => {
     if (event.touches && event.touches.length > 0) {
@@ -335,11 +335,11 @@ const TextoAnotacion = ({
   }, [limpiarTimersToques]);
 
   /**
-   * Guarda la anotación (sin cambios)
+   * Guarda la anotaciÃ³n (sin cambios)
    */
   const guardarCambios = useCallback(async () => {
     if (!textoLocal.trim()) {
-      setError('El texto no puede estar vacío');
+      setError('El texto no puede estar vacÃ­o');
       return;
     }
 
@@ -369,14 +369,14 @@ const TextoAnotacion = ({
       setModoEdicion(true);
       
     } catch (err) {
-      setError('Error al guardar. Inténtalo de nuevo.');
+      setError('Error al guardar. IntÃ©ntalo de nuevo.');
     } finally {
       setGuardando(false);
     }
   }, [textoLocal, fontSizeLocal, colorLocal, anotacion, onGuardar]);
 
   /**
-   * Cancela la edición (sin cambios)
+   * Cancela la ediciÃ³n (sin cambios)
    */
   const cancelarEdicion = useCallback(() => {
     if (anotacion.metadatos?.esNueva) {
@@ -392,12 +392,12 @@ const TextoAnotacion = ({
   }, [anotacion, onEliminar]);
 
   /**
-   * Elimina la anotación (sin cambios)
+   * Elimina la anotaciÃ³n (sin cambios)
    */
   const eliminarAnotacion = useCallback(() => {
     const mensaje = esDispositiveMovil 
-      ? '¿Eliminar esta anotación?' 
-      : '¿Estás seguro de que deseas eliminar esta anotación?';
+      ? 'Â¿Eliminar esta anotaciÃ³n?' 
+      : 'Â¿EstÃ¡s seguro de que deseas eliminar esta anotaciÃ³n?';
       
     if (window.confirm(mensaje)) {
       onEliminar?.();
@@ -525,7 +525,7 @@ const TextoAnotacion = ({
     secundario: { width: '8px', height: '20px' }
   };
 
-  // EVENTOS: Mantener funcionalidad original para desktop, doble toque para móvil
+  // EVENTOS: Mantener funcionalidad original para desktop, doble toque para mÃ³vil
   const eventosContenedor = {
     ...(esDispositiveMovil ? {
       onTouchStart: manejarTouchStart,
@@ -549,7 +549,7 @@ const TextoAnotacion = ({
           {textoLocal}
         </div>
 
-        {/* Handles de redimensionamiento - SOLO en modo edición */}
+        {/* Handles de redimensionamiento - SOLO en modo ediciÃ³n */}
         {enModoEdicion && (
           <>
             <div
@@ -607,7 +607,7 @@ const TextoAnotacion = ({
           </>
         )}
 
-        {/* INDICADORES VISUALES simplificados para móvil */}
+        {/* INDICADORES VISUALES simplificados para mÃ³vil */}
         {esDispositiveMovil && seleccionada && anotacionGuardada && (
           <div style={{
             position: 'absolute',
@@ -625,7 +625,7 @@ const TextoAnotacion = ({
           </div>
         )}
 
-        {/* Indicadores para modo edición */}
+        {/* Indicadores para modo ediciÃ³n */}
         {enModoEdicion && (
           <div style={{
             position: 'absolute',
@@ -644,13 +644,13 @@ const TextoAnotacion = ({
             textOverflow: 'ellipsis'
           }}>
             {esDispositiveMovil 
-              ? 'Mantén presionado para mover' 
+              ? 'MantÃ©n presionado para mover' 
               : 'Arrastra para mover'
             }
           </div>
         )}
 
-        {/* Indicador cuando está iniciando arrastre */}
+        {/* Indicador cuando estÃ¡ iniciando arrastre */}
         {toqueEstado.iniciandoArrastre && (
           <div style={{
             position: 'absolute',
@@ -667,12 +667,12 @@ const TextoAnotacion = ({
             zIndex: 1000,
             pointerEvents: 'none'
           }}>
-            🔄 Modo arrastre activado
+            ðŸ”„ Modo arrastre activado
           </div>
         )}
       </div>
 
-      {/* Modal de edición (sin cambios) */}
+      {/* Modal de ediciÃ³n (sin cambios) */}
       {mostrarModal && (
         <div className="modal-overlay" onClick={cancelarEdicion}>
           <div className="modal-edicion" onClick={(e) => e.stopPropagation()}>
@@ -708,14 +708,14 @@ const TextoAnotacion = ({
                     letterSpacing: '0.5px',
                     lineHeight: '1.4'
                   }}
-                  placeholder="Escribe el contenido de tu anotación..."
+                  placeholder="Escribe el contenido de tu anotaciÃ³n..."
                   rows={4}
                 />
               </div>
 
               <div className="controles-formato">
                 <div className="control-item">
-                  <label htmlFor="font-size">Tamaño:</label>
+                  <label htmlFor="font-size">TamaÃ±o:</label>
                   <div className="input-with-unit">
                     <input
                       id="font-size"
@@ -777,7 +777,7 @@ const TextoAnotacion = ({
             <div className="modal-footer">
               {!esDispositiveMovil && (
                 <div className="atajos-hint">
-                  Ctrl+Enter para guardar • Esc para cancelar
+                  Ctrl+Enter para guardar â€¢ Esc para cancelar
                 </div>
               )}
               <div className="botones-modal">
