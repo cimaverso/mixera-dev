@@ -1,4 +1,4 @@
-// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSION SIN SELECTOR DE COLOR
+// src/Componentes/Lector/anotaciones/TextoAnotacion.jsx - VERSION SIN SELECTOR DE COLOR - EDICIÓN LIBRE CORREGIDA
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './modalEdicion.css';
 
@@ -14,8 +14,8 @@ const obtenerPesoFuente = (fontSize) => {
 
 /**
  * Componente individual para anotaciones de texto con fuente Caveat y auto-ajuste de dimensiones
- * NUEVA FUNCIONALIDAD: Auto-ajuste del contenedor al contenido del texto
- * MODIFICADO: Sin selector de color - siempre usa color negro por defecto
+ * CORREGIDO: Estados de edición para permitir reapertura de modal en anotaciones guardadas
+ * FIX: Edición libre sin seleccionar todo el texto automáticamente
  */
 const TextoAnotacion = ({
   anotacion,
@@ -29,12 +29,10 @@ const TextoAnotacion = ({
   onIniciarEdicion
 }) => {
   
-  // Estados principales
-  const [modoEdicion, setModoEdicion] = useState(anotacion.metadatos?.esNueva || false);
+  // CORREGIDO: Estados principales - eliminado modoEdicion conflictivo
   const [mostrarModal, setMostrarModal] = useState(anotacion.metadatos?.esNueva || false);
   const [textoLocal, setTextoLocal] = useState(anotacion.contenido.texto);
   const [fontSizeLocal, setFontSizeLocal] = useState(anotacion.contenido.fontSize || 14);
-  // REMOVIDO: colorLocal - siempre usar negro
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   
@@ -168,6 +166,20 @@ const TextoAnotacion = ({
   }, []);
 
   /**
+   * CORREGIDO: Determinar si la anotación debe ser transparente (ya guardada)
+   */
+  const esAnotacionGuardada = useCallback(() => {
+    return !anotacion.metadatos?.esNueva && !mostrarModal;
+  }, [anotacion.metadatos?.esNueva, mostrarModal]);
+
+  /**
+   * CORREGIDO: Determinar si está en modo edición visual (para mostrar handles)
+   */
+  const estaEnModoEdicion = useCallback(() => {
+    return seleccionada && !anotacion.metadatos?.esNueva && !mostrarModal;
+  }, [seleccionada, anotacion.metadatos?.esNueva, mostrarModal]);
+
+  /**
    * CORREGIDO: Auto-ajusta manteniendo proporción solo cuando es necesario
    */
   const autoAjustarDimensiones = useCallback(async (nuevoTexto = null, nuevoFontSize = null) => {
@@ -213,9 +225,9 @@ const TextoAnotacion = ({
    * EFECTO: Auto-ajustar cuando cambia el contenido (solo para anotaciones guardadas)
    */
   useEffect(() => {
-    const esAnotacionGuardada = !anotacion.metadatos?.esNueva && !mostrarModal && !modoEdicion;
+    const esAnotacionGuardadaLocal = !anotacion.metadatos?.esNueva && !mostrarModal;
     
-    if (esAnotacionGuardada && textoLocal && !redimensionando) {
+    if (esAnotacionGuardadaLocal && textoLocal && !redimensionando) {
       // Pequeño delay para asegurar que el DOM esté actualizado
       const timer = setTimeout(() => {
         autoAjustarDimensiones();
@@ -223,14 +235,7 @@ const TextoAnotacion = ({
       
       return () => clearTimeout(timer);
     }
-  }, [textoLocal, fontSizeLocal, zoom, anotacion.metadatos?.esNueva, mostrarModal, modoEdicion, redimensionando, autoAjustarDimensiones]);
-
-  /**
-   * Determinar si la anotación debe ser transparente (ya guardada)
-   */
-  const esAnotacionGuardada = useCallback(() => {
-    return !anotacion.metadatos?.esNueva && !modoEdicion && !mostrarModal;
-  }, [anotacion.metadatos?.esNueva, modoEdicion, mostrarModal]);
+  }, [textoLocal, fontSizeLocal, zoom, anotacion.metadatos?.esNueva, mostrarModal, redimensionando, autoAjustarDimensiones]);
 
   /**
    * Limpiar timers de toque
@@ -246,7 +251,7 @@ const TextoAnotacion = ({
   }, [toqueEstado.timerDobleToque]);
 
   /**
-   * Maneja eventos de toque SOLO en móvil con separación clara
+   * CORREGIDO: Maneja eventos de toque SOLO en móvil con separación clara
    */
   const manejarTouchStart = useCallback((event) => {
     if (!esDispositiveMovil) return;
@@ -256,7 +261,8 @@ const TextoAnotacion = ({
       return;
     }
 
-    if (modoEdicion && anotacion.metadatos?.esNueva) {
+    // CORREGIDO: Permitir edición de anotaciones guardadas
+    if (anotacion.metadatos?.esNueva && mostrarModal) {
       return;
     }
 
@@ -288,7 +294,7 @@ const TextoAnotacion = ({
       contadorToques: 1
     }));
 
-  }, [esDispositiveMovil, redimensionando, mostrarModal, modoEdicion, anotacion.metadatos?.esNueva, toqueEstado.ultimoToque, limpiarTimersToques, onIniciarEdicion]);
+  }, [esDispositiveMovil, redimensionando, mostrarModal, anotacion.metadatos?.esNueva, toqueEstado.ultimoToque, limpiarTimersToques, onIniciarEdicion]);
 
   /**
    * Manejo del fin de toque - solo limpiar estados
@@ -299,7 +305,7 @@ const TextoAnotacion = ({
   }, [esDispositiveMovil, limpiarTimersToques]);
 
   /**
-   * Maneja clics en dispositivos no móviles
+   * CORREGIDO: Maneja clics en dispositivos no móviles
    */
   const manejarClick = useCallback((event) => {
     if (esDispositiveMovil) return;
@@ -308,7 +314,8 @@ const TextoAnotacion = ({
     
     if (redimensionando) return;
     
-    if (modoEdicion && anotacion.metadatos?.esNueva) {
+    // CORREGIDO: Permitir edición de anotaciones guardadas eliminando la condición problemática
+    if (anotacion.metadatos?.esNueva && mostrarModal) {
       return;
     }
     
@@ -321,7 +328,7 @@ const TextoAnotacion = ({
     }
     
     setUltimoClic(ahora);
-  }, [esDispositiveMovil, ultimoClic, modoEdicion, anotacion.metadatos?.esNueva, onIniciarEdicion, redimensionando]);
+  }, [esDispositiveMovil, ultimoClic, anotacion.metadatos?.esNueva, mostrarModal, onIniciarEdicion, redimensionando]);
 
   /**
    * Controla cuando se puede arrastrar
@@ -542,8 +549,8 @@ const TextoAnotacion = ({
 
       await onGuardar?.(anotacionActualizada);
       
+      // CORREGIDO: Cerrar modal sin establecer modo edición
       setMostrarModal(false);
-      setModoEdicion(true);
       
     } catch (err) {
       setError('Error al guardar. Inténtalo de nuevo.');
@@ -605,13 +612,20 @@ const TextoAnotacion = ({
   }, [mostrarModal, guardarCambios, cancelarEdicion]);
 
   /**
-   * Auto-focus en modal
+   * FIX PRINCIPAL: Auto-focus en modal SIN seleccionar todo el texto
    */
   useEffect(() => {
     if (mostrarModal && modalTextareaRef.current) {
       setTimeout(() => {
-        modalTextareaRef.current?.focus();
-        modalTextareaRef.current?.select();
+        const textarea = modalTextareaRef.current;
+        if (textarea) {
+          textarea.focus();
+          
+          // FIX CRÍTICO: En lugar de .select(), posicionar cursor al final
+          // Esto permite edición libre sin reemplazar todo el texto
+          const longitudTexto = textarea.value.length;
+          textarea.setSelectionRange(longitudTexto, longitudTexto);
+        }
       }, 100);
     }
   }, [mostrarModal]);
@@ -632,6 +646,7 @@ const TextoAnotacion = ({
   const fontSizeEscalado = Math.max(10, fontSizeLocal * zoom);
   const pesoFuente = obtenerPesoFuente(fontSizeLocal);
   const anotacionGuardada = esAnotacionGuardada();
+  const enModoEdicion = estaEnModoEdicion();
 
   const estilosAnotacion = {
     fontSize: `${fontSizeEscalado}px`,
@@ -649,14 +664,11 @@ const TextoAnotacion = ({
     fontWeight: pesoFuente,
     fontStyle: 'normal'
   };
-
-  const yaGuardada = !anotacion.metadatos?.esNueva;
-  const enModoEdicion = modoEdicion && yaGuardada;
   
   const estilosContenedor = {
     width: '100%',
     height: '100%',
-    border: modoEdicion 
+    border: enModoEdicion 
       ? '2px dashed #de007e' 
       : seleccionada 
         ? (anotacionGuardada ? '1px solid rgba(222, 0, 126, 0.3)' : '2px solid #de007e')
@@ -671,7 +683,7 @@ const TextoAnotacion = ({
           : 'rgba(255, 255, 255, 0.9)',
     boxShadow: anotacionGuardada
       ? (seleccionada ? '0 1px 6px rgba(222, 0, 126, 0.1)' : 'none')
-      : (seleccionada || modoEdicion)
+      : (seleccionada || enModoEdicion)
         ? '0 2px 8px rgba(222, 0, 126, 0.3)'
         : '0 1px 3px rgba(0, 0, 0, 0.1)',
     transition: redimensionando ? 'none' : 'all 0.2s ease',
@@ -716,7 +728,7 @@ const TextoAnotacion = ({
     <>
       <div
         ref={contenedorRef}
-        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${modoEdicion ? 'editando' : ''} ${anotacionGuardada ? 'guardada' : ''} ${redimensionando ? 'redimensionando' : ''} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
+        className={`anotacion-texto ${seleccionada ? 'seleccionada' : ''} ${enModoEdicion ? 'editando' : ''} ${anotacionGuardada ? 'guardada' : ''} ${redimensionando ? 'redimensionando' : ''} ${esDispositiveMovil ? 'movil' : 'desktop'}`}
         style={estilosContenedor}
         {...eventosContenedor}
       >
@@ -907,8 +919,6 @@ const TextoAnotacion = ({
                     <span className="unit-display">{fontSizeLocal}px</span>
                   </div>
                 </div>
-
-                {/* REMOVIDO: Control de color */}
               </div>
 
               <div className="vista-previa">

@@ -102,6 +102,14 @@
   transition: all 0.3s ease;
   z-index: 1000;
   gap: 50px;
+  
+  /* OCULTAR SCROLLBARS EN SIDEBAR DESKTOP */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.sidebar-usuario::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
 }
 
 /* Sidebar colapsado */
@@ -142,6 +150,14 @@
   transition: transform 0.3s ease;
   z-index: 975;
   overflow-y: auto;
+  
+  /* OCULTAR SCROLLBARS EN SIDEBAR MÓVIL */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.sidebar-movil::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
 }
 
 .sidebar-movil.abierto {
