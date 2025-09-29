@@ -14,6 +14,8 @@ import {
   finalizarSesionLectura,
 } from "../../servicios/sesionesLectura";
 
+import { progresoAPI } from "../../servicios/progresoAPI";
+
 /**
  * Componente principal del lector de PDF con sistema de anotaciones
  */
@@ -130,6 +132,76 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       }
     };
   }, [libroId]);
+
+  /**
+   * Guardar progreso cuando cambia la página
+   */
+  useEffect(() => {
+    const guardarProgreso = async () => {
+      if (!libroId || !paginaActual || !totalPaginas) return;
+      if (totalPaginas === 0) return; // Esperar a que se cargue el total
+
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          console.warn("No hay token disponible para guardar progreso");
+          return;
+        }
+
+        await progresoAPI.guardarProgreso(
+          {
+            libroId: parseInt(libroId),
+            paginaActual: paginaActual,
+            totalPaginas: totalPaginas,
+          },
+          token
+        );
+
+        console.log(
+          `Progreso guardado: Página ${paginaActual} de ${totalPaginas}`
+        );
+      } catch (error) {
+        console.error("Error al guardar progreso:", error);
+        // No mostrar error al usuario, es una operación secundaria
+      }
+    };
+
+    // Debounce para evitar demasiadas llamadas al cambiar páginas rápidamente
+    const timer = setTimeout(() => {
+      guardarProgreso();
+    }, 1000); // Espera 1 segundo después del último cambio de página
+
+    return () => clearTimeout(timer);
+  }, [libroId, paginaActual, totalPaginas]);
+
+  /**
+   * Cargar progreso guardado al iniciar
+   */
+  useEffect(() => {
+    const cargarProgresoGuardado = async () => {
+      if (!libroId || totalPaginas === 0) return;
+
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        const progreso = await progresoAPI.getProgreso(libroId, token);
+
+        if (progreso && progreso.pro_pagina_actual) {
+          const paginaGuardada = parseInt(progreso.pro_pagina_actual);
+          if (paginaGuardada >= 1 && paginaGuardada <= totalPaginas) {
+            setPaginaActual(paginaGuardada);
+            console.log(`Progreso recuperado: Página ${paginaGuardada}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error al cargar progreso:", error);
+        // No es crítico, inicia desde página 1
+      }
+    };
+
+    cargarProgresoGuardado();
+  }, [libroId, totalPaginas]);
 
   /**
    * Convierte anotacion del formato backend al formato interno
