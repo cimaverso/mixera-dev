@@ -9,11 +9,20 @@ import BarraInferior from "./BarraInferior";
 import { textosAPI } from "../../servicios/textosAPI";
 import { getLibroById } from "../../servicios/libros";
 import "./lector.css";
+import {
+  iniciarSesionLectura,
+  finalizarSesionLectura,
+} from "../../servicios/sesionesLectura";
 
 /**
  * Componente principal del lector de PDF con sistema de anotaciones
  */
 const LectorPDF = ({ libroId: libroIdProp }) => {
+  //Lectura //
+  const sesionLecturaIdRef = useRef(null);
+
+  // ** //
+
   const { libroId: libroIdURL } = useParams();
   const navigate = useNavigate();
 
@@ -33,13 +42,16 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
   // Estados de navegacion y visualizacion
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
-  
+
   // NUEVO: Funcion para determinar zoom inicial segun dispositivo
   const obtenerZoomInicial = useCallback(() => {
-    const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                   ('ontouchstart' in window) ||
-                   (window.innerWidth <= 768);
-    
+    const esMovil =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) ||
+      "ontouchstart" in window ||
+      window.innerWidth <= 768;
+
     return esMovil ? 0.6 : 1.0; // 60% en movil, 100% en desktop
   }, []);
 
@@ -68,7 +80,7 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       const esMovilActual = window.innerWidth <= 768;
       const zoomEsMovil = zoom === 0.6;
       const zoomEsDesktop = zoom === 1.0;
-      
+
       if (esMovilActual && zoomEsDesktop) {
         setZoom(0.6);
       } else if (!esMovilActual && zoomEsMovil) {
@@ -76,14 +88,48 @@ const LectorPDF = ({ libroId: libroIdProp }) => {
       }
     };
 
-    window.addEventListener('resize', manejarResize);
-    window.addEventListener('orientationchange', manejarResize);
-    
+    window.addEventListener("resize", manejarResize);
+    window.addEventListener("orientationchange", manejarResize);
+
     return () => {
-      window.removeEventListener('resize', manejarResize);
-      window.removeEventListener('orientationchange', manejarResize);
+      window.removeEventListener("resize", manejarResize);
+      window.removeEventListener("orientationchange", manejarResize);
     };
   }, [zoom, obtenerZoomInicial]);
+
+  /**
+   * Inicia una sesión de lectura al montar el componente
+   * y la finaliza al desmontar
+   */
+  useEffect(() => {
+    const iniciarSesion = async () => {
+      if (!libroId) return;
+
+      try {
+        const resultado = await iniciarSesionLectura(libroId);
+        sesionLecturaIdRef.current = resultado.ls_id;
+        console.log("Sesión de lectura iniciada:", resultado.ls_id);
+      } catch (error) {
+        console.error("Error al iniciar sesión de lectura:", error);
+        // No es crítico, continúa sin sesión
+      }
+    };
+
+    iniciarSesion();
+
+    // Cleanup: Finalizar sesión al desmontar
+    return () => {
+      if (sesionLecturaIdRef.current) {
+        finalizarSesionLectura(sesionLecturaIdRef.current)
+          .then(() => {
+            console.log("Sesión de lectura finalizada");
+          })
+          .catch((error) => {
+            console.error("Error al finalizar sesión de lectura:", error);
+          });
+      }
+    };
+  }, [libroId]);
 
   /**
    * Convierte anotacion del formato backend al formato interno
