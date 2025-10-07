@@ -814,7 +814,8 @@ const TextoAnotacion = ({
             borderRadius: '4px',
             whiteSpace: 'nowrap',
             boxShadow: '0 2px 8px rgba(222, 0, 126, 0.3)',
-            fontWeight: '600'
+            fontWeight: '600',
+            zIndex: 1000
           }}>
             Doble toque para editar
           </div>
