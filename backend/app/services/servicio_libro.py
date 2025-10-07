@@ -16,7 +16,7 @@ CARPETA_PORTADAS = os.path.join("uploads", "covers")
 os.makedirs(CARPETA_LIBROS, exist_ok=True)
 os.makedirs(CARPETA_PORTADAS, exist_ok=True)
 
-MAX_FILE_SIZE = 100 * 1024 * 1024
+MAX_FILE_SIZE = 200 * 1024 * 1024
 CHUNK_SIZE = 1024 * 1024
 
 class LibroServicio:
