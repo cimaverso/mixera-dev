@@ -16,6 +16,7 @@ const obtenerPesoFuente = (fontSize) => {
  * Componente individual para anotaciones de texto con fuente Caveat y auto-ajuste de dimensiones
  * CORREGIDO: Estados de edición para permitir reapertura de modal en anotaciones guardadas
  * FIX: Edición libre sin seleccionar todo el texto automáticamente
+ * FIX: Indicador móvil visible en modo oscuro
  */
 const TextoAnotacion = ({
   anotacion,
@@ -799,7 +800,7 @@ const TextoAnotacion = ({
           </>
         )}
 
-        {/* INDICADORES VISUALES simplificados para móvil */}
+        {/* INDICADORES VISUALES simplificados para móvil - FIX VISIBILIDAD */}
         {esDispositiveMovil && seleccionada && anotacionGuardada && (
           <div style={{
             position: 'absolute',
@@ -807,11 +808,13 @@ const TextoAnotacion = ({
             left: '50%',
             transform: 'translateX(-50%)',
             fontSize: '10px',
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: '#de007e',
             color: 'white',
             padding: '3px 8px',
             borderRadius: '4px',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(222, 0, 126, 0.3)',
+            fontWeight: '600'
           }}>
             Doble toque para editar
           </div>
