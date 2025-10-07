@@ -809,7 +809,7 @@ const TextoAnotacion = ({
             transform: 'translateX(-50%)',
             fontSize: '10px',
             backgroundColor: '#de007e',
-            color: 'white',
+            color: '#ffffff',
             padding: '3px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
